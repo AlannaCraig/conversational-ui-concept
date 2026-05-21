@@ -55,7 +55,7 @@ function ActionTile({ tile, onClick }: ActionTileProps) {
   return (
     <div
       onClick={handleClick}
-      className="flex items-center gap-2.5 px-4 py-3 bg-accent1-contrast border border-accent1-light rounded-lg cursor-pointer hover:bg-accent1-light transition-colors duration-200"
+      className="flex items-center gap-2.5 px-4 py-3.5 bg-accent1-contrast border border-accent1-light rounded-lg cursor-pointer hover:bg-accent1-light transition-colors duration-200"
       style={{ boxSizing: 'border-box' }}
     >
       <Icon size={20} className="text-accent1-main flex-shrink-0" />

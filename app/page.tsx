@@ -441,47 +441,9 @@ export default function Home() {
                     <ConversationHero skipAnimation={isTransitioning} />
                   </motion.div>
 
-                  {/* Two-column layout: Action Tiles + Suggested Prompts */}
-                  <motion.div
-                    className="mt-8 grid grid-cols-2 gap-6"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{
-                      opacity: isTransitioning ? 0 : 1,
-                      y: isTransitioning ? 0 : 0
-                    }}
-                    transition={
-                      isTransitioning
-                        ? {
-                            duration: 0.3,
-                            delay: 0,
-                            ease: [0.4, 0, 0.2, 1]
-                          }
-                        : {
-                            duration: 0.4,
-                            delay: 0.5,
-                            ease: [0.4, 0, 0.2, 1]
-                          }
-                    }
-                  >
-                    {/* Left column: Action Tiles */}
-                    <div>
-                      <h3 className="text-sm font-medium text-text-primary mb-3">Today's activities:</h3>
-                      <ActionTiles onTileClick={handleTileClick} />
-                    </div>
-
-                    {/* Right column: Suggested Prompts */}
-                    <div>
-                      <h3 className="text-sm font-medium text-text-primary mb-3">Suggested prompts:</h3>
-                      <PromptSuggestions
-                        suggestions={DEFAULT_SUGGESTIONS}
-                        onSelectSuggestion={handleSelectSuggestion}
-                      />
-                    </div>
-                  </motion.div>
-
                   {/* Prompt Input - Entrance animation + transition animation */}
                   <motion.div
-                    className="mt-6"
+                    className="mt-8"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{
                       opacity: 1,
@@ -502,6 +464,45 @@ export default function Home() {
                     }
                   >
                     <PromptInput onSubmit={handleSubmit} />
+                  </motion.div>
+
+                  {/* Two-column layout: Action Tiles + Suggested Prompts */}
+                  <motion.div
+                    className="mt-6 grid gap-6"
+                    style={{ gridTemplateColumns: '1fr 2fr' }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{
+                      opacity: isTransitioning ? 0 : 1,
+                      y: isTransitioning ? 0 : 0
+                    }}
+                    transition={
+                      isTransitioning
+                        ? {
+                            duration: 0.3,
+                            delay: 0,
+                            ease: [0.4, 0, 0.2, 1]
+                          }
+                        : {
+                            duration: 0.4,
+                            delay: 0.7,
+                            ease: [0.4, 0, 0.2, 1]
+                          }
+                    }
+                  >
+                    {/* Left column: Action Tiles (1/3 width) */}
+                    <div>
+                      <h3 className="text-sm font-medium text-text-primary mb-3">Today's activities:</h3>
+                      <ActionTiles onTileClick={handleTileClick} />
+                    </div>
+
+                    {/* Right column: Suggested Prompts (2/3 width) */}
+                    <div>
+                      <h3 className="text-sm font-medium text-text-primary mb-3">Suggested prompts:</h3>
+                      <PromptSuggestions
+                        suggestions={DEFAULT_SUGGESTIONS}
+                        onSelectSuggestion={handleSelectSuggestion}
+                      />
+                    </div>
                   </motion.div>
                 </div>
               </div>
