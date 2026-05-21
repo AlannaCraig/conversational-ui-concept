@@ -38,6 +38,7 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentGameNodeId, setCurrentGameNodeId] = useState<string | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [showLargeData, setShowLargeData] = useState(false);
 
   // Auto-scroll to bottom when messages change
   const scrollRef = useAutoScroll({
@@ -96,6 +97,7 @@ export default function Home() {
                 adaptiveCards: mockResponse.adaptiveCards,
                 gameOptions: mockResponse.gameOptions,
                 gameNodeId: mockResponse.gameNodeId,
+                largeData: mockResponse.largeData,
               }
             : m
         )
@@ -104,6 +106,11 @@ export default function Home() {
       // Update game state if this is a game response
       if (mockResponse.gameNodeId) {
         setCurrentGameNodeId(mockResponse.gameNodeId);
+      }
+
+      // Update large data state if this is a large data response
+      if (mockResponse.largeData) {
+        setShowLargeData(true);
       }
     }, mockResponse.delay || 1500);
   };
@@ -170,6 +177,7 @@ export default function Home() {
     setUiState('landing');
     setMessages([]);
     setCurrentGameNodeId(null);
+    setShowLargeData(false);
   };
 
   const handleNewChat = () => {
@@ -181,6 +189,7 @@ export default function Home() {
     // Clear messages and game state but stay in conversation view
     setMessages([]);
     setCurrentGameNodeId(null);
+    setShowLargeData(false);
 
     // Transition back to landing for a clean start
     setUiState('landing');
@@ -198,9 +207,39 @@ export default function Home() {
         )}
 
         {/* Main Content Area */}
-        <section className="flex-1 ml-16 p-4">
-          {/* Content Frame */}
-          <div className="h-full bg-background border border-border rounded-[12px] overflow-hidden">
+        <section className="flex-1 ml-16">
+          <div className="h-full p-4">
+            <div className="h-full flex gap-4">
+              <AnimatePresence>
+                {/* Large Data Panel - Appears on left when active */}
+                {showLargeData && (
+                  <motion.div
+                    initial={{ opacity: 0, flexGrow: 0, flexBasis: 0 }}
+                    animate={{ opacity: 1, flexGrow: 2, flexBasis: 0 }}
+                    exit={{ opacity: 0, flexGrow: 0, flexBasis: 0 }}
+                    transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+                    className="h-full bg-background border border-border rounded-[12px] overflow-hidden"
+                    style={{ minWidth: 0 }}
+                  >
+                    <div className="h-full overflow-y-auto p-6">
+                      <h2 className="text-xl font-semibold text-text-primary mb-4">Your things</h2>
+                      <p className="text-text-secondary">Your detailed data visualization will appear here. This is the large content area taking up 2/3 of the available space.</p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Dialog Container - Full width or 1/3 width */}
+              <motion.div
+                initial={{ flexGrow: 1, flexBasis: 0 }}
+                animate={{
+                  flexGrow: showLargeData ? 1 : 1,
+                  flexBasis: 0
+                }}
+                transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+                className="h-full bg-background border border-border rounded-[12px] overflow-hidden"
+                style={{ minWidth: 0 }}
+              >
             {/* STATE 1: LANDING STATE */}
             {uiState === 'landing' && (
               <div className="h-full flex flex-col items-center justify-center p-6 relative">
@@ -287,7 +326,8 @@ export default function Home() {
                 {/* Scrollable Conversation Thread */}
                 <div
                   ref={scrollRef}
-                  className="flex-1 overflow-y-auto px-6 pt-6 scroll-smooth conversation-scroll"
+                  className="flex-1 overflow-y-auto px-6 scroll-smooth conversation-scroll"
+                  style={{ paddingTop: showLargeData ? '56px' : '24px' }}
                 >
                   <div className="max-w-[800px] mx-auto">
                     <ConversationThread
@@ -304,12 +344,14 @@ export default function Home() {
                     <div className="border-t border-border mb-6"></div>
 
                     <div>
-                      <PromptInput onSubmit={handleSubmit} />
+                      <PromptInput onSubmit={handleSubmit} autoFocus={true} />
                     </div>
                   </div>
                 </div>
               </motion.div>
             )}
+            </motion.div>
+            </div>
           </div>
         </section>
       </div>

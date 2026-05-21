@@ -8,7 +8,7 @@
  * All styling driven by design tokens.
  */
 
-import { useState, useRef, KeyboardEvent, ChangeEvent } from 'react';
+import { useState, useRef, KeyboardEvent, ChangeEvent, useEffect } from 'react';
 import { SendIcon, MicIcon, PlusIcon, GlobeIcon } from '@/components/icons';
 import { motion } from 'framer-motion';
 import { ModelSelector } from './ModelSelector';
@@ -16,14 +16,23 @@ import { ModelSelector } from './ModelSelector';
 interface PromptInputProps {
   onSubmit?: (message: string) => void;
   placeholder?: string;
+  autoFocus?: boolean;
 }
 
 export function PromptInput({
   onSubmit,
-  placeholder = 'Ask me anything...'
+  placeholder = 'Ask me anything...',
+  autoFocus = false
 }: PromptInputProps) {
   const [message, setMessage] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-focus when requested
+  useEffect(() => {
+    if (autoFocus && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [autoFocus]);
 
   const handleSubmit = () => {
     if (!message.trim()) return;

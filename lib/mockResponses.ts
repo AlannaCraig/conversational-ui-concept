@@ -51,6 +51,20 @@ const responseVariations = [
 let lastResponseIndex = -1;
 
 /**
+ * Get a random response intro without duplicates
+ */
+function getRandomResponseIntro(): string {
+  let randomIndex;
+
+  do {
+    randomIndex = Math.floor(Math.random() * responseVariations.length);
+  } while (randomIndex === lastResponseIndex && responseVariations.length > 1);
+
+  lastResponseIndex = randomIndex;
+  return responseVariations[randomIndex];
+}
+
+/**
  * Determine if the message is requesting to play a game
  */
 function isGameRequest(message: string): boolean {
@@ -150,6 +164,23 @@ function isDataContinuationRequest(message: string): boolean {
   return dataContinuationPhrases.some(phrase => lowerMessage.includes(phrase));
 }
 
+/**
+ * Determine if the message is a large data request
+ */
+function isLargeDataRequest(message: string): boolean {
+  const lowerMessage = message.toLowerCase();
+
+  const largeDataKeywords = [
+    'large data',
+    'big data',
+    'full view',
+    'detailed view',
+    'expanded view',
+  ];
+
+  return largeDataKeywords.some(keyword => lowerMessage.includes(keyword));
+}
+
 export function getMockResponse(userMessage: string, gameNodeId?: string): MockResponse {
   // Priority 0: Check if this is a game request or game option selection
   if (isGameRequest(userMessage)) {
@@ -172,7 +203,16 @@ export function getMockResponse(userMessage: string, gameNodeId?: string): MockR
     };
   }
 
-  // Priority 1: Check for story continuation ("tell me more")
+  // Priority 1: Check for large data request
+  if (isLargeDataRequest(userMessage)) {
+    return {
+      content: getRandomResponseIntro(),
+      delay: 1500,
+      largeData: true,
+    };
+  }
+
+  // Priority 2: Check for story continuation ("tell me more")
   if (isStoryContinuationRequest(userMessage)) {
     return {
       content: getStoryContinuation(),
