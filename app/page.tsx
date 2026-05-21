@@ -37,6 +37,7 @@ export default function Home() {
   const [uiState, setUiState] = useState<UIState>('landing');
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentGameNodeId, setCurrentGameNodeId] = useState<string | null>(null);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Auto-scroll to bottom when messages change
   const scrollRef = useAutoScroll({
@@ -48,8 +49,14 @@ export default function Home() {
   const handleSubmit = (msg: string) => {
     if (!msg.trim()) return;
 
-    // Transition to conversation state (handles both text-only and small data requests)
-    setUiState('conversation');
+    // Start transition animation
+    setIsTransitioning(true);
+
+    // Transition to conversation state after animation
+    setTimeout(() => {
+      setUiState('conversation');
+      setIsTransitioning(false);
+    }, 2200);
 
     // Create user message
     const userMessage: Message = {
@@ -194,46 +201,86 @@ export default function Home() {
         <section className="flex-1 ml-16 p-4">
           {/* Content Frame */}
           <div className="h-full bg-background border border-border rounded-[12px] overflow-hidden">
-            <AnimatePresence mode="wait">
-              {/* STATE 1: LANDING STATE */}
-              {uiState === 'landing' && (
-              <motion.div
-                key="landing"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-                className="h-full flex flex-col items-center justify-center p-6"
-              >
+            {/* STATE 1: LANDING STATE */}
+            {uiState === 'landing' && (
+              <div className="h-full flex flex-col items-center justify-center p-6 relative">
                 <div className="w-full max-w-[800px]">
-                  {/* Hero Section */}
-                  <div>
-                    <ConversationHero />
-                  </div>
+                  {/* Hero Section with staggered internal animation */}
+                  <motion.div
+                    animate={{
+                      opacity: isTransitioning ? 0 : 1,
+                      y: isTransitioning ? -20 : 0
+                    }}
+                    transition={{
+                      duration: 0.5,
+                      delay: isTransitioning ? 0.35 : 0,
+                      ease: [0.4, 0, 0.2, 1]
+                    }}
+                  >
+                    <ConversationHero skipAnimation={isTransitioning} />
+                  </motion.div>
 
-                  {/* Prompt Input */}
-                  <div className="mt-8">
+                  {/* Prompt Input - Entrance animation + transition animation */}
+                  <motion.div
+                    className="mt-8"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{
+                      opacity: 1,
+                      y: isTransitioning ? 'calc(50vh - 120px)' : 0
+                    }}
+                    transition={
+                      isTransitioning
+                        ? {
+                            duration: 1.2,
+                            delay: 1.0,
+                            ease: [0.4, 0, 0.2, 1]
+                          }
+                        : {
+                            duration: 0.4,
+                            delay: 0.5,
+                            ease: [0.4, 0, 0.2, 1]
+                          }
+                    }
+                  >
                     <PromptInput onSubmit={handleSubmit} />
-                  </div>
+                  </motion.div>
 
-                  {/* Suggested Prompts */}
-                  <div className="mt-6">
+                  {/* Suggested Prompts - Entrance animation + transition fade */}
+                  <motion.div
+                    className="mt-6"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{
+                      opacity: isTransitioning ? 0 : 1,
+                      y: isTransitioning ? 0 : 0
+                    }}
+                    transition={
+                      isTransitioning
+                        ? {
+                            duration: 0.3,
+                            delay: 0,
+                            ease: [0.4, 0, 0.2, 1]
+                          }
+                        : {
+                            duration: 0.4,
+                            delay: 0.7,
+                            ease: [0.4, 0, 0.2, 1]
+                          }
+                    }
+                  >
                     <PromptSuggestions
                       suggestions={DEFAULT_SUGGESTIONS}
                       onSelectSuggestion={handleSelectSuggestion}
                     />
-                  </div>
+                  </motion.div>
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {/* STATE 2: ACTIVE CONVERSATION STATE */}
             {uiState === 'conversation' && (
               <motion.div
-                key="conversation"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
                 transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
                 className="h-full flex flex-col"
               >
@@ -263,7 +310,6 @@ export default function Home() {
                 </div>
               </motion.div>
             )}
-            </AnimatePresence>
           </div>
         </section>
       </div>
