@@ -37,3 +37,8 @@ export { RepeatIcon } from './RepeatIcon';
 export { ThumbsUpIcon } from './ThumbsUpIcon';
 export { ThumbsDownIcon } from './ThumbsDownIcon';
 export { NewChatIcon } from './NewChatIcon';
+
+// Action tile icons
+export { TaskIcon } from './TaskIcon';
+export { AppointmentIcon } from './AppointmentIcon';
+export { ReportIcon } from './ReportIcon';

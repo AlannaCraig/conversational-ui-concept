@@ -43,7 +43,7 @@ export function PromptSuggestion({ text, onClick, delay = 0 }: PromptSuggestionP
       transition={{ duration: 0.3, delay }}
       ref={cardRef}
       onClick={handleClick}
-      className="relative px-4 py-3.5 flex items-center justify-between gap-3 group cursor-pointer border border-border rounded-lg bg-background hover:bg-[rgba(72,65,53,0.08)] transition-colors duration-200 overflow-hidden"
+      className="relative px-4 py-3.5 flex items-center justify-between gap-3 group cursor-pointer border border-border rounded-lg bg-background hover:bg-hover transition-colors duration-200 overflow-hidden"
     >
       {/* Click pulse overlay */}
       {clickRipple && (
@@ -54,7 +54,7 @@ export function PromptSuggestion({ text, onClick, delay = 0 }: PromptSuggestionP
           animate={{ opacity: 0 }}
           transition={{ duration: 0.6, ease: 'easeOut' }}
           style={{
-            background: `radial-gradient(circle at ${clickRipple.x}px ${clickRipple.y}px, rgba(72,65,53,0.12) 0%, transparent 70%)`,
+            background: `radial-gradient(circle at ${clickRipple.x}px ${clickRipple.y}px, var(--hover-strong) 0%, transparent 70%)`,
           }}
         />
       )}

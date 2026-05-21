@@ -10,11 +10,31 @@ import {
   ConversationThread,
   NewChatButton
 } from '@/components/chat';
+import {
+  TableCard,
+  DashboardCard,
+  DocumentCard,
+  GridCard,
+  CalendarCard,
+  KanbanCard,
+  AnalyticsCard
+} from '@/components/ui/LargeAdaptiveCards';
+import { ActionTiles } from '@/components/ui';
 import { Message } from '@/types/conversation';
 import { getMockResponse } from '@/lib/mockResponses';
 import { getGameNode } from '@/lib/gameData';
 import { saveCurrentChat } from '@/lib/chatHistory';
 import { useAutoScroll } from '@/hooks';
+
+const LARGE_CARD_LAYOUTS = [
+  { type: 'table', component: TableCard },
+  { type: 'dashboard', component: DashboardCard },
+  { type: 'document', component: DocumentCard },
+  { type: 'grid', component: GridCard },
+  { type: 'calendar', component: CalendarCard },
+  { type: 'kanban', component: KanbanCard },
+  { type: 'analytics', component: AnalyticsCard },
+];
 
 const DEFAULT_SUGGESTIONS = [
   {
@@ -39,6 +59,7 @@ export default function Home() {
   const [currentGameNodeId, setCurrentGameNodeId] = useState<string | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showLargeData, setShowLargeData] = useState(false);
+  const [largeCardLayout, setLargeCardLayout] = useState<typeof LARGE_CARD_LAYOUTS[0] | null>(null);
 
   // Auto-scroll to bottom when messages change
   const scrollRef = useAutoScroll({
@@ -110,6 +131,9 @@ export default function Home() {
 
       // Update large data state if this is a large data response
       if (mockResponse.largeData) {
+        // Pick a random layout
+        const randomLayout = LARGE_CARD_LAYOUTS[Math.floor(Math.random() * LARGE_CARD_LAYOUTS.length)];
+        setLargeCardLayout(randomLayout);
         setShowLargeData(true);
       }
     }, mockResponse.delay || 1500);
@@ -167,6 +191,80 @@ export default function Home() {
     handleSubmit(text);
   };
 
+  const handleTileClick = (tile: { id: string; type: 'task' | 'appointment' | 'report'; count: number; label: string }) => {
+    // Start transition animation
+    setIsTransitioning(true);
+
+    // Transition to conversation state after animation
+    setTimeout(() => {
+      setUiState('conversation');
+      setIsTransitioning(false);
+    }, 2200);
+
+    // Create user message based on tile
+    const tileMessages: Record<string, string> = {
+      task: `Show me my ${tile.count} tasks due today`,
+      appointment: `Show me my ${tile.count} appointments today`,
+      report: `Show me my ${tile.count} reports scheduled for today`,
+    };
+
+    const userMessage: Message = {
+      id: `user-${Date.now()}`,
+      role: 'user',
+      content: tileMessages[tile.type],
+      timestamp: new Date(),
+      responseMode: 'inline',
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+
+    // Create loading assistant message
+    const loadingMessage: Message = {
+      id: `assistant-${Date.now()}`,
+      role: 'assistant',
+      content: '',
+      timestamp: new Date(),
+      responseMode: 'inline',
+      isLoading: true,
+    };
+
+    setMessages((prev) => [...prev, loadingMessage]);
+
+    // Generate response based on tile type
+    const responseMessages: Record<string, string> = {
+      task: `Here are your ${tile.count} outstanding tasks due today:`,
+      appointment: `Here are your ${tile.count} appointments scheduled for today:`,
+      report: `Here are your ${tile.count} reports scheduled for today:`,
+    };
+
+    const adaptiveCardTypes: Record<string, string> = {
+      task: 'task-list',
+      appointment: 'appointment-list',
+      report: 'report-list',
+    };
+
+    setTimeout(() => {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === loadingMessage.id
+            ? {
+                ...m,
+                content: responseMessages[tile.type],
+                isLoading: false,
+                adaptiveCards: [
+                  {
+                    id: `card-${Date.now()}`,
+                    type: adaptiveCardTypes[tile.type],
+                    data: { count: tile.count },
+                  },
+                ],
+              }
+            : m
+        )
+      );
+    }, 1500);
+  };
+
   const handleHomeClick = () => {
     // Save current chat if there are messages
     if (messages.length > 0) {
@@ -178,6 +276,7 @@ export default function Home() {
     setMessages([]);
     setCurrentGameNodeId(null);
     setShowLargeData(false);
+    setLargeCardLayout(null);
   };
 
   const handleNewChat = () => {
@@ -190,6 +289,7 @@ export default function Home() {
     setMessages([]);
     setCurrentGameNodeId(null);
     setShowLargeData(false);
+    setLargeCardLayout(null);
 
     // Transition back to landing for a clean start
     setUiState('landing');
@@ -208,22 +308,42 @@ export default function Home() {
 
         {/* Main Content Area */}
         <section className="flex-1 ml-16">
-          <div className="h-full p-4">
-            <div className="h-full flex gap-4">
+          <div className="h-full p-6">
+            <div className="h-full flex gap-6">
               <AnimatePresence>
                 {/* Large Data Panel - Appears on left when active */}
-                {showLargeData && (
+                {showLargeData && largeCardLayout && (
                   <motion.div
                     initial={{ opacity: 0, flexGrow: 0, flexBasis: 0 }}
                     animate={{ opacity: 1, flexGrow: 2, flexBasis: 0 }}
                     exit={{ opacity: 0, flexGrow: 0, flexBasis: 0 }}
                     transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-                    className="h-full bg-background border border-border rounded-[12px] overflow-hidden"
+                    className="h-full"
                     style={{ minWidth: 0 }}
                   >
-                    <div className="h-full overflow-y-auto p-6">
-                      <h2 className="text-xl font-semibold text-text-primary mb-4">Your things</h2>
-                      <p className="text-text-secondary">Your detailed data visualization will appear here. This is the large content area taking up 2/3 of the available space.</p>
+                    {/* Adaptive Card Container - Full height with flex layout */}
+                    <div className="h-full bg-background border border-border rounded-[12px] overflow-hidden flex flex-col">
+                      {/* Sticky Header */}
+                      <div className="flex-shrink-0 px-6 pt-6 pb-4 bg-background">
+                        <div className="flex items-center justify-between">
+                          <div className="h-6 w-32 bg-primary-light rounded" />
+                          <div className="w-6 h-6 border border-border rounded" />
+                        </div>
+                        {/* Breaker line */}
+                        <div className="border-t border-border mt-6"></div>
+                      </div>
+
+                      {/* Scrollable Content - starts 24px below breaker */}
+                      <div className="flex-1 overflow-y-auto px-6 pt-6 pb-6 conversation-scroll">
+                        {/* Render the selected large card layout */}
+                        {largeCardLayout.type === 'table' && <TableCard />}
+                        {largeCardLayout.type === 'dashboard' && <DashboardCard />}
+                        {largeCardLayout.type === 'document' && <DocumentCard />}
+                        {largeCardLayout.type === 'grid' && <GridCard />}
+                        {largeCardLayout.type === 'calendar' && <CalendarCard />}
+                        {largeCardLayout.type === 'kanban' && <KanbanCard />}
+                        {largeCardLayout.type === 'analytics' && <AnalyticsCard />}
+                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -259,9 +379,34 @@ export default function Home() {
                     <ConversationHero skipAnimation={isTransitioning} />
                   </motion.div>
 
-                  {/* Prompt Input - Entrance animation + transition animation */}
+                  {/* Action Tiles */}
                   <motion.div
                     className="mt-8"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{
+                      opacity: isTransitioning ? 0 : 1,
+                      y: isTransitioning ? 0 : 0
+                    }}
+                    transition={
+                      isTransitioning
+                        ? {
+                            duration: 0.3,
+                            delay: 0,
+                            ease: [0.4, 0, 0.2, 1]
+                          }
+                        : {
+                            duration: 0.4,
+                            delay: 0.5,
+                            ease: [0.4, 0, 0.2, 1]
+                          }
+                    }
+                  >
+                    <ActionTiles onTileClick={handleTileClick} />
+                  </motion.div>
+
+                  {/* Prompt Input - Entrance animation + transition animation */}
+                  <motion.div
+                    className="mt-6"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{
                       opacity: 1,

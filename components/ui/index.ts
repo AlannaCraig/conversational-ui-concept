@@ -10,4 +10,5 @@ export { Divider } from './Divider';
 export { Surface } from './Surface';
 export { Tooltip } from './Tooltip';
 export { Avatar } from './Avatar';
+export { ActionTiles } from './ActionTiles';
 export * from './AdaptiveCards';

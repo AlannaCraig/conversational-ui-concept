@@ -25,7 +25,7 @@ export function NewChatButton({ onClick }: NewChatButtonProps) {
     >
       <button
         onClick={onClick}
-        className="flex items-center gap-2 px-4 py-2 bg-transparent border border-border text-primary-main rounded-lg hover:bg-[rgba(72,65,53,0.08)] transition-colors duration-200"
+        className="flex items-center gap-2 px-4 py-2 bg-transparent border border-border text-primary-main rounded-lg hover:bg-hover transition-colors duration-200 cursor-pointer"
         aria-label="Start new chat"
       >
         <NewChatIcon size={20} />

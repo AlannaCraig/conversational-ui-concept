@@ -12,16 +12,19 @@ import {
   ProfileCard,
   TableRow,
   FormCard,
+  TaskListCard,
+  AppointmentListCard,
+  ReportListCard,
 } from '@/components/ui/AdaptiveCards';
 import type { CardLayoutType } from '@/lib/adaptiveCardSelector';
 
 interface AdaptiveCardRendererProps {
-  layouts: CardLayoutType[];
+  layouts: Array<CardLayoutType | { id: string; type: string; data?: any }>;
   className?: string;
 }
 
 // Map layout types to components
-const cardComponents: Record<CardLayoutType, React.ComponentType<any>> = {
+const cardComponents: Record<string, React.ComponentType<any>> = {
   'list-item': ListItemCard,
   'three-column': ThreeColumnGrid,
   'two-column': TwoColumnLayout,
@@ -32,6 +35,9 @@ const cardComponents: Record<CardLayoutType, React.ComponentType<any>> = {
   profile: ProfileCard,
   table: TableRow,
   form: FormCard,
+  'task-list': TaskListCard,
+  'appointment-list': AppointmentListCard,
+  'report-list': ReportListCard,
 };
 
 export function AdaptiveCardRenderer({
@@ -41,11 +47,21 @@ export function AdaptiveCardRenderer({
   return (
     <div className={`space-y-3 ${className}`}>
       {layouts.map((layout, index) => {
-        const CardComponent = cardComponents[layout];
+        // Handle both string layouts and object layouts with data
+        const layoutType = typeof layout === 'string' ? layout : layout.type;
+        const layoutData = typeof layout === 'object' && 'data' in layout ? layout.data : undefined;
+        const layoutKey = typeof layout === 'string' ? layout : layout.id || layout.type;
+
+        const CardComponent = cardComponents[layoutType];
+
+        if (!CardComponent) {
+          console.warn(`Unknown card layout type: ${layoutType}`);
+          return null;
+        }
 
         return (
           <motion.div
-            key={`${layout}-${index}`}
+            key={`${layoutKey}-${index}`}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
@@ -54,7 +70,7 @@ export function AdaptiveCardRenderer({
               ease: [0.4, 0, 0.2, 1],
             }}
           >
-            <CardComponent />
+            <CardComponent {...layoutData} />
           </motion.div>
         );
       })}

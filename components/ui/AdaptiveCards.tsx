@@ -2,6 +2,11 @@
 
 import { motion } from 'framer-motion';
 
+// Action tile specific cards
+export { TaskListCard } from './AdaptiveCards/TaskListCard';
+export { AppointmentListCard } from './AdaptiveCards/AppointmentListCard';
+export { ReportListCard } from './AdaptiveCards/ReportListCard';
+
 // Base skeleton animation
 const shimmer = {
   animate: {

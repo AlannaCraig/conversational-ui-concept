@@ -95,14 +95,14 @@ export function PromptInput({
             <button
               onClick={handleSubmit}
               disabled={!message.trim()}
-              className="w-9 h-9 flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-9 h-9 flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
               aria-label="Send message"
             >
               <SendIcon size={20} />
             </button>
 
             <button
-              className="w-9 h-9 flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors duration-200"
+              className="w-9 h-9 flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors duration-200 cursor-pointer"
               aria-label="Voice input"
             >
               <MicIcon size={20} />
@@ -120,7 +120,7 @@ export function PromptInput({
           <div className="flex items-center gap-1">
             {/* Add Attachment Button */}
             <button
-              className="h-9 px-2 flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-hover rounded-md transition-colors duration-200"
+              className="h-9 px-2 flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-hover rounded-md transition-colors duration-200 cursor-pointer"
               aria-label="Add attachment"
             >
               <PlusIcon size={18} />
@@ -128,7 +128,7 @@ export function PromptInput({
 
             {/* Globe/Model Icon */}
             <button
-              className="h-9 px-2 flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-hover rounded-md transition-colors duration-200"
+              className="h-9 px-2 flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-hover rounded-md transition-colors duration-200 cursor-pointer"
               aria-label="Model settings"
             >
               <GlobeIcon size={18} />

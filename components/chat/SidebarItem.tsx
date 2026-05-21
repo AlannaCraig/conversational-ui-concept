@@ -25,7 +25,7 @@ export function SidebarItem({ icon: Icon, label, active = false, onClick }: Side
         onClick={onClick}
         className={`
           w-10 h-10 rounded-lg flex items-center justify-center
-          transition-colors duration-200
+          transition-colors duration-200 cursor-pointer
           ${active
             ? 'bg-background-soft text-text-primary border border-border'
             : 'text-text-secondary hover:bg-hover hover:text-text-primary'

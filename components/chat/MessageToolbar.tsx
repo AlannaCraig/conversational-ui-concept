@@ -42,7 +42,7 @@ export function MessageToolbar({
     >
       <button
         onClick={onCopy}
-        className="p-2 text-primary-main hover:bg-hover rounded transition-colors duration-200"
+        className="p-2 text-primary-main hover:bg-hover rounded transition-colors duration-200 cursor-pointer"
         aria-label="Copy message"
       >
         <CopyIcon size={16} />
@@ -50,7 +50,7 @@ export function MessageToolbar({
 
       <button
         onClick={onEdit}
-        className="p-2 text-primary-main hover:bg-hover rounded transition-colors duration-200"
+        className="p-2 text-primary-main hover:bg-hover rounded transition-colors duration-200 cursor-pointer"
         aria-label="Edit message"
       >
         <EditIcon size={16} />
@@ -58,7 +58,7 @@ export function MessageToolbar({
 
       <button
         onClick={onRepeat}
-        className="p-2 text-primary-main hover:bg-hover rounded transition-colors duration-200"
+        className="p-2 text-primary-main hover:bg-hover rounded transition-colors duration-200 cursor-pointer"
         aria-label="Repeat query"
       >
         <RepeatIcon size={16} />
@@ -66,7 +66,7 @@ export function MessageToolbar({
 
       <button
         onClick={onThumbsUp}
-        className="p-2 text-primary-main hover:bg-hover rounded transition-colors duration-200"
+        className="p-2 text-primary-main hover:bg-hover rounded transition-colors duration-200 cursor-pointer"
         aria-label="Thumbs up"
       >
         <ThumbsUpIcon size={16} />
@@ -74,7 +74,7 @@ export function MessageToolbar({
 
       <button
         onClick={onThumbsDown}
-        className="p-2 text-primary-main hover:bg-hover rounded transition-colors duration-200"
+        className="p-2 text-primary-main hover:bg-hover rounded transition-colors duration-200 cursor-pointer"
         aria-label="Thumbs down"
       >
         <ThumbsDownIcon size={16} />

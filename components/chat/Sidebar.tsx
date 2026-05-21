@@ -26,7 +26,7 @@ interface SidebarProps {
 
 export function Sidebar({ onHomeClick, isOnHome = true }: SidebarProps) {
   return (
-    <aside className="fixed left-0 top-0 h-screen w-16 bg-background border-r border-border flex flex-col items-center py-4 z-50">
+    <aside className="fixed left-0 top-0 h-screen w-16 bg-background border-r border-border flex flex-col items-center py-6 z-50">
       {/* Logo */}
       <div className="mb-8">
         <IQIcon width={32} height={24} />

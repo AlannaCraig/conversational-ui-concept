@@ -181,6 +181,23 @@ function isLargeDataRequest(message: string): boolean {
   return largeDataKeywords.some(keyword => lowerMessage.includes(keyword));
 }
 
+/**
+ * Determine if the message is a large data continuation request
+ */
+function isLargeDataContinuationRequest(message: string): boolean {
+  const lowerMessage = message.toLowerCase();
+
+  const largeDataContinuationPhrases = [
+    'more large data',
+    'more big data',
+    'show me more large',
+    'another large',
+    'different large data',
+  ];
+
+  return largeDataContinuationPhrases.some(phrase => lowerMessage.includes(phrase));
+}
+
 export function getMockResponse(userMessage: string, gameNodeId?: string): MockResponse {
   // Priority 0: Check if this is a game request or game option selection
   if (isGameRequest(userMessage)) {
@@ -203,7 +220,16 @@ export function getMockResponse(userMessage: string, gameNodeId?: string): MockR
     };
   }
 
-  // Priority 1: Check for large data request
+  // Priority 1: Check for large data continuation
+  if (isLargeDataContinuationRequest(userMessage)) {
+    return {
+      content: getRandomResponseIntro(),
+      delay: 1200,
+      largeData: true,
+    };
+  }
+
+  // Priority 2: Check for large data request
   if (isLargeDataRequest(userMessage)) {
     return {
       content: getRandomResponseIntro(),

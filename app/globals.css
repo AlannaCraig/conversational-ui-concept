@@ -2,41 +2,85 @@
 
 /**
  * Design Tokens - CSS Variables
- * These values are imported from tokens/tokens.json
+ * Source: Ivory.tokens.json
  */
 :root {
-  /* Colors */
+  /* Greyscale */
+  --grey-10: #FBFAF4;
+  --grey-20: #F5F2E8;
+  --grey-30: #ECE8DA;
+  --grey-40: #E2DDCD;
+  --grey-50: #D5CFBD;
+  --grey-60: #C7C0AD;
+  --grey-70: #B6AE9A;
+  --grey-80: #A29984;
+  --grey-90: #8B826F;
+  --grey-100: #746B5B;
+  --grey-110: #5E5649;
+  --grey-120: #484135;
+  --grey-130: #333333;
+
+  /* Background */
   --background: #FBFAF4;
   --background-soft: #F5F2E8;
   --background-inactive: #E2DDCD;
+
+  /* Border */
   --border: #D5CFBD;
   --border-light: #ECE8DA;
+
+  /* Text */
   --text-primary: #484135;
   --text-secondary: #8B826F;
   --text-tertiary: #C7C0AD;
+
+  /* States */
   --inactive: #C7C0AD;
-  --hover: rgba(51, 51, 51, 0.1);
+  --hover: rgba(51, 51, 51, 0.10);
+  --hover-strong: rgba(51, 51, 51, 0.15);
   --selected: rgba(51, 51, 51, 0.15);
 
-  /* Accent */
-  --accent-main: #B67A3C;
-  --accent-dark: #7A542A;
-  --accent-light: #F4EBDD;
-  --accent-contrast: #FAF8F2;
-
-  /* Accent Variants for Avatars */
-  --accent1-main: #6B4347;
-  --accent1-contrast: #FAF7F7;
-  --accent2-main: #B28D87;
-  --accent2-contrast: #FBF8F7;
-  --accent3-main: #724E91;
-  --accent3-contrast: #F5F2F8;
-
-  /* Primary (for tooltips, high contrast elements) */
+  /* Primary */
   --primary-main: #0E0E0C;
   --primary-dark: #050505;
   --primary-light: #D8D2C6;
   --primary-contrast: #FAF8F2;
+
+  /* Warning (accent) */
+  --accent-main: #B67A3C;
+  --accent-dark: #7A542A;
+  --accent-light: #F4EBDD;
+  --accent-contrast: #FFF9F2;
+
+  /* Accent 1 */
+  --accent1-main: #6B4347;
+  --accent1-dark: #472B2E;
+  --accent1-light: #E7D8D8;
+  --accent1-contrast: #FAF7F7;
+
+  /* Accent 2 */
+  --accent2-main: #B28D87;
+  --accent2-dark: #7A625D;
+  --accent2-light: #EFE4E1;
+  --accent2-contrast: #FBF8F7;
+
+  /* Accent 3 */
+  --accent3-main: #724E91;
+  --accent3-dark: #3E2B50;
+  --accent3-light: #C3AFD4;
+  --accent3-contrast: #F5F2F8;
+
+  /* Success */
+  --success-main: #5E7F5C;
+  --success-dark: #415842;
+  --success-light: #E7EEE5;
+  --success-contrast: #FAFCF8;
+
+  /* Error */
+  --error-main: #B24E45;
+  --error-dark: #7A342E;
+  --error-light: #F3E5E1;
+  --error-contrast: #FFF8F6;
 
   /* Typography */
   --font-sans: var(--font-geist-sans);
@@ -48,32 +92,82 @@
  * Extends Tailwind with our design tokens
  */
 @theme inline {
-  /* Colors */
+  /* Greyscale */
+  --color-grey-10: var(--grey-10);
+  --color-grey-20: var(--grey-20);
+  --color-grey-30: var(--grey-30);
+  --color-grey-40: var(--grey-40);
+  --color-grey-50: var(--grey-50);
+  --color-grey-60: var(--grey-60);
+  --color-grey-70: var(--grey-70);
+  --color-grey-80: var(--grey-80);
+  --color-grey-90: var(--grey-90);
+  --color-grey-100: var(--grey-100);
+  --color-grey-110: var(--grey-110);
+  --color-grey-120: var(--grey-120);
+  --color-grey-130: var(--grey-130);
+
+  /* Background */
   --color-background: var(--background);
   --color-background-soft: var(--background-soft);
   --color-background-inactive: var(--background-inactive);
+
+  /* Border */
   --color-border: var(--border);
   --color-border-light: var(--border-light);
+
+  /* Text */
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-tertiary: var(--text-tertiary);
+
+  /* States */
   --color-inactive: var(--inactive);
   --color-hover: var(--hover);
+  --color-hover-strong: var(--hover-strong);
   --color-selected: var(--selected);
-  --color-accent-main: var(--accent-main);
-  --color-accent-dark: var(--accent-dark);
-  --color-accent-light: var(--accent-light);
-  --color-accent-contrast: var(--accent-contrast);
-  --color-accent1-main: var(--accent1-main);
-  --color-accent1-contrast: var(--accent1-contrast);
-  --color-accent2-main: var(--accent2-main);
-  --color-accent2-contrast: var(--accent2-contrast);
-  --color-accent3-main: var(--accent3-main);
-  --color-accent3-contrast: var(--accent3-contrast);
+
+  /* Primary */
   --color-primary-main: var(--primary-main);
   --color-primary-dark: var(--primary-dark);
   --color-primary-light: var(--primary-light);
   --color-primary-contrast: var(--primary-contrast);
+
+  /* Warning (accent) */
+  --color-accent-main: var(--accent-main);
+  --color-accent-dark: var(--accent-dark);
+  --color-accent-light: var(--accent-light);
+  --color-accent-contrast: var(--accent-contrast);
+
+  /* Accent 1 */
+  --color-accent1-main: var(--accent1-main);
+  --color-accent1-dark: var(--accent1-dark);
+  --color-accent1-light: var(--accent1-light);
+  --color-accent1-contrast: var(--accent1-contrast);
+
+  /* Accent 2 */
+  --color-accent2-main: var(--accent2-main);
+  --color-accent2-dark: var(--accent2-dark);
+  --color-accent2-light: var(--accent2-light);
+  --color-accent2-contrast: var(--accent2-contrast);
+
+  /* Accent 3 */
+  --color-accent3-main: var(--accent3-main);
+  --color-accent3-dark: var(--accent3-dark);
+  --color-accent3-light: var(--accent3-light);
+  --color-accent3-contrast: var(--accent3-contrast);
+
+  /* Success */
+  --color-success-main: var(--success-main);
+  --color-success-dark: var(--success-dark);
+  --color-success-light: var(--success-light);
+  --color-success-contrast: var(--success-contrast);
+
+  /* Error */
+  --color-error-main: var(--error-main);
+  --color-error-dark: var(--error-dark);
+  --color-error-light: var(--error-light);
+  --color-error-contrast: var(--error-contrast);
 
   /* Fonts */
   --font-sans: var(--font-geist-sans);
@@ -125,7 +219,7 @@ body {
 /* Custom scrollbar styling for conversation thread */
 .conversation-scroll {
   scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
+  scrollbar-color: var(--primary-light) var(--primary-contrast);
 }
 
 .conversation-scroll::-webkit-scrollbar {
@@ -133,14 +227,19 @@ body {
 }
 
 .conversation-scroll::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--primary-contrast);
 }
 
 .conversation-scroll::-webkit-scrollbar-thumb {
-  background-color: var(--border);
+  background-color: var(--primary-light);
   border-radius: 4px;
 }
 
 .conversation-scroll::-webkit-scrollbar-thumb:hover {
-  background-color: var(--text-tertiary);
+  background-color: var(--primary-main);
+}
+
+.conversation-scroll::-webkit-scrollbar-button {
+  background-color: var(--primary-main);
+  height: 8px;
 }

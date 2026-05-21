@@ -60,7 +60,7 @@ export function ModelSelector() {
       <button
         ref={buttonRef}
         onClick={handleToggle}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-hover rounded-md transition-colors duration-200"
+        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary hover:bg-hover rounded-md transition-colors duration-200 cursor-pointer"
         aria-label="Select model"
       >
         <span className="text-xs font-medium">{selectedModel.name}</span>
@@ -106,7 +106,7 @@ export function ModelSelector() {
                     <button
                       key={model.id}
                       onClick={() => handleSelect(model)}
-                      className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-text-primary hover:bg-hover transition-colors duration-150"
+                      className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-text-primary hover:bg-hover transition-colors duration-150 cursor-pointer"
                     >
                       <span className="font-normal">{model.name}</span>
                       {isSelected && (

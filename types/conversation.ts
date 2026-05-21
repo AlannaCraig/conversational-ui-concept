@@ -18,7 +18,7 @@ export interface Message {
   timestamp: Date;
   isLoading?: boolean;
   // Adaptive card data for small data returns
-  adaptiveCards?: CardLayoutType[];
+  adaptiveCards?: Array<CardLayoutType | { id: string; type: string; data?: any }>;
   // Game data for text-based adventure
   gameOptions?: { id: string; text: string; nextNode: string }[];
   gameNodeId?: string;
@@ -35,7 +35,7 @@ export interface ConversationState {
 export interface MockResponse {
   content: string;
   delay?: number;
-  adaptiveCards?: CardLayoutType[];
+  adaptiveCards?: Array<CardLayoutType | { id: string; type: string; data?: any }>;
   gameOptions?: { id: string; text: string; nextNode: string }[];
   gameNodeId?: string;
   largeData?: boolean;
