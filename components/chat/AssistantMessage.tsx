@@ -10,12 +10,15 @@ import { motion } from 'framer-motion';
 import { IQChatIcon } from '@/components/icons';
 import { AdaptiveCardRenderer } from './AdaptiveCardRenderer';
 import { MessageToolbar } from './MessageToolbar';
+import { GameOptions } from './GameOptions';
 import type { CardLayoutType } from '@/lib/adaptiveCardSelector';
 
 interface AssistantMessageProps {
   content?: string;
   isLoading?: boolean;
   adaptiveCards?: CardLayoutType[];
+  gameOptions?: { id: string; text: string; nextNode: string }[];
+  onSelectGameOption?: (option: { id: string; text: string; nextNode: string }) => void;
   timestamp?: Date;
   onCopy?: () => void;
   onEdit?: () => void;
@@ -28,6 +31,8 @@ export function AssistantMessage({
   content,
   isLoading,
   adaptiveCards,
+  gameOptions,
+  onSelectGameOption,
   timestamp,
   onCopy,
   onEdit,
@@ -68,6 +73,16 @@ export function AssistantMessage({
           {adaptiveCards && adaptiveCards.length > 0 && (
             <div className="mb-3">
               <AdaptiveCardRenderer layouts={adaptiveCards} />
+            </div>
+          )}
+
+          {/* Game Options - Interactive choices for text adventure */}
+          {gameOptions && gameOptions.length > 0 && onSelectGameOption && (
+            <div className="mb-3">
+              <GameOptions
+                options={gameOptions}
+                onSelectOption={onSelectGameOption}
+              />
             </div>
           )}
 

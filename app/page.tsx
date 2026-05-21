@@ -7,16 +7,19 @@ import {
   ConversationHero,
   PromptInput,
   PromptSuggestions,
-  ConversationThread
+  ConversationThread,
+  NewChatButton
 } from '@/components/chat';
 import { Message } from '@/types/conversation';
 import { getMockResponse } from '@/lib/mockResponses';
+import { getGameNode } from '@/lib/gameData';
+import { saveCurrentChat } from '@/lib/chatHistory';
 import { useAutoScroll } from '@/hooks';
 
 const DEFAULT_SUGGESTIONS = [
   {
     id: '1',
-    text: 'Show my upcoming appointments'
+    text: 'Show me a small data return'
   },
   {
     id: '2',
@@ -24,7 +27,7 @@ const DEFAULT_SUGGESTIONS = [
   },
   {
     id: '3',
-    text: 'List all my medications'
+    text: "Let's play a game"
   }
 ];
 
@@ -33,6 +36,7 @@ type UIState = 'landing' | 'conversation';
 export default function Home() {
   const [uiState, setUiState] = useState<UIState>('landing');
   const [messages, setMessages] = useState<Message[]>([]);
+  const [currentGameNodeId, setCurrentGameNodeId] = useState<string | null>(null);
 
   // Auto-scroll to bottom when messages change
   const scrollRef = useAutoScroll({
@@ -71,7 +75,7 @@ export default function Home() {
     setMessages((prev) => [...prev, loadingMessage]);
 
     // Get mock response
-    const mockResponse = getMockResponse(msg);
+    const mockResponse = getMockResponse(msg, currentGameNodeId || undefined);
 
     // Simulate assistant response
     setTimeout(() => {
@@ -83,11 +87,66 @@ export default function Home() {
                 content: mockResponse.content,
                 isLoading: false,
                 adaptiveCards: mockResponse.adaptiveCards,
+                gameOptions: mockResponse.gameOptions,
+                gameNodeId: mockResponse.gameNodeId,
               }
             : m
         )
       );
+
+      // Update game state if this is a game response
+      if (mockResponse.gameNodeId) {
+        setCurrentGameNodeId(mockResponse.gameNodeId);
+      }
     }, mockResponse.delay || 1500);
+  };
+
+  const handleSelectGameOption = (option: { id: string; text: string; nextNode: string }) => {
+    // Add user's choice as a message
+    const userMessage: Message = {
+      id: `user-${Date.now()}`,
+      role: 'user',
+      content: option.text,
+      timestamp: new Date(),
+      responseMode: 'inline',
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+
+    // Create loading assistant message
+    const loadingMessage: Message = {
+      id: `assistant-${Date.now()}`,
+      role: 'assistant',
+      content: '',
+      timestamp: new Date(),
+      responseMode: 'inline',
+      isLoading: true,
+    };
+
+    setMessages((prev) => [...prev, loadingMessage]);
+
+    // Get the next game node
+    const nextNode = getGameNode(option.nextNode);
+
+    if (nextNode) {
+      setTimeout(() => {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === loadingMessage.id
+              ? {
+                  ...m,
+                  content: nextNode.text,
+                  isLoading: false,
+                  gameOptions: nextNode.options,
+                  gameNodeId: nextNode.id,
+                }
+              : m
+          )
+        );
+
+        setCurrentGameNodeId(nextNode.id);
+      }, 1000);
+    }
   };
 
   const handleSelectSuggestion = (text: string) => {
@@ -95,9 +154,29 @@ export default function Home() {
   };
 
   const handleHomeClick = () => {
+    // Save current chat if there are messages
+    if (messages.length > 0) {
+      saveCurrentChat(messages, currentGameNodeId);
+    }
+
     // Reset to landing state
     setUiState('landing');
     setMessages([]);
+    setCurrentGameNodeId(null);
+  };
+
+  const handleNewChat = () => {
+    // Save current chat if there are messages
+    if (messages.length > 0) {
+      saveCurrentChat(messages, currentGameNodeId);
+    }
+
+    // Clear messages and game state but stay in conversation view
+    setMessages([]);
+    setCurrentGameNodeId(null);
+
+    // Transition back to landing for a clean start
+    setUiState('landing');
   };
 
   return (
@@ -105,6 +184,11 @@ export default function Home() {
       <div className="flex h-full">
         {/* Fixed Sidebar */}
         <Sidebar onHomeClick={handleHomeClick} isOnHome={uiState === 'landing'} />
+
+        {/* New Chat Button - Only visible in conversation view */}
+        {uiState === 'conversation' && (
+          <NewChatButton onClick={handleNewChat} />
+        )}
 
         {/* Main Content Area */}
         <section className="flex-1 ml-16 p-4">
@@ -159,7 +243,10 @@ export default function Home() {
                   className="flex-1 overflow-y-auto px-6 pt-6 scroll-smooth conversation-scroll"
                 >
                   <div className="max-w-[800px] mx-auto">
-                    <ConversationThread messages={messages} />
+                    <ConversationThread
+                      messages={messages}
+                      onSelectGameOption={handleSelectGameOption}
+                    />
                   </div>
                 </div>
 

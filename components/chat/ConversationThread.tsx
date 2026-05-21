@@ -11,9 +11,10 @@ import { AssistantMessage } from './AssistantMessage';
 
 interface ConversationThreadProps {
   messages: Message[];
+  onSelectGameOption?: (option: { id: string; text: string; nextNode: string }) => void;
 }
 
-export function ConversationThread({ messages }: ConversationThreadProps) {
+export function ConversationThread({ messages, onSelectGameOption }: ConversationThreadProps) {
   if (messages.length === 0) {
     return null;
   }
@@ -47,6 +48,8 @@ export function ConversationThread({ messages }: ConversationThreadProps) {
                   content={message.content}
                   isLoading={message.isLoading}
                   adaptiveCards={message.adaptiveCards}
+                  gameOptions={message.gameOptions}
+                  onSelectGameOption={onSelectGameOption}
                 />
               </div>
             )}

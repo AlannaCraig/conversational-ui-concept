@@ -1,5 +1,53 @@
 # Feature Documentation
 
+## Prompt Suggestion Interactions
+
+### Overview
+Prompt suggestions use conventional hover with cursor-based pulse animation on click.
+
+### Hover State
+
+**Effect:**
+- Conventional background overlay
+- 8% `grey-120` (rgba(72,65,53,0.08))
+- Smooth transition (200ms)
+- Uniform across entire card
+
+### Click State
+
+**Effect:**
+- Radial gradient pulse from click point
+- 12% `grey-120` overlay (rgba(72,65,53,0.12))
+- Expands and fades out over 600ms
+- Triggers before navigation
+
+**Sequence:**
+1. User clicks suggestion
+2. Pulse animation starts from click point
+3. 12% overlay expands outward (70% spread)
+4. Fades to transparent over 600ms
+5. Navigation triggers after 300ms
+
+### Design Notes
+
+**Hover:**
+- Simple, predictable interaction
+- 8% grey-120 for subtle effect
+- Consistent across all hover interactions
+
+**Click:**
+- Dynamic, cursor-aware feedback
+- 12% grey-120 (darker than hover)
+- Radial pulse provides visual confirmation
+
+**Consistency:**
+All hover interactions use 8% grey-120:
+- Prompt suggestions
+- New chat button
+- Other interactive elements
+
+---
+
 ## Message Grouping & Spacing
 
 ### Overview
@@ -36,6 +84,90 @@ User messages and assistant responses are visually grouped together with tighter
 - Clear visual grouping of conversation pairs
 - Breaker lines separate complete exchanges
 - Reduced visual noise
+
+---
+
+## New Chat Button & History
+
+### Overview
+Floating "New chat" button in conversation view allows starting fresh conversations while preserving chat history.
+
+### Button Design
+
+**Position:**
+- Fixed top-right corner
+- 40px from top edge
+- 40px from right edge
+- Positioned outside chat dialog container
+- Z-index: 50 (floats above content)
+
+**Styling:**
+- Background: Transparent (outline style)
+- Border: 1px `border` token (#D5CFBD) - subtle, matches UI
+- Text & Icon: `primary-main` (#0E0E0C)
+- Icon: NewChatIcon (chat bubble with plus)
+- Label: "New chat"
+- Rounded corners
+- Hover: 10% `grey-120` overlay (rgba(72,65,53,0.1)) - maintains theme
+
+**Visibility:**
+- Only appears in conversation view
+- Hidden on landing page
+- Animates in/out with fade + scale
+
+### Functionality
+
+**Click Behavior:**
+1. Saves current conversation to localStorage
+2. Clears messages from screen
+3. Resets game state (if in game)
+4. Returns to landing page for fresh start
+
+**Chat History Storage:**
+- Location: `localStorage` (key: `conversational-ui-chat-history`)
+- Max storage: 50 most recent chats
+- Each saved chat includes:
+  - Unique ID
+  - Title (first 50 chars of first message)
+  - Complete message array
+  - Timestamp
+  - Game state (if applicable)
+
+**Also Saves On:**
+- Clicking home button (sidebar)
+- Both actions preserve conversation before clearing
+
+### Data Structure
+
+```typescript
+interface SavedChat {
+  id: string;              // chat-{timestamp}
+  title: string;           // First message preview
+  messages: Message[];     // Full conversation
+  timestamp: Date;         // When saved
+  gameNodeId?: string;     // Game progress
+}
+```
+
+### Future Recall
+Storage system ready for chat history sidebar:
+- `getChatHistory()` - Load all saved chats
+- `getChatById(id)` - Load specific conversation
+- `deleteChat(id)` - Remove from history
+- `clearChatHistory()` - Wipe all saved chats
+
+### Implementation
+
+**File:** `lib/chatHistory.ts`
+- Save/load/delete operations
+- localStorage management
+- Date serialization
+- Max 50 chat limit
+
+**File:** `components/chat/NewChatButton.tsx`
+- Fixed positioned button
+- Framer Motion animations
+- Primary brand styling
 
 ---
 
@@ -168,41 +300,67 @@ Each story has a specific continuation, plus generic continuations for extended 
 
 ### Keywords Detection
 
-**Text-Only Triggers:**
-- "tell me", "story", "explain", "describe"
-- "what is", "how does", "why"
+**Story Triggers (Text-Only):**
+- "tell me a story", "story", "tale", "narrative"
+- "explain", "describe" (without data keywords)
 
-**Continuation Triggers:**
-- "tell me more", "continue", "go on", "more"
-- "what happens", "and then", "keep going"
+**Story Continuation:**
+- "tell me more" (without "data", "show", "list")
+- "continue the story", "what happens next"
+- "go on", "and then", "keep going"
+- Simple "more" or "continue" (context-dependent)
+
+**Data Continuation:**
+- "show me more data"
+- "show more", "list more", "more results"
+- "give me more" (with data context)
 
 **Small Data Triggers:**
+- "show", "list", "display", "view", "get", "find"
+- "appointments", "schedule", "medications", etc.
 - Detected by `adaptiveCardSelector.ts` keywords
-- "appointments", "list", "show", "schedule", etc.
 
 ### Example Conversations
 
-**Story Conversation:**
+**Story Flow:**
 ```
 User: "Tell me a story"
-Assistant: [Story opening text]
+Assistant: [Story opening text only]
 
 User: "Tell me more"
-Assistant: [Story continuation]
+Assistant: [Story continuation text only]
 
+User: "Keep going"
+Assistant: [More story text]
+```
+
+**Data Flow:**
+```
 User: "Show my appointments"
 Assistant: [Text + adaptive cards]
+
+User: "Show me more data"
+Assistant: [Text + more adaptive cards]
+
+User: "List more"
+Assistant: [Text + more cards]
 ```
 
 **Mixed Conversation:**
 ```
-User: "List my medications"
-Assistant: [Text + adaptive cards]
-
 User: "Tell me a story"
 Assistant: [Story text only]
 
-User: "Continue"
+User: "Tell me more"
+Assistant: [More story text]
+
+User: "Show my medications"
+Assistant: [Text + adaptive cards]
+
+User: "Show me more data"
+Assistant: [Text + more cards]
+
+User: "Continue the story"
 Assistant: [More story text]
 ```
 

@@ -13,6 +13,7 @@ import {
   getRecommendedCardCount,
 } from './adaptiveCardSelector';
 import { getStoryOpening, getStoryContinuation } from './storyGenerator';
+import { getStartingNode, getGameNode } from './gameData';
 
 const responseVariations = [
   "Behold, your results have arrived.",
@@ -50,74 +51,167 @@ const responseVariations = [
 let lastResponseIndex = -1;
 
 /**
+ * Determine if the message is requesting to play a game
+ */
+function isGameRequest(message: string): boolean {
+  const lowerMessage = message.toLowerCase();
+
+  const gameKeywords = [
+    'play a game',
+    'play game',
+    "let's play",
+    'start a game',
+    'start game',
+    'game time',
+  ];
+
+  return gameKeywords.some(keyword => lowerMessage.includes(keyword));
+}
+
+/**
  * Determine if the message is requesting a text-only response (story, explanation, etc.)
  */
 function isTextOnlyRequest(message: string): boolean {
   const lowerMessage = message.toLowerCase();
 
+  // Story-specific keywords (must NOT contain data-related words)
+  const storyKeywords = ['story', 'tale', 'narrative'];
+  const hasStoryKeyword = storyKeywords.some(keyword => lowerMessage.includes(keyword));
+
+  if (hasStoryKeyword) return true;
+
+  // Generic text requests (but exclude if they mention data/show/list)
+  const dataExclusions = ['show', 'list', 'data', 'display', 'view', 'get', 'find'];
+  const hasDataExclusion = dataExclusions.some(keyword => lowerMessage.includes(keyword));
+
+  if (hasDataExclusion) return false;
+
+  // Safe text-only keywords (won't conflict with data requests)
   const textOnlyKeywords = [
-    'tell me',
-    'story',
     'explain',
     'describe',
     'what is',
     'how does',
     'why',
-    'tell me more',
-    'continue',
-    'go on',
-    'more',
-    'keep going',
-    'what happens',
-    'and then',
   ];
 
   return textOnlyKeywords.some(keyword => lowerMessage.includes(keyword));
 }
 
 /**
- * Determine if the message is a continuation request
+ * Determine if the message is a story continuation request
  */
-function isContinuationRequest(message: string): boolean {
+function isStoryContinuationRequest(message: string): boolean {
   const lowerMessage = message.toLowerCase();
 
-  const continuationKeywords = [
+  // Story continuation phrases (explicit)
+  const storyContinuationPhrases = [
     'tell me more',
-    'more',
-    'continue',
-    'go on',
+    'continue the story',
     'keep going',
+    'what happens next',
     'what happens',
     'and then',
+    'go on',
     'what next',
     'then what',
   ];
 
-  return continuationKeywords.some(keyword => lowerMessage.includes(keyword));
+  // Check for explicit story continuation
+  if (storyContinuationPhrases.some(phrase => lowerMessage.includes(phrase))) {
+    // But NOT if it mentions data/show/list
+    const dataKeywords = ['data', 'show', 'list', 'display'];
+    return !dataKeywords.some(keyword => lowerMessage.includes(keyword));
+  }
+
+  // Simple "more" or "continue" only counts if NO data keywords present
+  if (lowerMessage === 'more' || lowerMessage === 'continue') {
+    return true;
+  }
+
+  return false;
 }
 
-export function getMockResponse(userMessage: string): MockResponse {
-  // Check if this is a text-only request (story, explanation, etc.)
-  if (isTextOnlyRequest(userMessage)) {
-    let content: string;
+/**
+ * Determine if the message is a data continuation request
+ */
+function isDataContinuationRequest(message: string): boolean {
+  const lowerMessage = message.toLowerCase();
 
-    // If it's a continuation request, provide story continuation
-    if (isContinuationRequest(userMessage)) {
-      content = getStoryContinuation();
-    } else {
-      // Otherwise, start a new story
-      content = getStoryOpening();
-    }
+  const dataContinuationPhrases = [
+    'show me more',
+    'more data',
+    'show more',
+    'list more',
+    'more results',
+    'give me more',
+  ];
+
+  return dataContinuationPhrases.some(phrase => lowerMessage.includes(phrase));
+}
+
+export function getMockResponse(userMessage: string, gameNodeId?: string): MockResponse {
+  // Priority 0: Check if this is a game request or game option selection
+  if (isGameRequest(userMessage)) {
+    const startNode = getStartingNode();
+    return {
+      content: startNode.text,
+      delay: 1000,
+      gameOptions: startNode.options,
+      gameNodeId: startNode.id,
+    };
+  }
+
+  // If we have a game node ID, user is selecting a game option
+  if (gameNodeId) {
+    // The userMessage should contain the option text they selected
+    // We'll handle this in the main app logic
+    return {
+      content: '',
+      delay: 0,
+    };
+  }
+
+  // Priority 1: Check for story continuation ("tell me more")
+  if (isStoryContinuationRequest(userMessage)) {
+    return {
+      content: getStoryContinuation(),
+      delay: 1200,
+      // No adaptive cards for story continuation
+    };
+  }
+
+  // Priority 2: Check for data continuation ("show me more data")
+  if (isDataContinuationRequest(userMessage)) {
+    let newIndex;
+    do {
+      newIndex = Math.floor(Math.random() * responseVariations.length);
+    } while (newIndex === lastResponseIndex && responseVariations.length > 1);
+
+    lastResponseIndex = newIndex;
+    const content = responseVariations[newIndex];
+
+    // Generate more adaptive cards
+    const cardCount = getRecommendedCardCount(userMessage);
+    const adaptiveCards = getMultipleRandomLayouts(userMessage, cardCount);
 
     return {
       content,
+      delay: 1000,
+      adaptiveCards,
+    };
+  }
+
+  // Priority 3: Check if this is a new story request
+  if (isTextOnlyRequest(userMessage)) {
+    return {
+      content: getStoryOpening(),
       delay: 1200,
       // No adaptive cards for text-only responses
     };
   }
 
-  // Small data request - return with adaptive cards
-  // Get a random index that's different from the last one
+  // Default: Small data request - return with adaptive cards
   let newIndex;
   do {
     newIndex = Math.floor(Math.random() * responseVariations.length);

@@ -36,3 +36,4 @@ export { EditIcon } from './EditIcon';
 export { RepeatIcon } from './RepeatIcon';
 export { ThumbsUpIcon } from './ThumbsUpIcon';
 export { ThumbsDownIcon } from './ThumbsDownIcon';
+export { NewChatIcon } from './NewChatIcon';

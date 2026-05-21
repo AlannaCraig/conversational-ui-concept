@@ -16,3 +16,5 @@ export { UserMessage } from './UserMessage';
 export { AssistantMessage } from './AssistantMessage';
 export { AdaptiveCardRenderer } from './AdaptiveCardRenderer';
 export { MessageToolbar } from './MessageToolbar';
+export { GameOptions } from './GameOptions';
+export { NewChatButton } from './NewChatButton';
