@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 export { TaskListCard } from './AdaptiveCards/TaskListCard';
 export { AppointmentListCard } from './AdaptiveCards/AppointmentListCard';
 export { ReportListCard } from './AdaptiveCards/ReportListCard';
+export { ReopenPromptCard } from './AdaptiveCards/ReopenPromptCard';
 
 // Base skeleton animation
 const shimmer = {

@@ -49,7 +49,6 @@ export function getTailwindTheme() {
       background: tokens.colors.background,
       backgroundSoft: tokens.colors.backgroundSoft,
       backgroundInactive: tokens.colors.backgroundInactive,
-      surface: tokens.colors.surface,
       border: tokens.colors.border,
       borderLight: tokens.colors.borderLight,
       textPrimary: tokens.colors.textPrimary,

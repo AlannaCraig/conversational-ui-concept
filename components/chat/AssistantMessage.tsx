@@ -16,9 +16,10 @@ import type { CardLayoutType } from '@/lib/adaptiveCardSelector';
 interface AssistantMessageProps {
   content?: string;
   isLoading?: boolean;
-  adaptiveCards?: CardLayoutType[];
+  adaptiveCards?: Array<CardLayoutType | { id: string; type: string; data?: any }>;
   gameOptions?: { id: string; text: string; nextNode: string }[];
   onSelectGameOption?: (option: { id: string; text: string; nextNode: string }) => void;
+  onReopenLargeData?: () => void;
   timestamp?: Date;
   onCopy?: () => void;
   onEdit?: () => void;
@@ -33,6 +34,7 @@ export function AssistantMessage({
   adaptiveCards,
   gameOptions,
   onSelectGameOption,
+  onReopenLargeData,
   timestamp,
   onCopy,
   onEdit,
@@ -72,7 +74,7 @@ export function AssistantMessage({
           {/* Adaptive Cards - Full width, 16px below text */}
           {adaptiveCards && adaptiveCards.length > 0 && (
             <div className="mb-3">
-              <AdaptiveCardRenderer layouts={adaptiveCards} />
+              <AdaptiveCardRenderer layouts={adaptiveCards} onReopen={onReopenLargeData} />
             </div>
           )}
 

@@ -12,10 +12,11 @@ import { AssistantMessage } from './AssistantMessage';
 interface ConversationThreadProps {
   messages: Message[];
   onSelectGameOption?: (option: { id: string; text: string; nextNode: string }) => void;
+  onReopenLargeData?: () => void;
   removeFirstMessageTopPadding?: boolean;
 }
 
-export function ConversationThread({ messages, onSelectGameOption, removeFirstMessageTopPadding = false }: ConversationThreadProps) {
+export function ConversationThread({ messages, onSelectGameOption, onReopenLargeData, removeFirstMessageTopPadding = false }: ConversationThreadProps) {
   if (messages.length === 0) {
     return null;
   }
@@ -57,6 +58,7 @@ export function ConversationThread({ messages, onSelectGameOption, removeFirstMe
                   adaptiveCards={message.adaptiveCards}
                   gameOptions={message.gameOptions}
                   onSelectGameOption={onSelectGameOption}
+                  onReopenLargeData={onReopenLargeData}
                 />
               </div>
             )}

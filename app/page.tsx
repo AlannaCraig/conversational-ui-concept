@@ -20,6 +20,7 @@ import {
   AnalyticsCard
 } from '@/components/ui/LargeAdaptiveCards';
 import { ActionTiles } from '@/components/ui';
+import { CloseXIcon } from '@/components/icons';
 import { Message } from '@/types/conversation';
 import { getMockResponse } from '@/lib/mockResponses';
 import { getGameNode } from '@/lib/gameData';
@@ -60,6 +61,7 @@ export default function Home() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [showLargeData, setShowLargeData] = useState(false);
   const [largeCardLayout, setLargeCardLayout] = useState<typeof LARGE_CARD_LAYOUTS[0] | null>(null);
+  const [closedLargeDataContext, setClosedLargeDataContext] = useState<{ layout: typeof LARGE_CARD_LAYOUTS[0]; messageContent: string } | null>(null);
 
   // Auto-scroll to bottom when messages change
   const scrollRef = useAutoScroll({
@@ -265,6 +267,45 @@ export default function Home() {
     }, 1500);
   };
 
+  const handleCloseLargeData = () => {
+    // Store the context for reopening
+    if (largeCardLayout) {
+      setClosedLargeDataContext({
+        layout: largeCardLayout,
+        messageContent: 'Large data view has been closed.',
+      });
+    }
+
+    // Close the large data view
+    setShowLargeData(false);
+
+    // Add system message to conversation
+    const systemMessage: Message = {
+      id: `system-${Date.now()}`,
+      role: 'assistant',
+      content: 'Large data view has been closed.',
+      timestamp: new Date(),
+      responseMode: 'inline',
+      adaptiveCards: [
+        {
+          id: `reopen-${Date.now()}`,
+          type: 'reopen-prompt',
+          data: {},
+        },
+      ],
+    };
+
+    setMessages((prev) => [...prev, systemMessage]);
+  };
+
+  const handleReopenLargeData = () => {
+    if (closedLargeDataContext) {
+      setLargeCardLayout(closedLargeDataContext.layout);
+      setShowLargeData(true);
+      setClosedLargeDataContext(null);
+    }
+  };
+
   const handleHomeClick = () => {
     // Save current chat if there are messages
     if (messages.length > 0) {
@@ -277,6 +318,7 @@ export default function Home() {
     setCurrentGameNodeId(null);
     setShowLargeData(false);
     setLargeCardLayout(null);
+    setClosedLargeDataContext(null);
   };
 
   const handleNewChat = () => {
@@ -290,6 +332,7 @@ export default function Home() {
     setCurrentGameNodeId(null);
     setShowLargeData(false);
     setLargeCardLayout(null);
+    setClosedLargeDataContext(null);
 
     // Transition back to landing for a clean start
     setUiState('landing');
@@ -327,7 +370,26 @@ export default function Home() {
                       <div className="flex-shrink-0 px-6 pt-6 pb-4 bg-background">
                         <div className="flex items-center justify-between">
                           <div className="h-6 w-32 bg-primary-light rounded" />
-                          <div className="w-6 h-6 border border-border rounded" />
+
+                          {/* Action buttons */}
+                          <div className="flex items-center gap-2">
+                            {/* Placeholder buttons */}
+                            <button className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-hover transition-colors cursor-pointer">
+                              <div className="w-4 h-4 bg-border rounded" />
+                            </button>
+                            <button className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-hover transition-colors cursor-pointer">
+                              <div className="w-4 h-4 bg-border rounded" />
+                            </button>
+
+                            {/* Close button */}
+                            <button
+                              onClick={handleCloseLargeData}
+                              className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-hover transition-colors cursor-pointer text-text-secondary hover:text-text-primary"
+                              aria-label="Close large data view"
+                            >
+                              <CloseXIcon size={20} />
+                            </button>
+                          </div>
                         </div>
                         {/* Breaker line */}
                         <div className="border-t border-border mt-6"></div>
@@ -483,6 +545,7 @@ export default function Home() {
                     <ConversationThread
                       messages={messages}
                       onSelectGameOption={handleSelectGameOption}
+                      onReopenLargeData={handleReopenLargeData}
                       removeFirstMessageTopPadding={showLargeData}
                     />
                   </div>

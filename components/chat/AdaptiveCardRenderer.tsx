@@ -15,12 +15,14 @@ import {
   TaskListCard,
   AppointmentListCard,
   ReportListCard,
+  ReopenPromptCard,
 } from '@/components/ui/AdaptiveCards';
 import type { CardLayoutType } from '@/lib/adaptiveCardSelector';
 
 interface AdaptiveCardRendererProps {
   layouts: Array<CardLayoutType | { id: string; type: string; data?: any }>;
   className?: string;
+  onReopen?: () => void;
 }
 
 // Map layout types to components
@@ -38,11 +40,13 @@ const cardComponents: Record<string, React.ComponentType<any>> = {
   'task-list': TaskListCard,
   'appointment-list': AppointmentListCard,
   'report-list': ReportListCard,
+  'reopen-prompt': ReopenPromptCard,
 };
 
 export function AdaptiveCardRenderer({
   layouts,
   className = '',
+  onReopen,
 }: AdaptiveCardRendererProps) {
   return (
     <div className={`space-y-3 ${className}`}>
@@ -59,6 +63,11 @@ export function AdaptiveCardRenderer({
           return null;
         }
 
+        // Pass onReopen handler to ReopenPromptCard
+        const componentProps = layoutType === 'reopen-prompt'
+          ? { ...layoutData, onReopen }
+          : layoutData;
+
         return (
           <motion.div
             key={`${layoutKey}-${index}`}
@@ -70,7 +79,7 @@ export function AdaptiveCardRenderer({
               ease: [0.4, 0, 0.2, 1],
             }}
           >
-            <CardComponent {...layoutData} />
+            <CardComponent {...componentProps} />
           </motion.div>
         );
       })}
