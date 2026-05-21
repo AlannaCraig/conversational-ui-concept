@@ -12,9 +12,10 @@ import { AssistantMessage } from './AssistantMessage';
 interface ConversationThreadProps {
   messages: Message[];
   onSelectGameOption?: (option: { id: string; text: string; nextNode: string }) => void;
+  removeFirstMessageTopPadding?: boolean;
 }
 
-export function ConversationThread({ messages, onSelectGameOption }: ConversationThreadProps) {
+export function ConversationThread({ messages, onSelectGameOption, removeFirstMessageTopPadding = false }: ConversationThreadProps) {
   if (messages.length === 0) {
     return null;
   }
@@ -29,8 +30,14 @@ export function ConversationThread({ messages, onSelectGameOption }: Conversatio
         // Tighter spacing between user and assistant messages
         const isUserBeforeAssistant = message.role === 'user' && nextMessage?.role === 'assistant';
         const isAssistantAfterUser = message.role === 'assistant' && prevMessage?.role === 'user';
+        const isFirstMessage = index === 0;
 
-        const userPadding = isUserBeforeAssistant ? 'pt-6 pb-3' : 'py-6';
+        // Remove top padding from first message if requested (for large data view)
+        let userPadding = isUserBeforeAssistant ? 'pt-6 pb-3' : 'py-6';
+        if (isFirstMessage && removeFirstMessageTopPadding && message.role === 'user') {
+          userPadding = isUserBeforeAssistant ? 'pt-0 pb-3' : 'py-0 pb-6';
+        }
+
         const assistantPadding = isAssistantAfterUser ? 'pt-3 pb-6' : 'py-6';
 
         return (

@@ -323,22 +323,28 @@ export default function Home() {
                 transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
                 className="h-full flex flex-col"
               >
+                {/* Spacer for New Chat button in large data view - clips 56px below button bottom */}
+                {showLargeData && (
+                  <div style={{ height: '96px', flexShrink: 0 }} />
+                )}
+
                 {/* Scrollable Conversation Thread */}
                 <div
                   ref={scrollRef}
                   className="flex-1 overflow-y-auto px-6 scroll-smooth conversation-scroll"
-                  style={{ paddingTop: showLargeData ? '56px' : '24px' }}
+                  style={{ paddingTop: showLargeData ? '0px' : '24px' }}
                 >
                   <div className="max-w-[800px] mx-auto">
                     <ConversationThread
                       messages={messages}
                       onSelectGameOption={handleSelectGameOption}
+                      removeFirstMessageTopPadding={showLargeData}
                     />
                   </div>
                 </div>
 
                 {/* Fixed Input at Bottom */}
-                <div className="pb-10 pt-6 px-6 bg-background">
+                <div className="pb-6 pt-6 px-6 bg-background">
                   <div className="max-w-[800px] mx-auto">
                     {/* Breaker line */}
                     <div className="border-t border-border mb-6"></div>
