@@ -25,28 +25,15 @@ export function PromptSuggestions({
   onSelectSuggestion
 }: PromptSuggestionsProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.4, delay: 0.3 }}
-      className="w-full space-y-3"
-    >
-      {/* Section Heading */}
-      <p className="text-sm font-medium text-text-secondary">
-        Suggested prompts:
-      </p>
-
-      {/* Suggestion Cards */}
-      <div className="space-y-2">
-        {suggestions.map((suggestion, index) => (
-          <PromptSuggestion
-            key={suggestion.id}
-            text={suggestion.text}
-            onClick={onSelectSuggestion}
-            delay={0.1 + index * 0.05}
-          />
-        ))}
-      </div>
-    </motion.div>
+    <div className="space-y-3">
+      {suggestions.map((suggestion, index) => (
+        <PromptSuggestion
+          key={suggestion.id}
+          text={suggestion.text}
+          onClick={onSelectSuggestion}
+          delay={0.1 + index * 0.05}
+        />
+      ))}
+    </div>
   );
 }

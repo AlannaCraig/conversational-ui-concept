@@ -441,9 +441,9 @@ export default function Home() {
                     <ConversationHero skipAnimation={isTransitioning} />
                   </motion.div>
 
-                  {/* Action Tiles */}
+                  {/* Two-column layout: Action Tiles + Suggested Prompts */}
                   <motion.div
-                    className="mt-8"
+                    className="mt-8 grid grid-cols-2 gap-6"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{
                       opacity: isTransitioning ? 0 : 1,
@@ -463,7 +463,20 @@ export default function Home() {
                           }
                     }
                   >
-                    <ActionTiles onTileClick={handleTileClick} />
+                    {/* Left column: Action Tiles */}
+                    <div>
+                      <h3 className="text-sm font-medium text-text-primary mb-3">Today's activities:</h3>
+                      <ActionTiles onTileClick={handleTileClick} />
+                    </div>
+
+                    {/* Right column: Suggested Prompts */}
+                    <div>
+                      <h3 className="text-sm font-medium text-text-primary mb-3">Suggested prompts:</h3>
+                      <PromptSuggestions
+                        suggestions={DEFAULT_SUGGESTIONS}
+                        onSelectSuggestion={handleSelectSuggestion}
+                      />
+                    </div>
                   </motion.div>
 
                   {/* Prompt Input - Entrance animation + transition animation */}
@@ -489,34 +502,6 @@ export default function Home() {
                     }
                   >
                     <PromptInput onSubmit={handleSubmit} />
-                  </motion.div>
-
-                  {/* Suggested Prompts - Entrance animation + transition fade */}
-                  <motion.div
-                    className="mt-6"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{
-                      opacity: isTransitioning ? 0 : 1,
-                      y: isTransitioning ? 0 : 0
-                    }}
-                    transition={
-                      isTransitioning
-                        ? {
-                            duration: 0.3,
-                            delay: 0,
-                            ease: [0.4, 0, 0.2, 1]
-                          }
-                        : {
-                            duration: 0.4,
-                            delay: 0.7,
-                            ease: [0.4, 0, 0.2, 1]
-                          }
-                    }
-                  >
-                    <PromptSuggestions
-                      suggestions={DEFAULT_SUGGESTIONS}
-                      onSelectSuggestion={handleSelectSuggestion}
-                    />
                   </motion.div>
                 </div>
               </div>

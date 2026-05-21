@@ -30,7 +30,7 @@ const DEFAULT_TILES: ActionTile[] = [
 
 export function ActionTiles({ tiles = DEFAULT_TILES, className = '', onTileClick }: ActionTilesProps) {
   return (
-    <div className={`flex gap-3 justify-center ${className}`}>
+    <div className={`flex flex-col gap-3 ${className}`}>
       {tiles.map((tile) => (
         <ActionTile key={tile.id} tile={tile} onClick={onTileClick} />
       ))}
@@ -55,13 +55,13 @@ function ActionTile({ tile, onClick }: ActionTileProps) {
   return (
     <div
       onClick={handleClick}
-      className="flex items-center gap-2.5 px-4 py-3 bg-primary-contrast border border-accent1-light rounded-lg cursor-pointer hover:bg-background transition-colors duration-200"
+      className="flex items-center gap-2.5 px-4 py-3 bg-accent1-contrast border border-accent1-light rounded-lg cursor-pointer hover:bg-accent1-light transition-colors duration-200"
       style={{ boxSizing: 'border-box' }}
     >
-      <Icon size={20} className="text-text-primary flex-shrink-0" />
+      <Icon size={20} className="text-accent1-main flex-shrink-0" />
       <div className="flex items-baseline gap-1.5">
-        <span className="text-sm font-semibold text-text-primary">{tile.count}</span>
-        <span className="text-sm text-text-primary font-normal">{tile.label}</span>
+        <span className="text-sm font-semibold text-accent1-main">{tile.count}</span>
+        <span className="text-sm text-accent1-main font-normal">{tile.label}</span>
       </div>
     </div>
   );
