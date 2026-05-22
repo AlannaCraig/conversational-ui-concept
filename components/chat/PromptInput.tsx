@@ -102,7 +102,7 @@ export function PromptInput({
             </button>
 
             <button
-              className="w-9 h-9 flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors duration-200 cursor-pointer"
+              className="w-9 h-9 flex items-center justify-center text-text-secondary hover:text-text-primary transition-colors duration-200 cursor-pointer flex-shrink-0"
               aria-label="Voice input"
             >
               <MicIcon size={20} />
