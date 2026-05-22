@@ -19,13 +19,13 @@ import {
   KanbanCard,
   AnalyticsCard
 } from '@/components/ui/LargeAdaptiveCards';
-import { ActionTiles } from '@/components/ui';
+import { ActionTiles, ThemeToast } from '@/components/ui';
 import { CloseXIcon } from '@/components/icons';
 import { Message } from '@/types/conversation';
 import { getMockResponse } from '@/lib/mockResponses';
 import { getGameNode } from '@/lib/gameData';
 import { saveCurrentChat } from '@/lib/chatHistory';
-import { useAutoScroll } from '@/hooks';
+import { useAutoScroll, useTheme } from '@/hooks';
 
 const LARGE_CARD_LAYOUTS = [
   { type: 'table', component: TableCard },
@@ -62,6 +62,15 @@ export default function Home() {
   const [showLargeData, setShowLargeData] = useState(false);
   const [largeCardLayout, setLargeCardLayout] = useState<typeof LARGE_CARD_LAYOUTS[0] | null>(null);
   const [closedLargeDataContext, setClosedLargeDataContext] = useState<{ layout: typeof LARGE_CARD_LAYOUTS[0]; messageContent: string } | null>(null);
+  const [showThemeToast, setShowThemeToast] = useState(false);
+
+  // Theme management
+  const { cycleTheme, currentThemeName } = useTheme();
+
+  const handleThemeCycle = () => {
+    cycleTheme();
+    setShowThemeToast(true);
+  };
 
   // Auto-scroll to bottom when messages change
   const scrollRef = useAutoScroll({
@@ -189,6 +198,11 @@ export default function Home() {
     }
   };
 
+  const handleSelectSuggestedAction = (action: { id: string; text: string }) => {
+    // Submit the suggested action text as if the user typed it
+    handleSubmit(action.text);
+  };
+
   const handleSelectSuggestion = (text: string) => {
     handleSubmit(text);
   };
@@ -245,6 +259,25 @@ export default function Home() {
       report: 'report-list',
     };
 
+    // Suggested actions for each tile type
+    const suggestedActionsMap: Record<string, { id: string; text: string }[]> = {
+      task: [
+        { id: 'reschedule-tasks', text: 'Reschedule overdue tasks' },
+        { id: 'mark-complete', text: 'Mark first 3 as complete' },
+        { id: 'delegate-tasks', text: 'Suggest delegation options' },
+      ],
+      appointment: [
+        { id: 'prep-meetings', text: 'Prepare meeting briefs' },
+        { id: 'send-reminders', text: 'Send reminders to attendees' },
+        { id: 'review-conflicts', text: 'Check for schedule conflicts' },
+      ],
+      report: [
+        { id: 'generate-drafts', text: 'Generate draft summaries' },
+        { id: 'gather-data', text: 'Gather required data' },
+        { id: 'review-templates', text: 'Review report templates' },
+      ],
+    };
+
     setTimeout(() => {
       setMessages((prev) =>
         prev.map((m) =>
@@ -260,6 +293,7 @@ export default function Home() {
                     data: { count: tile.count },
                   },
                 ],
+                suggestedActions: suggestedActionsMap[tile.type],
               }
             : m
         )
@@ -342,7 +376,7 @@ export default function Home() {
     <main className="h-screen bg-background-soft">
       <div className="flex h-full">
         {/* Fixed Sidebar */}
-        <Sidebar onHomeClick={handleHomeClick} isOnHome={uiState === 'landing'} />
+        <Sidebar onHomeClick={handleHomeClick} onHelpClick={handleThemeCycle} isOnHome={uiState === 'landing'} />
 
         {/* New Chat Button - Only visible in conversation view */}
         {uiState === 'conversation' && (
@@ -531,6 +565,7 @@ export default function Home() {
                     <ConversationThread
                       messages={messages}
                       onSelectGameOption={handleSelectGameOption}
+                      onSelectSuggestedAction={handleSelectSuggestedAction}
                       onReopenLargeData={handleReopenLargeData}
                       removeFirstMessageTopPadding={showLargeData}
                     />
@@ -555,6 +590,13 @@ export default function Home() {
           </div>
         </section>
       </div>
+
+      {/* Theme Toast Notification */}
+      <ThemeToast
+        themeName={currentThemeName}
+        isVisible={showThemeToast}
+        onClose={() => setShowThemeToast(false)}
+      />
     </main>
   );
 }

@@ -11,4 +11,5 @@ export { Surface } from './Surface';
 export { Tooltip } from './Tooltip';
 export { Avatar } from './Avatar';
 export { ActionTiles } from './ActionTiles';
+export { ThemeToast } from './ThemeToast';
 export * from './AdaptiveCards';

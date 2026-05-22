@@ -22,6 +22,8 @@ export interface Message {
   // Game data for text-based adventure
   gameOptions?: { id: string; text: string; nextNode: string }[];
   gameNodeId?: string;
+  // Suggested actions for follow-up
+  suggestedActions?: { id: string; text: string }[];
   // Large data return flag
   largeData?: boolean;
 }
@@ -38,5 +40,6 @@ export interface MockResponse {
   adaptiveCards?: Array<CardLayoutType | { id: string; type: string; data?: any }>;
   gameOptions?: { id: string; text: string; nextNode: string }[];
   gameNodeId?: string;
+  suggestedActions?: { id: string; text: string }[];
   largeData?: boolean;
 }

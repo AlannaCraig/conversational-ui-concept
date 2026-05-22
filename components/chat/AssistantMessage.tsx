@@ -11,6 +11,7 @@ import { IQChatIcon } from '@/components/icons';
 import { AdaptiveCardRenderer } from './AdaptiveCardRenderer';
 import { MessageToolbar } from './MessageToolbar';
 import { GameOptions } from './GameOptions';
+import { SuggestedActions } from './SuggestedActions';
 import type { CardLayoutType } from '@/lib/adaptiveCardSelector';
 
 interface AssistantMessageProps {
@@ -19,6 +20,8 @@ interface AssistantMessageProps {
   adaptiveCards?: Array<CardLayoutType | { id: string; type: string; data?: any }>;
   gameOptions?: { id: string; text: string; nextNode: string }[];
   onSelectGameOption?: (option: { id: string; text: string; nextNode: string }) => void;
+  suggestedActions?: { id: string; text: string }[];
+  onSelectSuggestedAction?: (action: { id: string; text: string }) => void;
   onReopenLargeData?: () => void;
   timestamp?: Date;
   onCopy?: () => void;
@@ -34,6 +37,8 @@ export function AssistantMessage({
   adaptiveCards,
   gameOptions,
   onSelectGameOption,
+  suggestedActions,
+  onSelectSuggestedAction,
   onReopenLargeData,
   timestamp,
   onCopy,
@@ -73,7 +78,7 @@ export function AssistantMessage({
 
           {/* Adaptive Cards - Full width, 16px below text */}
           {adaptiveCards && adaptiveCards.length > 0 && (
-            <div className="mb-3">
+            <div className="mb-5">
               <AdaptiveCardRenderer layouts={adaptiveCards} onReopen={onReopenLargeData} />
             </div>
           )}
@@ -84,6 +89,16 @@ export function AssistantMessage({
               <GameOptions
                 options={gameOptions}
                 onSelectOption={onSelectGameOption}
+              />
+            </div>
+          )}
+
+          {/* Suggested Actions - Follow-up actions after data returns */}
+          {suggestedActions && suggestedActions.length > 0 && onSelectSuggestedAction && (
+            <div className="mb-3">
+              <SuggestedActions
+                actions={suggestedActions}
+                onSelectAction={onSelectSuggestedAction}
               />
             </div>
           )}

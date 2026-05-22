@@ -21,10 +21,11 @@ import { Avatar } from '@/components/ui';
 
 interface SidebarProps {
   onHomeClick?: () => void;
+  onHelpClick?: () => void;
   isOnHome?: boolean;
 }
 
-export function Sidebar({ onHomeClick, isOnHome = true }: SidebarProps) {
+export function Sidebar({ onHomeClick, onHelpClick, isOnHome = true }: SidebarProps) {
   return (
     <aside className="fixed left-0 top-0 h-screen w-16 bg-background border-r border-border flex flex-col items-center py-6 z-50">
       {/* Logo */}
@@ -42,7 +43,7 @@ export function Sidebar({ onHomeClick, isOnHome = true }: SidebarProps) {
       <div className="flex flex-col gap-2 mt-auto">
         <SidebarItem icon={SearchIcon} label="Search" />
         <SidebarItem icon={NotificationIcon} label="Notifications" />
-        <SidebarItem icon={HelpIcon} label="Help" />
+        <SidebarItem icon={HelpIcon} label="Help" onClick={onHelpClick} />
         <SidebarItem icon={SettingsIcon} label="Settings" />
       </div>
 
