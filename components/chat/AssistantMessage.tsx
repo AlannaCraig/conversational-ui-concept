@@ -62,19 +62,16 @@ export function AssistantMessage({
           </div>
         </div>
       ) : (
-        /* Normal Message - Icon + Content, then Full-width Cards, then Toolbar */
+        /* Normal Message - Text content edge-to-edge without icon */
         <div>
-          {/* Text content with icon */}
-          <div className="flex items-start gap-3 mb-4">
-            <div className="flex-shrink-0">
-              <IQChatIcon size={24} />
-            </div>
-            <div className="flex-1">
+          {/* Text content - flush to edge */}
+          {content && (
+            <div className="mb-4">
               <div className="text-text-primary text-sm leading-6">
                 {content}
               </div>
             </div>
-          </div>
+          )}
 
           {/* Adaptive Cards - Full width, 16px below text */}
           {adaptiveCards && adaptiveCards.length > 0 && (

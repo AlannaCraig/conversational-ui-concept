@@ -152,16 +152,15 @@ function isStoryContinuationRequest(message: string): boolean {
 function isDataContinuationRequest(message: string): boolean {
   const lowerMessage = message.toLowerCase();
 
-  const dataContinuationPhrases = [
-    'show me more',
-    'more data',
-    'show more',
-    'list more',
-    'more results',
-    'give me more',
-  ];
+  // Must contain either "more" or "another" AND data-related keywords
+  const hasMore = lowerMessage.includes('more') || lowerMessage.includes('another');
+  const hasDataKeyword = lowerMessage.includes('data') ||
+                         lowerMessage.includes('small data') ||
+                         lowerMessage.includes('show') ||
+                         lowerMessage.includes('list') ||
+                         lowerMessage.includes('results');
 
-  return dataContinuationPhrases.some(phrase => lowerMessage.includes(phrase));
+  return hasMore && hasDataKeyword;
 }
 
 /**

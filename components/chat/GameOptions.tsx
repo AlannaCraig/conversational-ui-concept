@@ -29,15 +29,18 @@ export function GameOptions({
   className = '',
 }: GameOptionsProps) {
   return (
-    <div className={`space-y-2 ${className}`}>
-      {options.map((option, index) => (
-        <GameOptionButton
-          key={option.id}
-          option={option}
-          index={index}
-          onSelect={onSelectOption}
-        />
-      ))}
+    <div className={className}>
+      <h3 className="text-sm font-medium text-text-primary mb-3">Suggested actions:</h3>
+      <div className="space-y-2">
+        {options.map((option, index) => (
+          <GameOptionButton
+            key={option.id}
+            option={option}
+            index={index}
+            onSelect={onSelectOption}
+          />
+        ))}
+      </div>
     </div>
   );
 }

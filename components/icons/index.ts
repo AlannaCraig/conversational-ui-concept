@@ -45,3 +45,10 @@ export { ReportIcon } from './ReportIcon';
 
 // Large data view icons
 export { CloseXIcon } from './CloseXIcon';
+
+// Chat history popover icons
+export { ChatsIcon } from './ChatsIcon';
+export { MoreVerticalIcon } from './MoreVerticalIcon';
+
+// Layout icons
+export { SwapHorizontalIcon } from './SwapHorizontalIcon';

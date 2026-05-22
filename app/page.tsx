@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sidebar,
@@ -8,7 +8,7 @@ import {
   PromptInput,
   PromptSuggestions,
   ConversationThread,
-  NewChatButton
+  ChatHistoryPopover
 } from '@/components/chat';
 import {
   TableCard,
@@ -20,11 +20,12 @@ import {
   AnalyticsCard
 } from '@/components/ui/LargeAdaptiveCards';
 import { ActionTiles, ThemeToast } from '@/components/ui';
-import { CloseXIcon } from '@/components/icons';
+import { CloseXIcon, SwapHorizontalIcon, NewChatIcon } from '@/components/icons';
 import { Message } from '@/types/conversation';
 import { getMockResponse } from '@/lib/mockResponses';
 import { getGameNode } from '@/lib/gameData';
 import { saveCurrentChat } from '@/lib/chatHistory';
+import { getMockChatHistory } from '@/lib/mockChatHistory';
 import { useAutoScroll, useTheme } from '@/hooks';
 
 const LARGE_CARD_LAYOUTS = [
@@ -63,6 +64,11 @@ export default function Home() {
   const [largeCardLayout, setLargeCardLayout] = useState<typeof LARGE_CARD_LAYOUTS[0] | null>(null);
   const [closedLargeDataContext, setClosedLargeDataContext] = useState<{ layout: typeof LARGE_CARD_LAYOUTS[0]; messageContent: string } | null>(null);
   const [showThemeToast, setShowThemeToast] = useState(false);
+  const [showChatHistory, setShowChatHistory] = useState(false);
+  const [isLayoutSwapped, setIsLayoutSwapped] = useState(false);
+
+  // Refs
+  const chatHistoryButtonRef = useRef<HTMLButtonElement>(null);
 
   // Theme management
   const { cycleTheme, currentThemeName } = useTheme();
@@ -70,6 +76,35 @@ export default function Home() {
   const handleThemeCycle = () => {
     cycleTheme();
     setShowThemeToast(true);
+  };
+
+  const handleChatHistoryClick = () => {
+    setShowChatHistory(prev => !prev);
+  };
+
+  const handleSelectChat = (chatId: string) => {
+    // Load the chat history
+    const chatHistory = getMockChatHistory();
+    const selectedChat = chatHistory.find(chat => chat.id === chatId);
+
+    if (selectedChat) {
+      // Transition to conversation state
+      setUiState('conversation');
+
+      // Load the messages from the selected chat
+      setMessages(selectedChat.messages);
+
+      // Reset other states
+      setCurrentGameNodeId(null);
+      setShowLargeData(false);
+      setLargeCardLayout(null);
+      setClosedLargeDataContext(null);
+      setIsLayoutSwapped(false);
+    }
+  };
+
+  const handleSwapLayout = () => {
+    setIsLayoutSwapped(prev => !prev);
   };
 
   // Auto-scroll to bottom when messages change
@@ -376,21 +411,33 @@ export default function Home() {
     <main className="h-screen bg-background-soft">
       <div className="flex h-full">
         {/* Fixed Sidebar */}
-        <Sidebar onHomeClick={handleHomeClick} onHelpClick={handleThemeCycle} isOnHome={uiState === 'landing'} />
+        <Sidebar
+          onHomeClick={handleHomeClick}
+          onHelpClick={handleThemeCycle}
+          onChatHistoryClick={handleChatHistoryClick}
+          chatHistoryButtonRef={chatHistoryButtonRef}
+          isOnHome={uiState === 'landing'}
+        />
 
-        {/* New Chat Button - Only visible in conversation view */}
-        {uiState === 'conversation' && (
-          <NewChatButton onClick={handleNewChat} />
-        )}
+        {/* Chat History Popover */}
+        <ChatHistoryPopover
+          isOpen={showChatHistory}
+          onClose={() => setShowChatHistory(false)}
+          buttonRef={chatHistoryButtonRef}
+          onSelectChat={handleSelectChat}
+        />
+
+        {/* New Chat Button is now inside dialog container for both views */}
 
         {/* Main Content Area */}
         <section className="flex-1 ml-16">
           <div className="h-full p-6">
-            <div className="h-full flex gap-6">
+            <div className="h-full flex gap-6" style={{ flexDirection: isLayoutSwapped ? 'row-reverse' : 'row' }}>
               <AnimatePresence>
-                {/* Large Data Panel - Appears on left when active */}
+                {/* Large Data Panel - Appears on left (or right if swapped) when active */}
                 {showLargeData && largeCardLayout && (
                   <motion.div
+                    key="large-data-panel"
                     initial={{ opacity: 0, flexGrow: 0, flexBasis: 0 }}
                     animate={{ opacity: 1, flexGrow: 2, flexBasis: 0 }}
                     exit={{ opacity: 0, flexGrow: 0, flexBasis: 0 }}
@@ -447,6 +494,7 @@ export default function Home() {
 
               {/* Dialog Container - Full width or 1/3 width */}
               <motion.div
+                key="dialog-container"
                 initial={{ flexGrow: 1, flexBasis: 0 }}
                 animate={{
                   flexGrow: showLargeData ? 1 : 1,
@@ -550,16 +598,31 @@ export default function Home() {
                 transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
                 className="h-full flex flex-col"
               >
-                {/* Spacer for New Chat button in large data view - clips 56px below button bottom */}
-                {showLargeData && (
-                  <div style={{ height: '96px', flexShrink: 0 }} />
-                )}
+                {/* Header with New Chat button (and Swap button in large data view) */}
+                <div className="flex-shrink-0 px-6 pt-6 pb-4 flex items-center justify-end gap-2">
+                  {showLargeData && (
+                    <button
+                      onClick={handleSwapLayout}
+                      className="w-10 h-10 flex items-center justify-center bg-background border border-border rounded-lg hover:bg-hover transition-colors shadow-sm"
+                      aria-label="Swap layout"
+                    >
+                      <SwapHorizontalIcon size={20} className="text-text-secondary" />
+                    </button>
+                  )}
+                  <button
+                    onClick={handleNewChat}
+                    className="h-10 px-4 flex items-center gap-2 bg-background border border-border rounded-lg hover:bg-hover transition-colors shadow-sm"
+                  >
+                    <NewChatIcon size={20} className="text-text-secondary" />
+                    <span className="text-sm font-medium text-text-primary">New chat</span>
+                  </button>
+                </div>
 
                 {/* Scrollable Conversation Thread */}
                 <div
                   ref={scrollRef}
                   className="flex-1 overflow-y-auto px-6 scroll-smooth conversation-scroll"
-                  style={{ paddingTop: showLargeData ? '0px' : '24px' }}
+                  style={{ paddingTop: '0px' }}
                 >
                   <div className="max-w-[800px] mx-auto">
                     <ConversationThread

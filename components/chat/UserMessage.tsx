@@ -51,7 +51,7 @@ export function UserMessage({ content, timestamp }: UserMessageProps) {
       className="flex justify-end"
     >
       <div className="max-w-[80%]">
-        <div className="bg-primary-contrast border border-border rounded p-4 text-text-primary text-sm">
+        <div className="bg-primary-contrast border border-border p-4 text-text-primary text-sm" style={{ borderRadius: '16px 16px 4px 16px' }}>
           {content}
         </div>
         {timestamp && (

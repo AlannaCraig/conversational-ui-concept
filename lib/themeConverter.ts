@@ -156,10 +156,28 @@ export function convertFigmaThemeToCSSVars(figmaTheme: FigmaTheme): Record<strin
       cssVars['--border'] = extractColor(figmaTheme.Other.border as FigmaToken);
     }
     if ('hover' in figmaTheme.Other && '$value' in figmaTheme.Other.hover) {
-      cssVars['--hover'] = extractColor(figmaTheme.Other.hover as FigmaToken);
+      const hoverToken = figmaTheme.Other.hover as FigmaToken;
+      // Reduce hover opacity to 5% for more subtle effect
+      const subtleHover = {
+        ...hoverToken,
+        $value: {
+          ...hoverToken.$value,
+          alpha: 0.05
+        }
+      };
+      cssVars['--hover'] = extractColor(subtleHover);
     }
     if ('selected' in figmaTheme.Other && '$value' in figmaTheme.Other.selected) {
-      cssVars['--selected'] = extractColor(figmaTheme.Other.selected as FigmaToken);
+      const selectedToken = figmaTheme.Other.selected as FigmaToken;
+      // Reduce selected opacity to 8% for more subtle effect
+      const subtleSelected = {
+        ...selectedToken,
+        $value: {
+          ...selectedToken.$value,
+          alpha: 0.08
+        }
+      };
+      cssVars['--selected'] = extractColor(subtleSelected);
     }
     if ('inactive' in figmaTheme.Other && '$value' in figmaTheme.Other.inactive) {
       cssVars['--inactive'] = extractColor(figmaTheme.Other.inactive as FigmaToken);

@@ -1,11 +1,11 @@
 /**
- * ChevronDownIcon Component
- * Chevron down icon for dropdowns
+ * SwapHorizontalIcon Component
+ * Horizontal swap/exchange icon
  */
 
 import { IconProps } from '@/lib/svg-icon-loader';
 
-export function ChevronDownIcon({ className = '', size = 24, color = 'currentColor' }: IconProps) {
+export function SwapHorizontalIcon({ className = '', size = 24, color = 'currentColor' }: IconProps) {
   return (
     <svg
       width={size}
@@ -16,7 +16,7 @@ export function ChevronDownIcon({ className = '', size = 24, color = 'currentCol
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        d="M18 9.00005C18 9.00005 13.5811 15 12 15C10.4188 15 6 9 6 9"
+        d="M7 16L3 12M3 12L7 8M3 12H21M17 8L21 12M21 12L17 16"
         stroke={color}
         strokeWidth="1.5"
         strokeLinecap="round"

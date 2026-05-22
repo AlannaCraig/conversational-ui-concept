@@ -19,3 +19,5 @@ export { MessageToolbar } from './MessageToolbar';
 export { GameOptions } from './GameOptions';
 export { SuggestedActions } from './SuggestedActions';
 export { NewChatButton } from './NewChatButton';
+export { SwapLayoutButton } from './SwapLayoutButton';
+export { ChatHistoryPopover } from './ChatHistoryPopover';
