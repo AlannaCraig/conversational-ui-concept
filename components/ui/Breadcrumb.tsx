@@ -27,14 +27,14 @@ export function Breadcrumb({ items, onNavigate, className = '' }: BreadcrumbProp
           )}
           {index === items.length - 1 ? (
             // Current page - not clickable
-            <span className="text-base font-semibold text-text-primary">
+            <span className="text-xl font-semibold text-text-primary">
               {item}
             </span>
           ) : (
             // Previous pages - clickable
             <button
               onClick={() => onNavigate(index)}
-              className="text-base font-medium text-text-secondary hover:text-text-primary transition-colors"
+              className="text-xl font-medium text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
             >
               {item}
             </button>

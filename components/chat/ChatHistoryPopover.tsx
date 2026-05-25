@@ -137,7 +137,7 @@ export function ChatHistoryPopover({ isOpen, onClose, buttonRef, onSelectChat }:
                 </div>
 
                 {/* Sort by chip */}
-                <button className="flex items-center gap-2 px-3 py-1.5 border border-border rounded-full hover:bg-hover transition-colors">
+                <button className="flex items-center gap-2 px-3 py-1.5 border border-border rounded-full hover:bg-hover cursor-pointer transition-colors">
                   <span className="text-sm text-text-secondary">Sort by</span>
                   <ChevronDownIcon size={16} className="text-text-secondary" />
                 </button>
@@ -192,7 +192,7 @@ export function ChatHistoryPopover({ isOpen, onClose, buttonRef, onSelectChat }:
                         <div className="relative">
                           <button
                             onClick={(e) => toggleMenu(group.id, e)}
-                            className="p-1 hover:bg-hover rounded transition-colors flex-shrink-0"
+                            className="p-1 hover:bg-hover cursor-pointer rounded transition-colors flex-shrink-0"
                           >
                             <MoreVerticalIcon size={20} className="text-text-secondary" />
                           </button>
@@ -210,13 +210,13 @@ export function ChatHistoryPopover({ isOpen, onClose, buttonRef, onSelectChat }:
                               <div className="absolute right-0 top-full mt-1 w-48 bg-background border border-border rounded-lg shadow-lg z-[70] py-1">
                                 <button
                                   onClick={(e) => handleExportChats(group.id, e)}
-                                  className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-hover transition-colors"
+                                  className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-hover cursor-pointer transition-colors"
                                 >
                                   Export all chats
                                 </button>
                                 <button
                                   onClick={(e) => handleDeleteChats(group.id, e)}
-                                  className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-hover transition-colors"
+                                  className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-hover cursor-pointer transition-colors"
                                 >
                                   Delete all chats
                                 </button>
@@ -245,7 +245,7 @@ export function ChatHistoryPopover({ isOpen, onClose, buttonRef, onSelectChat }:
                                     onClose();
                                   }
                                 }}
-                                className="w-full flex items-start gap-3 px-4 py-3 hover:bg-hover transition-colors text-left"
+                                className="w-full flex items-start gap-3 px-4 py-3 hover:bg-hover cursor-pointer transition-colors text-left"
                               >
                                 <ChatsIcon size={20} className="text-text-secondary flex-shrink-0 mt-0.5" />
                                 <div className="flex-1 min-w-0">

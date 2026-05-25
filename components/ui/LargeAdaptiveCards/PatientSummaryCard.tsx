@@ -40,25 +40,25 @@ export function PatientHeader({
   className = '',
 }: Omit<PatientSummaryCardProps, 'onWidgetClick' | 'showWidgets'>) {
   return (
-    <div className={`border border-accent1-main bg-accent1-contrast rounded-lg p-4 flex items-center gap-4 ${className}`}>
+    <div className={`border border-border bg-background-soft rounded-lg p-4 flex items-center gap-4 ${className}`}>
       {/* Patient Icon */}
-      <div className="w-10 h-10 flex items-center justify-center bg-accent1-contrast border border-accent1-main rounded flex-shrink-0">
-        <PatientIcon size={24} className="text-accent1-main" />
+      <div className="w-10 h-10 flex items-center justify-center bg-primary-contrast border border-border rounded flex-shrink-0">
+        <PatientIcon size={24} className="text-primary-main" />
       </div>
 
       {/* Patient Information */}
       <div className="flex-1 min-w-0">
         {/* Patient Name */}
-        <div className="text-sm font-semibold text-accent1-dark mb-1">
+        <div className="text-base font-semibold text-text-primary mb-1">
           {patientName}
         </div>
 
         {/* Demographics - Single line with separators */}
-        <div className="text-sm text-accent1-main flex items-center gap-2 flex-wrap">
+        <div className="text-sm text-text-secondary flex items-center gap-2 flex-wrap">
           <span>Born: {dateOfBirth}</span>
-          <span className="text-accent1-main opacity-50">•</span>
+          <span className="opacity-50">•</span>
           <span>Patient identifier: {patientId}</span>
-          <span className="text-accent1-main opacity-50">•</span>
+          <span className="opacity-50">•</span>
           <span>Sex: {sex}</span>
         </div>
       </div>
@@ -71,7 +71,7 @@ export function PatientHeader({
 
       {/* More Actions Button */}
       <button
-        className="w-10 h-10 flex items-center justify-center text-accent1-main hover:text-accent1-dark transition-colors flex-shrink-0"
+        className="w-10 h-10 flex items-center justify-center text-primary-main hover:text-text-primary transition-colors flex-shrink-0 cursor-pointer"
         aria-label="More actions"
       >
         <MoreVerticalIcon size={20} />
@@ -114,13 +114,13 @@ export function PatientSummaryCard({
             <div className="flex items-center gap-2 flex-shrink-0">
               <button
                 onClick={() => onWidgetClick?.(widget.title)}
-                className="w-8 h-8 flex items-center justify-center hover:bg-hover transition-colors rounded"
+                className="w-8 h-8 flex items-center justify-center hover:bg-hover transition-colors rounded cursor-pointer"
                 aria-label={`Open ${widget.title}`}
               >
                 <ArrowRightIcon size={20} className="text-primary-main" />
               </button>
               <button
-                className="w-8 h-8 flex items-center justify-center hover:bg-hover transition-colors rounded"
+                className="w-8 h-8 flex items-center justify-center hover:bg-hover transition-colors rounded cursor-pointer"
                 aria-label={`${widget.title} options`}
               >
                 <MoreVerticalIcon size={20} className="text-primary-main" />

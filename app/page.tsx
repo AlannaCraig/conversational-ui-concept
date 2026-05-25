@@ -493,27 +493,31 @@ export default function Home() {
                     <div className="h-full bg-background border border-border rounded-[12px] overflow-hidden flex flex-col">
                       {/* Sticky Header */}
                       <div className="flex-shrink-0 px-6 pt-6 pb-6 bg-background">
-                        <div className="flex items-center justify-between mb-6">
-                          {/* Breadcrumb Navigation */}
-                          <Breadcrumb
-                            items={breadcrumbs}
-                            onNavigate={handleBreadcrumbNavigate}
-                          />
+                        <div className="flex items-center justify-between mb-3">
+                          {/* Conditional Header: Breadcrumb for patient summary, "Large data" for others */}
+                          {showPatientHeader ? (
+                            <Breadcrumb
+                              items={breadcrumbs}
+                              onNavigate={handleBreadcrumbNavigate}
+                            />
+                          ) : (
+                            <h2 className="text-xl font-semibold text-text-primary">Large data</h2>
+                          )}
 
                           {/* Action buttons */}
                           <div className="flex items-center gap-2">
                             {/* Placeholder buttons */}
-                            <button className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-hover transition-colors cursor-pointer">
-                              <div className="w-4 h-4 bg-border rounded" />
+                            <button className="w-10 h-10 bg-background border border-border rounded-lg flex items-center justify-center hover:bg-hover transition-colors shadow-sm cursor-pointer">
+                              <div className="w-4 h-4 border border-border rounded" />
                             </button>
-                            <button className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-hover transition-colors cursor-pointer">
-                              <div className="w-4 h-4 bg-border rounded" />
+                            <button className="w-10 h-10 bg-background border border-border rounded-lg flex items-center justify-center hover:bg-hover transition-colors shadow-sm cursor-pointer">
+                              <div className="w-4 h-4 border border-border rounded" />
                             </button>
 
                             {/* Close button */}
                             <button
                               onClick={handleCloseLargeData}
-                              className="w-8 h-8 border border-border rounded flex items-center justify-center hover:bg-hover transition-colors cursor-pointer text-text-secondary hover:text-text-primary"
+                              className="w-10 h-10 bg-background border border-border rounded-lg flex items-center justify-center hover:bg-hover transition-colors shadow-sm text-text-secondary hover:text-text-primary cursor-pointer"
                               aria-label="Close large data view"
                             >
                               <CloseXIcon size={20} />
@@ -666,7 +670,7 @@ export default function Home() {
                   {showLargeData && (
                     <button
                       onClick={handleSwapLayout}
-                      className="w-10 h-10 flex items-center justify-center bg-background border border-border rounded-lg hover:bg-hover transition-colors shadow-sm"
+                      className="w-10 h-10 flex items-center justify-center bg-background border border-border rounded-lg hover:bg-hover transition-colors shadow-sm cursor-pointer"
                       aria-label="Swap layout"
                     >
                       <SwapHorizontalIcon size={20} className="text-text-secondary" />
@@ -674,7 +678,7 @@ export default function Home() {
                   )}
                   <button
                     onClick={handleNewChat}
-                    className="h-10 px-4 flex items-center gap-2 bg-background border border-border rounded-lg hover:bg-hover transition-colors shadow-sm"
+                    className="h-10 px-4 flex items-center gap-2 bg-background border border-border rounded-lg hover:bg-hover transition-colors shadow-sm cursor-pointer"
                   >
                     <NewChatIcon size={20} className="text-text-secondary" />
                     <span className="text-sm font-medium text-text-primary">New chat</span>
