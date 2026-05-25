@@ -25,6 +25,7 @@ export { MicIcon } from './MicIcon';
 export { PlusIcon } from './PlusIcon';
 export { ArrowRightIcon } from './ArrowRightIcon';
 export { ChevronDownIcon } from './ChevronDownIcon';
+export { ChevronUpIcon } from './ChevronUpIcon';
 export { GlobeIcon } from './GlobeIcon';
 export { MenuIcon } from './MenuIcon';
 export { CloseIcon } from './CloseIcon';

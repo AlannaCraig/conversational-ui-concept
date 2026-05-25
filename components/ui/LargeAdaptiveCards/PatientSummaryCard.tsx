@@ -65,7 +65,7 @@ export function PatientHeader({
 
       {/* Allergy Badge */}
       <div className="flex items-center gap-2 px-3 py-2 bg-accent3-contrast border border-accent3-dark rounded-lg flex-shrink-0">
-        <AllergyIcon size={16} className="text-accent3-dark" />
+        <AllergyIcon size={20} className="text-accent3-dark" />
         <span className="text-sm text-accent3-dark whitespace-nowrap">{allergyStatus}</span>
       </div>
 

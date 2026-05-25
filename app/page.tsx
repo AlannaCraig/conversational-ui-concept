@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/LargeAdaptiveCards';
 import { ActionTiles, ThemeToast, Breadcrumb } from '@/components/ui';
 import { CloseXIcon, SwapHorizontalIcon, NewChatIcon } from '@/components/icons';
+import { PopOutForm, TextInput, TextArea, Select } from '@/components/forms';
 import { Message } from '@/types/conversation';
 import { getMockResponse } from '@/lib/mockResponses';
 import { getGameNode } from '@/lib/gameData';
@@ -71,9 +72,12 @@ export default function Home() {
   const [isLayoutSwapped, setIsLayoutSwapped] = useState(false);
   const [breadcrumbs, setBreadcrumbs] = useState<string[]>(['Patient summary']);
   const [showPatientHeader, setShowPatientHeader] = useState(false);
+  const [showPopOutForm, setShowPopOutForm] = useState(false);
+  const [popOutFormData, setPopOutFormData] = useState<{ title: string; subtitle?: string; formId?: string } | null>(null);
 
   // Refs
   const chatHistoryButtonRef = useRef<HTMLButtonElement>(null);
+  const largeDataContainerRef = useRef<HTMLDivElement>(null);
 
   // Theme management
   const { cycleTheme, currentThemeName } = useTheme();
@@ -172,6 +176,9 @@ export default function Home() {
                 largeData: mockResponse.largeData,
                 suggestedActions: mockResponse.suggestedActions,
                 followUpText: mockResponse.followUpText,
+                showInDialogForm: mockResponse.showInDialogForm,
+                showPopOutForm: mockResponse.showPopOutForm,
+                formData: mockResponse.formData,
               }
             : m
         )
@@ -199,6 +206,12 @@ export default function Home() {
         }
         setLargeCardLayout(layout);
         setShowLargeData(true);
+      }
+
+      // Update pop-out form state if this is a pop-out form response
+      if (mockResponse.showPopOutForm && mockResponse.formData) {
+        setShowPopOutForm(true);
+        setPopOutFormData(mockResponse.formData);
       }
     }, mockResponse.delay || 1500);
   };
@@ -258,6 +271,49 @@ export default function Home() {
 
   const handleSelectSuggestion = (text: string) => {
     handleSubmit(text);
+  };
+
+  const handleFormSubmit = (formData: FormData) => {
+    console.log('Form submitted:', Object.fromEntries(formData));
+
+    // Close pop-out form if open
+    setShowPopOutForm(false);
+    setPopOutFormData(null);
+
+    // Create user message showing form was submitted
+    const userMessage: Message = {
+      id: `user-${Date.now()}`,
+      role: 'user',
+      content: 'Form submitted successfully',
+      timestamp: new Date(),
+      responseMode: 'inline',
+    };
+
+    // Create assistant confirmation
+    const confirmMessage: Message = {
+      id: `assistant-${Date.now()}`,
+      role: 'assistant',
+      content: 'Thank you! Your form has been submitted.',
+      timestamp: new Date(),
+      responseMode: 'inline',
+    };
+
+    setMessages((prev) => [...prev, userMessage, confirmMessage]);
+  };
+
+  const handleFormCancel = () => {
+    console.log('Form cancelled');
+
+    // Create user message showing form was cancelled
+    const userMessage: Message = {
+      id: `user-${Date.now()}`,
+      role: 'user',
+      content: 'Form cancelled',
+      timestamp: new Date(),
+      responseMode: 'inline',
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
   };
 
   const handleTileClick = (tile: { id: string; type: 'task' | 'appointment' | 'report'; count: number; label: string }) => {
@@ -490,7 +546,7 @@ export default function Home() {
                     style={{ minWidth: 0 }}
                   >
                     {/* Adaptive Card Container - Full height with flex layout */}
-                    <div className="h-full bg-background border border-border rounded-[12px] overflow-hidden flex flex-col">
+                    <div ref={largeDataContainerRef} className="h-full bg-background border border-border rounded-[12px] overflow-hidden flex flex-col">
                       {/* Sticky Header */}
                       <div className="flex-shrink-0 px-6 pt-6 pb-6 bg-background">
                         <div className="flex items-center justify-between mb-3">
@@ -697,6 +753,8 @@ export default function Home() {
                       onSelectGameOption={handleSelectGameOption}
                       onSelectSuggestedAction={handleSelectSuggestedAction}
                       onReopenLargeData={handleReopenLargeData}
+                      onFormSubmit={handleFormSubmit}
+                      onFormCancel={handleFormCancel}
                       removeFirstMessageTopPadding={showLargeData}
                     />
                   </div>
@@ -727,6 +785,49 @@ export default function Home() {
         isVisible={showThemeToast}
         onClose={() => setShowThemeToast(false)}
       />
+
+      {/* Pop-Out Form */}
+      {showPopOutForm && popOutFormData && (
+        <PopOutForm
+          formId={popOutFormData.formId || `FORM-${Date.now()}`}
+          title={popOutFormData.title}
+          subtitle={popOutFormData.subtitle}
+          isOpen={showPopOutForm}
+          onClose={() => {
+            setShowPopOutForm(false);
+            setPopOutFormData(null);
+          }}
+          onSubmit={handleFormSubmit}
+          containerRef={largeDataContainerRef}
+        >
+          <TextInput label="Patient Name" name="patient_name" required />
+          <TextInput label="Date of Birth" name="dob" type="text" required />
+          <Select
+            label="Gender"
+            name="gender"
+            options={[
+              { value: 'male', label: 'Male' },
+              { value: 'female', label: 'Female' },
+              { value: 'other', label: 'Other' },
+            ]}
+            required
+          />
+          <TextInput label="Contact Number" name="contact" type="tel" />
+          <TextInput label="Email Address" name="email" type="email" />
+          <Select
+            label="Preferred Contact Method"
+            name="contact_method"
+            options={[
+              { value: 'phone', label: 'Phone' },
+              { value: 'email', label: 'Email' },
+              { value: 'sms', label: 'SMS' },
+            ]}
+          />
+          <TextArea label="Medical History" name="medical_history" rows={4} />
+          <TextArea label="Current Medications" name="medications" rows={3} />
+          <TextArea label="Notes" name="notes" rows={3} />
+        </PopOutForm>
+      )}
     </main>
   );
 }

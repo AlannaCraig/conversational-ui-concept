@@ -14,10 +14,12 @@ interface ConversationThreadProps {
   onSelectGameOption?: (option: { id: string; text: string; nextNode: string }) => void;
   onSelectSuggestedAction?: (action: { id: string; text: string }) => void;
   onReopenLargeData?: () => void;
+  onFormSubmit?: (formData: FormData) => void;
+  onFormCancel?: () => void;
   removeFirstMessageTopPadding?: boolean;
 }
 
-export function ConversationThread({ messages, onSelectGameOption, onSelectSuggestedAction, onReopenLargeData, removeFirstMessageTopPadding = false }: ConversationThreadProps) {
+export function ConversationThread({ messages, onSelectGameOption, onSelectSuggestedAction, onReopenLargeData, onFormSubmit, onFormCancel, removeFirstMessageTopPadding = false }: ConversationThreadProps) {
   if (messages.length === 0) {
     return null;
   }
@@ -63,6 +65,10 @@ export function ConversationThread({ messages, onSelectGameOption, onSelectSugge
                   onSelectSuggestedAction={onSelectSuggestedAction}
                   onReopenLargeData={onReopenLargeData}
                   followUpText={message.followUpText}
+                  showInDialogForm={message.showInDialogForm}
+                  formData={message.formData}
+                  onFormSubmit={onFormSubmit}
+                  onFormCancel={onFormCancel}
                 />
               </div>
             )}

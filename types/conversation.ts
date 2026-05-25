@@ -28,6 +28,14 @@ export interface Message {
   largeData?: boolean;
   // Follow-up text that appears after cards/actions
   followUpText?: string;
+  // Form data
+  showInDialogForm?: boolean;
+  showPopOutForm?: boolean;
+  formData?: {
+    title: string;
+    subtitle?: string;
+    formId?: string;
+  };
 }
 
 export interface ConversationState {
@@ -46,4 +54,11 @@ export interface MockResponse {
   largeData?: boolean;
   largeDataType?: string;
   followUpText?: string;
+  showInDialogForm?: boolean;
+  showPopOutForm?: boolean;
+  formData?: {
+    title: string;
+    subtitle?: string;
+    formId?: string;
+  };
 }

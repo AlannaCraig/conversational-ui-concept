@@ -197,6 +197,35 @@ function isLargeDataContinuationRequest(message: string): boolean {
   return largeDataContinuationPhrases.some(phrase => lowerMessage.includes(phrase));
 }
 
+/**
+ * Determine if the message is a form request
+ */
+function isFormRequest(message: string): boolean {
+  const lowerMessage = message.toLowerCase();
+  return lowerMessage.includes('form') || lowerMessage.includes('fill out');
+}
+
+/**
+ * Determine if the message requests an in-dialog form specifically
+ */
+function isInDialogFormRequest(message: string): boolean {
+  const lowerMessage = message.toLowerCase();
+  return lowerMessage.includes('in dialog') ||
+         lowerMessage.includes('in-dialog') ||
+         lowerMessage.includes('inline form');
+}
+
+/**
+ * Determine if the message requests a pop-out form specifically
+ */
+function isPopOutFormRequest(message: string): boolean {
+  const lowerMessage = message.toLowerCase();
+  return lowerMessage.includes('pop out') ||
+         lowerMessage.includes('pop-out') ||
+         lowerMessage.includes('popout') ||
+         lowerMessage.includes('floating form');
+}
+
 export function getMockResponse(userMessage: string, gameNodeId?: string): MockResponse {
   // Priority 0a: Check for blood pressure readings request
   if (userMessage.toLowerCase().includes('blood pressure') ||
@@ -262,6 +291,47 @@ export function getMockResponse(userMessage: string, gameNodeId?: string): MockR
       ],
       followUpText: "Mr Robert Smith has requested this appointment to discuss his current health concerns. He reports a worsening wheeze and persistent cough, with a constant dull headache and aversion to bright lights. From a brief review of Mr Robert Smith's patient record I can see that he has a recorded COPD Problem already.",
     };
+  }
+
+  // Priority 0c: Check for form requests
+  if (isFormRequest(userMessage)) {
+    const now = new Date();
+    const formId = `FORM-${now.getTime()}`;
+    const subtitle = now.toLocaleString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    // If user specifically requests pop-out form
+    if (isPopOutFormRequest(userMessage)) {
+      return {
+        content: "I've opened a pop-out form for you. You can minimize it to continue viewing the data.",
+        delay: 1000,
+        showPopOutForm: true,
+        formData: {
+          title: 'Form title',
+          subtitle,
+          formId,
+        },
+      };
+    }
+
+    // If user specifically requests in-dialog form OR just asks for "a form" (default behavior)
+    if (isInDialogFormRequest(userMessage) || !isPopOutFormRequest(userMessage)) {
+      return {
+        content: "Here's a form for you to complete:",
+        delay: 1000,
+        showInDialogForm: true,
+        formData: {
+          title: 'Form title',
+          subtitle,
+          formId,
+        },
+      };
+    }
   }
 
   // Priority 1: Check if this is a game request or game option selection

@@ -12,6 +12,7 @@ import { AdaptiveCardRenderer } from './AdaptiveCardRenderer';
 import { MessageToolbar } from './MessageToolbar';
 import { GameOptions } from './GameOptions';
 import { SuggestedActions } from './SuggestedActions';
+import { InDialogForm, TextInput, TextArea, Select } from '@/components/forms';
 import type { CardLayoutType } from '@/lib/adaptiveCardSelector';
 
 interface AssistantMessageProps {
@@ -30,6 +31,15 @@ interface AssistantMessageProps {
   onRepeat?: () => void;
   onThumbsUp?: () => void;
   onThumbsDown?: () => void;
+  // Form props
+  showInDialogForm?: boolean;
+  formData?: {
+    title: string;
+    subtitle?: string;
+    formId?: string;
+  };
+  onFormSubmit?: (formData: FormData) => void;
+  onFormCancel?: () => void;
 }
 
 export function AssistantMessage({
@@ -48,6 +58,10 @@ export function AssistantMessage({
   onRepeat,
   onThumbsUp,
   onThumbsDown,
+  showInDialogForm,
+  formData,
+  onFormSubmit,
+  onFormCancel,
 }: AssistantMessageProps) {
   return (
     <motion.div
@@ -79,6 +93,52 @@ export function AssistantMessage({
           {adaptiveCards && adaptiveCards.length > 0 && (
             <div className="mb-5">
               <AdaptiveCardRenderer layouts={adaptiveCards} onReopen={onReopenLargeData} />
+            </div>
+          )}
+
+          {/* In-Dialog Form - Inline form in conversation */}
+          {showInDialogForm && formData && (
+            <div className="mb-5">
+              <InDialogForm
+                title={formData.title}
+                subtitle={formData.subtitle}
+                formId={formData.formId}
+                submitText="Submit"
+                cancelText="Cancel"
+                onSubmit={onFormSubmit}
+                onCancel={onFormCancel}
+              >
+                {/* Example form fields - replace with dynamic fields */}
+                <TextInput
+                  label="Patient Name"
+                  name="patient_name"
+                  placeholder="Enter patient name"
+                  required
+                />
+                <TextInput
+                  label="Date of Birth"
+                  name="dob"
+                  type="date"
+                  required
+                />
+                <Select
+                  label="Gender"
+                  name="gender"
+                  placeholder="Select gender"
+                  options={[
+                    { value: 'male', label: 'Male' },
+                    { value: 'female', label: 'Female' },
+                    { value: 'other', label: 'Other' },
+                  ]}
+                  required
+                />
+                <TextArea
+                  label="Notes"
+                  name="notes"
+                  placeholder="Additional notes..."
+                  rows={3}
+                />
+              </InDialogForm>
             </div>
           )}
 
