@@ -7,6 +7,8 @@ export { TaskListCard } from './AdaptiveCards/TaskListCard';
 export { AppointmentListCard } from './AdaptiveCards/AppointmentListCard';
 export { ReportListCard } from './AdaptiveCards/ReportListCard';
 export { ReopenPromptCard } from './AdaptiveCards/ReopenPromptCard';
+export { PatientCard } from './AdaptiveCards/PatientCard';
+export { LineGraphCard } from './AdaptiveCards/LineGraphCard';
 
 // Base skeleton animation
 const shimmer = {

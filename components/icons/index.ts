@@ -42,6 +42,8 @@ export { NewChatIcon } from './NewChatIcon';
 export { TaskIcon } from './TaskIcon';
 export { AppointmentIcon } from './AppointmentIcon';
 export { ReportIcon } from './ReportIcon';
+export { PatientIcon } from './PatientIcon';
+export { AllergyIcon } from './AllergyIcon';
 
 // Large data view icons
 export { CloseXIcon } from './CloseXIcon';

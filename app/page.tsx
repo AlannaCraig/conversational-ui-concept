@@ -17,9 +17,11 @@ import {
   GridCard,
   CalendarCard,
   KanbanCard,
-  AnalyticsCard
+  AnalyticsCard,
+  PatientSummaryCard,
+  PatientHeader
 } from '@/components/ui/LargeAdaptiveCards';
-import { ActionTiles, ThemeToast } from '@/components/ui';
+import { ActionTiles, ThemeToast, Breadcrumb } from '@/components/ui';
 import { CloseXIcon, SwapHorizontalIcon, NewChatIcon } from '@/components/icons';
 import { Message } from '@/types/conversation';
 import { getMockResponse } from '@/lib/mockResponses';
@@ -36,6 +38,7 @@ const LARGE_CARD_LAYOUTS = [
   { type: 'calendar', component: CalendarCard },
   { type: 'kanban', component: KanbanCard },
   { type: 'analytics', component: AnalyticsCard },
+  { type: 'patient-summary', component: PatientSummaryCard },
 ];
 
 const DEFAULT_SUGGESTIONS = [
@@ -66,6 +69,8 @@ export default function Home() {
   const [showThemeToast, setShowThemeToast] = useState(false);
   const [showChatHistory, setShowChatHistory] = useState(false);
   const [isLayoutSwapped, setIsLayoutSwapped] = useState(false);
+  const [breadcrumbs, setBreadcrumbs] = useState<string[]>(['Patient summary']);
+  const [showPatientHeader, setShowPatientHeader] = useState(false);
 
   // Refs
   const chatHistoryButtonRef = useRef<HTMLButtonElement>(null);
@@ -165,6 +170,8 @@ export default function Home() {
                 gameOptions: mockResponse.gameOptions,
                 gameNodeId: mockResponse.gameNodeId,
                 largeData: mockResponse.largeData,
+                suggestedActions: mockResponse.suggestedActions,
+                followUpText: mockResponse.followUpText,
               }
             : m
         )
@@ -177,9 +184,20 @@ export default function Home() {
 
       // Update large data state if this is a large data response
       if (mockResponse.largeData) {
-        // Pick a random layout
-        const randomLayout = LARGE_CARD_LAYOUTS[Math.floor(Math.random() * LARGE_CARD_LAYOUTS.length)];
-        setLargeCardLayout(randomLayout);
+        // Use specific layout if provided, otherwise pick random
+        let layout;
+        if (mockResponse.largeDataType) {
+          layout = LARGE_CARD_LAYOUTS.find(l => l.type === mockResponse.largeDataType);
+          // Reset breadcrumbs and show patient header for patient summary
+          if (mockResponse.largeDataType === 'patient-summary') {
+            setBreadcrumbs(['Patient summary']);
+            setShowPatientHeader(true);
+          }
+        }
+        if (!layout) {
+          layout = LARGE_CARD_LAYOUTS[Math.floor(Math.random() * LARGE_CARD_LAYOUTS.length)];
+        }
+        setLargeCardLayout(layout);
         setShowLargeData(true);
       }
     }, mockResponse.delay || 1500);
@@ -365,6 +383,10 @@ export default function Home() {
     };
 
     setMessages((prev) => [...prev, systemMessage]);
+
+    // Reset breadcrumbs and patient header
+    setBreadcrumbs(['Patient summary']);
+    setShowPatientHeader(false);
   };
 
   const handleReopenLargeData = () => {
@@ -388,6 +410,7 @@ export default function Home() {
     setShowLargeData(false);
     setLargeCardLayout(null);
     setClosedLargeDataContext(null);
+    setShowPatientHeader(false);
   };
 
   const handleNewChat = () => {
@@ -402,9 +425,30 @@ export default function Home() {
     setShowLargeData(false);
     setLargeCardLayout(null);
     setClosedLargeDataContext(null);
+    setBreadcrumbs(['Patient summary']);
+    setShowPatientHeader(false);
 
     // Transition back to landing for a clean start
     setUiState('landing');
+  };
+
+  const handleWidgetClick = (widgetTitle: string) => {
+    // Add widget title to breadcrumbs
+    setBreadcrumbs(prev => [...prev, widgetTitle]);
+
+    // Pick a random layout for the widget content
+    const randomLayout = LARGE_CARD_LAYOUTS[Math.floor(Math.random() * (LARGE_CARD_LAYOUTS.length - 1))]; // Exclude patient-summary
+    setLargeCardLayout(randomLayout);
+  };
+
+  const handleBreadcrumbNavigate = (index: number) => {
+    // Navigate to the clicked breadcrumb level
+    setBreadcrumbs(prev => prev.slice(0, index + 1));
+
+    // If navigating back to root (Patient summary), show patient summary
+    if (index === 0) {
+      setLargeCardLayout(LARGE_CARD_LAYOUTS.find(l => l.type === 'patient-summary') || LARGE_CARD_LAYOUTS[0]);
+    }
   };
 
   return (
@@ -448,9 +492,13 @@ export default function Home() {
                     {/* Adaptive Card Container - Full height with flex layout */}
                     <div className="h-full bg-background border border-border rounded-[12px] overflow-hidden flex flex-col">
                       {/* Sticky Header */}
-                      <div className="flex-shrink-0 px-6 pt-6 pb-4 bg-background">
-                        <div className="flex items-center justify-between">
-                          <div className="h-6 w-32 bg-primary-light rounded" />
+                      <div className="flex-shrink-0 px-6 pt-6 pb-6 bg-background">
+                        <div className="flex items-center justify-between mb-6">
+                          {/* Breadcrumb Navigation */}
+                          <Breadcrumb
+                            items={breadcrumbs}
+                            onNavigate={handleBreadcrumbNavigate}
+                          />
 
                           {/* Action buttons */}
                           <div className="flex items-center gap-2">
@@ -473,19 +521,34 @@ export default function Home() {
                           </div>
                         </div>
                         {/* Breaker line */}
-                        <div className="border-t border-border mt-6"></div>
+                        <div className="border-t border-border"></div>
                       </div>
 
-                      {/* Scrollable Content - starts 24px below breaker */}
-                      <div className="flex-1 overflow-y-auto px-6 pt-6 pb-6 conversation-scroll">
-                        {/* Render the selected large card layout */}
-                        {largeCardLayout.type === 'table' && <TableCard />}
-                        {largeCardLayout.type === 'dashboard' && <DashboardCard />}
-                        {largeCardLayout.type === 'document' && <DocumentCard />}
-                        {largeCardLayout.type === 'grid' && <GridCard />}
-                        {largeCardLayout.type === 'calendar' && <CalendarCard />}
-                        {largeCardLayout.type === 'kanban' && <KanbanCard />}
-                        {largeCardLayout.type === 'analytics' && <AnalyticsCard />}
+                      {/* Scrollable Content */}
+                      <div className="flex-1 overflow-y-auto px-6 pb-6 conversation-scroll">
+                        <div className="flex flex-col h-full">
+                          {/* Persistent Patient Header - only shown for patient-related views */}
+                          {showPatientHeader && (
+                            <div className="flex-shrink-0 mb-6">
+                              <PatientHeader />
+                            </div>
+                          )}
+
+                          {/* Main Content Area */}
+                          <div className="flex-1">
+                            {/* Render the selected large card layout */}
+                            {largeCardLayout.type === 'table' && <TableCard />}
+                            {largeCardLayout.type === 'dashboard' && <DashboardCard />}
+                            {largeCardLayout.type === 'document' && <DocumentCard />}
+                            {largeCardLayout.type === 'grid' && <GridCard />}
+                            {largeCardLayout.type === 'calendar' && <CalendarCard />}
+                            {largeCardLayout.type === 'kanban' && <KanbanCard />}
+                            {largeCardLayout.type === 'analytics' && <AnalyticsCard />}
+                            {largeCardLayout.type === 'patient-summary' && (
+                              <PatientSummaryCard onWidgetClick={handleWidgetClick} />
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </motion.div>

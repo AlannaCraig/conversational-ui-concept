@@ -12,4 +12,5 @@ export { Tooltip } from './Tooltip';
 export { Avatar } from './Avatar';
 export { ActionTiles } from './ActionTiles';
 export { ThemeToast } from './ThemeToast';
+export { Breadcrumb } from './Breadcrumb';
 export * from './AdaptiveCards';

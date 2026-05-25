@@ -26,6 +26,8 @@ export interface Message {
   suggestedActions?: { id: string; text: string }[];
   // Large data return flag
   largeData?: boolean;
+  // Follow-up text that appears after cards/actions
+  followUpText?: string;
 }
 
 export interface ConversationState {
@@ -42,4 +44,6 @@ export interface MockResponse {
   gameNodeId?: string;
   suggestedActions?: { id: string; text: string }[];
   largeData?: boolean;
+  largeDataType?: string;
+  followUpText?: string;
 }

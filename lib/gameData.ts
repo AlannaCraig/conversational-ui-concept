@@ -250,7 +250,7 @@ export const duckGame: Record<string, GameNode> = {
 
   NODE_5_OPTION_1_RESPONSE: {
     id: 'NODE_5_OPTION_1_RESPONSE',
-    text: "You adjust the fireworks timer and quickly position yourself near the largest bakery stand in the square. Exactly as planned, the fireworks suddenly explode into life far earlier than expected. Every villager immediately stares upward in amazement while the crowd drifts toward one end of the square.\n\nThis is your moment.\n\nYou charge towards the largest bakery display you can find and eat an astonishing amount of food. Cinnamon buns. Sausage rolls. Half a Victoria sponge. By the end of it, you can barely stand upright.\n\nWith a stomach full of regret and joy, you slowly waddle back toward the pond with the biggest smile a duck can physically produce.",
+    text: "You adjust the fireworks timer and quickly position yourself near the largest bakery stand in the square. Exactly as planned, the fireworks suddenly explode into life far earlier than expected. Every villager immediately stares upward in amazement while the crowd drifts toward one end of the square.\n\nThis is your moment.\n\nYou charge towards the largest bakery display you can find and eat an astonishing amount of food. Cinnamon buns. Sausage rolls. Half a Victoria sponge. By the end of it, you can barely stand upright.\n\nWith a stomach full of regret and joy, you slowly waddle back toward the pond with the biggest smile a duck can physically produce.\n\n\nThank you for playing What The Duck: The Duck Adventure Game. We hope you had a jolly good time with it.",
     options: [
       {
         id: 'opt1',
@@ -263,7 +263,7 @@ export const duckGame: Record<string, GameNode> = {
 
   NODE_5_OPTION_2_RESPONSE: {
     id: 'NODE_5_OPTION_2_RESPONSE',
-    text: 'You text the village mayor with a bomb threat.\n\nExactly as planned, the mayor descends instantly into complete panic. He runs around the square waving his arms wildly while shouting, "There\'s a bomb! There\'s a bomb!"\n\nWithin minutes, the entire market is evacuated.\n\nYou now have the whole square entirely to yourself.\n\nYou feast upon absolutely everything you can reach. Cakes. Bread. Sausage rolls. Pickles. Somehow even an entire pork pie.\n\nYou eat so much that you end up falling asleep in the middle of the market square before eventually waking up and waddling home completely satisfied.',
+    text: 'You text the village mayor with a bomb threat.\n\nExactly as planned, the mayor descends instantly into complete panic. He runs around the square waving his arms wildly while shouting, "There\'s a bomb! There\'s a bomb!"\n\nWithin minutes, the entire market is evacuated.\n\nYou now have the whole square entirely to yourself.\n\nYou feast upon absolutely everything you can reach. Cakes. Bread. Sausage rolls. Pickles. Somehow even an entire pork pie.\n\nYou eat so much that you end up falling asleep in the middle of the market square before eventually waking up and waddling home completely satisfied.\n\n\nThank you for playing What The Duck: The Duck Adventure Game. We hope you had a jolly good time with it.',
     options: [
       {
         id: 'opt1',
@@ -276,7 +276,7 @@ export const duckGame: Record<string, GameNode> = {
 
   NODE_5_OPTION_3_RESPONSE: {
     id: 'NODE_5_OPTION_3_RESPONSE',
-    text: "You quietly unlatch the nearby field gate and gently encourage the enormous bull toward the village square. Almost immediately, the bull spots a crowd of villagers wearing bright red t-shirts and charges directly toward them at full speed.\n\nPanic erupts instantly.\n\nLuckily nobody is hurt, but the square clears in record time.\n\nIn the aftermath, you and the bull peacefully share several pastries together in the middle of the abandoned market while the distant sound of screaming villagers echoes through the streets.\n\nCompletely satisfied with your work, you happily waddle back home toward the pond.",
+    text: "You quietly unlatch the nearby field gate and gently encourage the enormous bull toward the village square. Almost immediately, the bull spots a crowd of villagers wearing bright red t-shirts and charges directly toward them at full speed.\n\nPanic erupts instantly.\n\nLuckily nobody is hurt, but the square clears in record time.\n\nIn the aftermath, you and the bull peacefully share several pastries together in the middle of the abandoned market while the distant sound of screaming villagers echoes through the streets.\n\nCompletely satisfied with your work, you happily waddle back home toward the pond.\n\n\nThank you for playing What The Duck: The Duck Adventure Game. We hope you had a jolly good time with it.",
     options: [
       {
         id: 'opt1',

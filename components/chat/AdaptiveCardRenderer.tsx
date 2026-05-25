@@ -16,6 +16,8 @@ import {
   AppointmentListCard,
   ReportListCard,
   ReopenPromptCard,
+  PatientCard,
+  LineGraphCard,
 } from '@/components/ui/AdaptiveCards';
 import type { CardLayoutType } from '@/lib/adaptiveCardSelector';
 
@@ -41,6 +43,8 @@ const cardComponents: Record<string, React.ComponentType<any>> = {
   'appointment-list': AppointmentListCard,
   'report-list': ReportListCard,
   'reopen-prompt': ReopenPromptCard,
+  'patient-card': PatientCard,
+  'line-graph': LineGraphCard,
 };
 
 export function AdaptiveCardRenderer({

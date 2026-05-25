@@ -8,6 +8,8 @@
 
 'use client';
 
+export { PatientSummaryCard, PatientHeader } from './LargeAdaptiveCards/PatientSummaryCard';
+
 interface CardProps {
   className?: string;
 }

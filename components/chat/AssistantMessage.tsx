@@ -23,6 +23,7 @@ interface AssistantMessageProps {
   suggestedActions?: { id: string; text: string }[];
   onSelectSuggestedAction?: (action: { id: string; text: string }) => void;
   onReopenLargeData?: () => void;
+  followUpText?: string;
   timestamp?: Date;
   onCopy?: () => void;
   onEdit?: () => void;
@@ -40,6 +41,7 @@ export function AssistantMessage({
   suggestedActions,
   onSelectSuggestedAction,
   onReopenLargeData,
+  followUpText,
   timestamp,
   onCopy,
   onEdit,
@@ -67,7 +69,7 @@ export function AssistantMessage({
           {/* Text content - flush to edge */}
           {content && (
             <div className="mb-4">
-              <div className="text-text-primary text-sm leading-6">
+              <div className="text-text-primary text-sm leading-6 whitespace-pre-wrap">
                 {content}
               </div>
             </div>
@@ -77,6 +79,15 @@ export function AssistantMessage({
           {adaptiveCards && adaptiveCards.length > 0 && (
             <div className="mb-5">
               <AdaptiveCardRenderer layouts={adaptiveCards} onReopen={onReopenLargeData} />
+            </div>
+          )}
+
+          {/* Follow-up Text - Additional context after cards but before actions */}
+          {followUpText && (
+            <div className="mb-5">
+              <div className="text-text-primary text-sm leading-6 whitespace-pre-wrap">
+                {followUpText}
+              </div>
             </div>
           )}
 

@@ -62,6 +62,7 @@ export function ConversationThread({ messages, onSelectGameOption, onSelectSugge
                   suggestedActions={message.suggestedActions}
                   onSelectSuggestedAction={onSelectSuggestedAction}
                   onReopenLargeData={onReopenLargeData}
+                  followUpText={message.followUpText}
                 />
               </div>
             )}

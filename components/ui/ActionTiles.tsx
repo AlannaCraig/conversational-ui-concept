@@ -7,6 +7,7 @@
 
 'use client';
 
+import { motion } from 'framer-motion';
 import { TaskIcon, AppointmentIcon, ReportIcon } from '@/components/icons';
 
 interface ActionTile {
@@ -53,16 +54,28 @@ function ActionTile({ tile, onClick }: ActionTileProps) {
   };
 
   return (
-    <div
+    <motion.div
       onClick={handleClick}
-      className="flex items-center gap-2.5 px-4 py-3.5 bg-accent1-contrast border border-accent1-light rounded-lg cursor-pointer hover:bg-accent1-light transition-colors duration-200"
+      className="relative flex items-center gap-2.5 px-4 py-3.5 bg-accent1-contrast border border-accent1-light rounded-lg cursor-pointer transition-colors duration-200 overflow-hidden group"
       style={{ boxSizing: 'border-box' }}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
     >
-      <Icon size={20} className="text-accent1-main flex-shrink-0" />
-      <div className="flex items-baseline gap-1.5">
+      {/* Hover overlay */}
+      <div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none"
+        style={{ backgroundColor: 'rgba(71, 43, 46, 0.08)' }}
+      />
+      {/* Active/Selected overlay */}
+      <div
+        className="absolute inset-0 opacity-0 group-active:opacity-100 pointer-events-none"
+        style={{ backgroundColor: 'rgba(71, 43, 46, 0.15)' }}
+      />
+      <Icon size={20} className="text-accent1-main flex-shrink-0 relative z-10" />
+      <div className="flex items-baseline gap-1.5 relative z-10">
         <span className="text-sm font-semibold text-accent1-main">{tile.count}</span>
         <span className="text-sm text-accent1-main font-normal">{tile.label}</span>
       </div>
-    </div>
+    </motion.div>
   );
 }
