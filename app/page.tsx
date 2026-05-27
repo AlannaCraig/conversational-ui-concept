@@ -8,8 +8,10 @@ import {
   PromptInput,
   PromptSuggestions,
   ConversationThread,
-  ChatHistoryPopover
+  ChatHistoryPopover,
+  NotificationsPopover
 } from '@/components/chat';
+import { getMockNotifications } from '@/lib/mockNotifications';
 import {
   TableCard,
   DashboardCard,
@@ -69,6 +71,7 @@ export default function Home() {
   const [closedLargeDataContext, setClosedLargeDataContext] = useState<{ layout: typeof LARGE_CARD_LAYOUTS[0]; messageContent: string } | null>(null);
   const [showThemeToast, setShowThemeToast] = useState(false);
   const [showChatHistory, setShowChatHistory] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [isLayoutSwapped, setIsLayoutSwapped] = useState(false);
   const [breadcrumbs, setBreadcrumbs] = useState<string[]>(['Patient summary']);
   const [showPatientHeader, setShowPatientHeader] = useState(false);
@@ -77,6 +80,7 @@ export default function Home() {
 
   // Refs
   const chatHistoryButtonRef = useRef<HTMLButtonElement>(null);
+  const notificationsButtonRef = useRef<HTMLButtonElement>(null);
   const largeDataContainerRef = useRef<HTMLDivElement>(null);
 
   // Theme management
@@ -89,6 +93,15 @@ export default function Home() {
 
   const handleChatHistoryClick = () => {
     setShowChatHistory(prev => !prev);
+  };
+
+  const handleNotificationsClick = () => {
+    setShowNotifications(prev => !prev);
+  };
+
+  const handleSelectNotification = (notificationId: string) => {
+    console.log('Selected notification:', notificationId);
+    // TODO: Handle notification selection (navigate, mark as read, etc.)
   };
 
   const handleSelectChat = (chatId: string) => {
@@ -507,6 +520,9 @@ export default function Home() {
     }
   };
 
+  // Get unread notification count
+  const unreadNotificationCount = getMockNotifications().filter(n => !n.isRead).length;
+
   return (
     <main className="h-screen bg-background-soft">
       <div className="flex h-full">
@@ -515,8 +531,11 @@ export default function Home() {
           onHomeClick={handleHomeClick}
           onHelpClick={handleThemeCycle}
           onChatHistoryClick={handleChatHistoryClick}
+          onNotificationsClick={handleNotificationsClick}
           chatHistoryButtonRef={chatHistoryButtonRef}
+          notificationsButtonRef={notificationsButtonRef}
           isOnHome={uiState === 'landing'}
+          unreadNotificationCount={unreadNotificationCount}
         />
 
         {/* Chat History Popover */}
@@ -525,6 +544,14 @@ export default function Home() {
           onClose={() => setShowChatHistory(false)}
           buttonRef={chatHistoryButtonRef}
           onSelectChat={handleSelectChat}
+        />
+
+        {/* Notifications Popover */}
+        <NotificationsPopover
+          isOpen={showNotifications}
+          onClose={() => setShowNotifications(false)}
+          buttonRef={notificationsButtonRef}
+          onSelectNotification={handleSelectNotification}
         />
 
         {/* New Chat Button is now inside dialog container for both views */}

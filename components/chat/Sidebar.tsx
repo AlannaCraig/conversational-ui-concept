@@ -24,11 +24,14 @@ interface SidebarProps {
   onHomeClick?: () => void;
   onHelpClick?: () => void;
   onChatHistoryClick?: () => void;
+  onNotificationsClick?: () => void;
   chatHistoryButtonRef?: React.RefObject<HTMLButtonElement>;
+  notificationsButtonRef?: React.RefObject<HTMLButtonElement>;
   isOnHome?: boolean;
+  unreadNotificationCount?: number;
 }
 
-export function Sidebar({ onHomeClick, onHelpClick, onChatHistoryClick, chatHistoryButtonRef, isOnHome = true }: SidebarProps) {
+export function Sidebar({ onHomeClick, onHelpClick, onChatHistoryClick, onNotificationsClick, chatHistoryButtonRef, notificationsButtonRef, isOnHome = true, unreadNotificationCount = 0 }: SidebarProps) {
   return (
     <aside className="fixed left-0 top-0 h-screen w-16 bg-background border-r border-border flex flex-col items-center py-6 z-50">
       {/* Logo */}
@@ -50,7 +53,13 @@ export function Sidebar({ onHomeClick, onHelpClick, onChatHistoryClick, chatHist
       {/* Bottom Utility Icons */}
       <div className="flex flex-col gap-2 mt-auto">
         <SidebarItem icon={SearchIcon} label="Search" />
-        <SidebarItem icon={NotificationIcon} label="Notifications" />
+        <SidebarItem
+          ref={notificationsButtonRef}
+          icon={NotificationIcon}
+          label="Notifications"
+          onClick={onNotificationsClick}
+          badge={unreadNotificationCount}
+        />
         <SidebarItem icon={HelpIcon} label="Help" onClick={onHelpClick} />
         <SidebarItem icon={SettingsIcon} label="Settings" />
       </div>

@@ -53,5 +53,11 @@ export { CloseXIcon } from './CloseXIcon';
 export { ChatsIcon } from './ChatsIcon';
 export { MoreVerticalIcon } from './MoreVerticalIcon';
 
+// Notification icons
+export { AlertTriangleIcon } from './AlertTriangleIcon';
+export { AlertCircleIcon } from './AlertCircleIcon';
+export { AppWindowIcon } from './AppWindowIcon';
+export { CircleIcon } from './CircleIcon';
+
 // Layout icons
 export { SwapHorizontalIcon } from './SwapHorizontalIcon';

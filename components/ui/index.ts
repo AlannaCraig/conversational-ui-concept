@@ -13,4 +13,5 @@ export { Avatar } from './Avatar';
 export { ActionTiles } from './ActionTiles';
 export { ThemeToast } from './ThemeToast';
 export { Breadcrumb } from './Breadcrumb';
+export { StatusChip } from './StatusChip';
 export * from './AdaptiveCards';

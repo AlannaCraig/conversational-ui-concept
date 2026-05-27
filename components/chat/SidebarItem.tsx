@@ -17,17 +17,18 @@ interface SidebarItemProps {
   label: string;
   active?: boolean;
   onClick?: () => void;
+  badge?: number;
 }
 
 export const SidebarItem = forwardRef<HTMLButtonElement, SidebarItemProps>(
-  function SidebarItem({ icon: Icon, label, active = false, onClick }, ref) {
+  function SidebarItem({ icon: Icon, label, active = false, onClick, badge }, ref) {
     return (
       <Tooltip text={label} position="right" gap={8}>
         <motion.button
           ref={ref}
           onClick={onClick}
           className={`
-            w-10 h-10 rounded-lg flex items-center justify-center
+            w-10 h-10 rounded-lg flex items-center justify-center relative
             transition-colors duration-200 cursor-pointer
             ${active
               ? 'bg-background-soft text-text-primary border border-border'
@@ -39,6 +40,18 @@ export const SidebarItem = forwardRef<HTMLButtonElement, SidebarItemProps>(
           aria-label={label}
         >
           <Icon size={20} />
+          {badge !== undefined && badge > 0 && (
+            <span
+              className="absolute bottom-0 right-0 min-w-[16px] h-[16px] flex items-center justify-center text-[9px] font-semibold rounded-full leading-none"
+              style={{
+                backgroundColor: 'var(--accent3-main)',
+                color: 'var(--accent3-contrast)',
+                padding: '0 3px',
+              }}
+            >
+              {badge > 99 ? '99+' : badge}
+            </span>
+          )}
         </motion.button>
       </Tooltip>
     );
