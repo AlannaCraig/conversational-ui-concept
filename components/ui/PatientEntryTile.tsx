@@ -5,12 +5,14 @@ import { createPortal } from 'react-dom';
 import { ChevronRightIcon } from './ChevronRightIcon';
 
 const AVATAR_TOKENS = [
-  { bg: 'var(--accent1-main)',  text: 'var(--accent1-contrast)' },
-  { bg: 'var(--accent3-main)',  text: 'var(--accent3-contrast)' },
   { bg: 'var(--accent-main)',   text: 'var(--accent-contrast)'  },
-  { bg: 'var(--accent2-main)',  text: 'var(--accent2-contrast)' },
-  { bg: 'var(--primary-main)',  text: 'var(--primary-contrast)' },
+  { bg: 'var(--accent-dark)',   text: 'var(--accent-contrast)'  },
+  { bg: 'var(--accent1-main)',  text: 'var(--accent1-contrast)' },
   { bg: 'var(--accent1-dark)',  text: 'var(--accent1-contrast)' },
+  { bg: 'var(--accent2-main)',  text: 'var(--accent2-contrast)' },
+  { bg: 'var(--accent2-dark)',  text: 'var(--accent2-contrast)' },
+  { bg: 'var(--accent3-main)',  text: 'var(--accent3-contrast)' },
+  { bg: 'var(--accent3-dark)',  text: 'var(--accent3-contrast)' },
 ];
 
 function getInitials(name: string): string {
@@ -91,10 +93,11 @@ export interface PatientEntryTileProps {
   title: string;
   subtitle: string;
   gpName: string;
+  date?: string;
   onClick?: () => void;
 }
 
-export function PatientEntryTile({ title, subtitle, gpName, onClick }: PatientEntryTileProps) {
+export function PatientEntryTile({ title, subtitle, gpName, date, onClick }: PatientEntryTileProps) {
   const token = getAvatarToken(gpName);
   const initials = getInitials(gpName);
 
@@ -113,6 +116,13 @@ export function PatientEntryTile({ title, subtitle, gpName, onClick }: PatientEn
         <div className="text-sm font-medium text-text-primary truncate">{title}</div>
         <div className="text-xs text-text-secondary mt-0.5">{subtitle}</div>
       </div>
+
+      {/* Optional date — centred between text and avatar */}
+      {date && (
+        <span className="text-xs text-text-secondary flex-shrink-0 mx-2 whitespace-nowrap">
+          {date}
+        </span>
+      )}
 
       {/* GP Avatar — tooltip only fires on hover of this element */}
       <AvatarWithTooltip name={gpName} initials={initials} token={token} />

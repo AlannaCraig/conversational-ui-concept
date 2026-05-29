@@ -24,7 +24,7 @@ const MOCK_SUMMARIES_HARPER: Record<string, string> = {
   'Recent tests':
     '• HbA1c (Jan 2025) — 5.2%; normal, no diabetes risk identified\n• Total cholesterol (Jan 2025) — 4.4 mmol/L; within normal range\n• eGFR (Jan 2025) — Normal\n• FBC (Jan 2025) — Normal; no haematological concerns',
 
-  Medications:
+  'Current medications':
     'Mr Harper is prescribed two PRN medications: cetirizine 10 mg for seasonal rhinitis and propranolol 10 mg for situational anxiety episodes. There are no regular daily medications and no known significant drug interactions. Medication burden is minimal and appropriate to his low-complexity clinical profile.',
 };
 
@@ -49,7 +49,7 @@ Be concise and clinically factual. No headers, no labels, no preamble — output
   'Recent activity': `In 2–3 sentences, describe the pattern of recent clinical activity for this patient — frequency of contact, types of interactions, and any trend worth noting clinically.`,
   'Lifestyle & examinations': `Briefly summarise (2–3 sentences) the patient's lifestyle risk factors and any recent examination findings relevant to their care. Highlight the most clinically significant points.`,
   'Recent tests': `Summarise the most clinically significant recent test results in 3–4 short bullet points. Flag any results outside normal range and note what action if any was taken.`,
-  Medications: `Provide a brief medication overview (2–3 sentences): number of active medications, main therapeutic categories, and any notable interactions or review points. Do not list every drug — give a high-level clinical picture.`,
+  'Current medications': `Provide a brief medication overview (2–3 sentences): number of active medications, main therapeutic categories, and any notable interactions or review points. Do not list every drug — give a high-level clinical picture.`,
 };
 
 export async function POST(request: Request) {

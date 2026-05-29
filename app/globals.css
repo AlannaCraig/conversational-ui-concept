@@ -227,7 +227,7 @@ body {
 }
 
 .conversation-scroll::-webkit-scrollbar-track {
-  background: var(--primary-contrast);
+  background: transparent;
 }
 
 .conversation-scroll::-webkit-scrollbar-thumb {

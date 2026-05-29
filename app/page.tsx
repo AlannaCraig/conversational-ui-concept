@@ -616,18 +616,17 @@ export default function Home() {
                       </div>
 
                       {/* Scrollable Content */}
-                      <div className="flex-1 overflow-y-auto px-6 pb-6 conversation-scroll">
-                        <div className="flex flex-col h-full">
-                          {/* Persistent Patient Header - only shown for patient-related views */}
+                      <div className="flex-1 overflow-y-auto conversation-scroll">
+                        <div className="px-6">
+                          {/* Patient Banner — sticky inside scroll container so it shares the same width as the widgets */}
                           {showPatientHeader && (
-                            <div className="flex-shrink-0 mb-6">
+                            <div className="sticky top-0 z-10 bg-background pb-6">
                               <PatientHeader activePatientId={activePatientId} />
                             </div>
                           )}
 
                           {/* Main Content Area */}
-                          <div className="flex-1">
-                            {/* Render the selected large card layout */}
+                          <div className="pb-6">
                             {largeCardLayout.type === 'table' && <TableCard />}
                             {largeCardLayout.type === 'dashboard' && <DashboardCard />}
                             {largeCardLayout.type === 'document' && <DocumentCard />}
@@ -641,6 +640,7 @@ export default function Home() {
                           </div>
                         </div>
                       </div>
+
                     </div>
                   </motion.div>
                 )}

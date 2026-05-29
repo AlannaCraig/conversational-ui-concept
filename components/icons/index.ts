@@ -45,6 +45,7 @@ export { AppointmentIcon } from './AppointmentIcon';
 export { ReportIcon } from './ReportIcon';
 export { PatientIcon } from './PatientIcon';
 export { AllergyIcon } from './AllergyIcon';
+export { AllergyUnavailableIcon } from './AllergyUnavailableIcon';
 
 // Large data view icons
 export { CloseXIcon } from './CloseXIcon';

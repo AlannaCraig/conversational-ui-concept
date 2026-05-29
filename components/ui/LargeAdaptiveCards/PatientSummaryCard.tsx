@@ -9,9 +9,19 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { PatientIcon, AllergyIcon, MoreVerticalIcon, ArrowRightIcon } from '@/components/icons';
+import { PatientIcon, MoreVerticalIcon, ArrowRightIcon } from '@/components/icons';
 import { ACTIVE_PATIENT, PATIENT_HARPER, PATIENT_ELLISON, type Patient } from '@/lib/patientData';
 import { PatientEntryTile } from '@/components/ui/PatientEntryTile';
+import { AllergyChip, type AllergyStatus } from '@/components/ui/AllergyChip';
+import { LifestyleMetricTile } from '@/components/ui/LifestyleMetricTile';
+
+function getAllergyStatus(allergyText: string): AllergyStatus {
+  const lower = allergyText.toLowerCase();
+  if (lower.includes('unavailable') || lower.includes('unknown')) return 'unavailable';
+  if (lower.includes('not recorded') || lower.includes('no record')) return 'not-recorded';
+  if (lower.includes('no known')) return 'none';
+  return 'known';
+}
 
 const PATIENT_REGISTRY: Record<string, Patient> = {
   'PT-10001': PATIENT_HARPER,
@@ -36,7 +46,7 @@ const WIDGETS = [
   { id: 'activity', title: 'Recent activity' },
   { id: 'lifestyle', title: 'Lifestyle & examinations' },
   { id: 'tests', title: 'Recent tests' },
-  { id: 'medications', title: 'Medications' },
+  { id: 'medications', title: 'Current medications' },
 ];
 
 // Separate Patient Header component for reuse
@@ -82,11 +92,8 @@ export function PatientHeader({
         </div>
       </div>
 
-      {/* Allergy Badge */}
-      <div className="flex items-center gap-2 px-3 py-2 bg-accent3-contrast border border-accent3-dark rounded-lg flex-shrink-0">
-        <AllergyIcon size={20} className="text-accent3-dark" />
-        <span className="text-sm text-accent3-dark whitespace-nowrap">{allergyStatus}</span>
-      </div>
+      {/* Allergy Chip */}
+      <AllergyChip status={getAllergyStatus(allergyStatus ?? '')} />
 
       {/* More Actions Button */}
       <button
@@ -173,13 +180,13 @@ function WidgetContent({ title, patientId }: { title: string; patientId: string 
 }
 
 // Renders **bold** markdown inline within a text string
-function RichText({ text, className = '' }: { text: string; className?: string }) {
+function RichText({ text, className = '', boldColor }: { text: string; className?: string; boldColor?: string }) {
   const parts = text.split(/\*\*(.+?)\*\*/g);
   return (
     <span className={className}>
       {parts.map((part, i) =>
         i % 2 === 1
-          ? <strong key={i} className="font-semibold text-text-primary">{part}</strong>
+          ? <strong key={i} className="font-semibold" style={boldColor ? { color: boldColor } : undefined}>{part}</strong>
           : part
       )}
     </span>
@@ -209,15 +216,15 @@ function SummaryContent({ text }: { text: string }) {
         <ul className="space-y-1.5">
           {bullets.map((b, i) => (
             <li key={i} className="flex items-start gap-1.5">
-              <span className="mt-1.5 w-1 h-1 rounded-full bg-text-secondary flex-shrink-0" />
-              <RichText text={b} className="text-sm text-text-secondary leading-relaxed" />
+              <span className="mt-1.5 w-1 h-1 rounded-full bg-text-primary flex-shrink-0" />
+              <RichText text={b} className="text-sm text-text-primary leading-relaxed" boldColor="var(--accent1-main)" />
             </li>
           ))}
         </ul>
       )}
       {paragraphs.map((p, i) => (
-        <p key={i} className="text-sm text-text-secondary leading-relaxed">
-          <RichText text={p} />
+        <p key={i} className="text-sm text-text-primary leading-relaxed">
+          <RichText text={p} boldColor="var(--accent1-main)" />
         </p>
       ))}
     </div>
@@ -235,7 +242,7 @@ function BulletOrParagraph({ text }: { text: string }) {
             <span className="mt-1.5 w-1 h-1 rounded-full bg-text-secondary flex-shrink-0" />
             <RichText
               text={line.startsWith('•') ? line.slice(1).trim() : line}
-              className="text-sm text-text-secondary leading-relaxed"
+              className="text-sm text-text-primary leading-relaxed"
             />
           </li>
         ))}
@@ -243,7 +250,7 @@ function BulletOrParagraph({ text }: { text: string }) {
     );
   }
   return (
-    <p className="text-sm text-text-secondary leading-relaxed">
+    <p className="text-sm text-text-primary leading-relaxed">
       <RichText text={text} />
     </p>
   );
@@ -269,7 +276,7 @@ function EncountersContent({ patientId }: { patientId: string }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="flex flex-col gap-1 px-2 py-2"
+      className="flex flex-col gap-1"
     >
       {encounters.map((enc, i) => (
         <PatientEntryTile
@@ -277,6 +284,54 @@ function EncountersContent({ patientId }: { patientId: string }) {
           title={encounterLabel(enc.type)}
           subtitle={`${enc.date} at ${enc.time}`}
           gpName={enc.clinician}
+        />
+      ))}
+    </motion.div>
+  );
+}
+
+function LifestyleContent({ patientId }: { patientId: string }) {
+  const patient = PATIENT_REGISTRY[patientId] ?? ACTIVE_PATIENT;
+  const metrics = patient.lifestyleMetrics ?? [];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      className="flex flex-col gap-2"
+    >
+      {metrics.map((m, i) => (
+        <LifestyleMetricTile
+          key={i}
+          label={m.label}
+          value={m.value}
+          unit={m.unit}
+          date={m.date}
+          trend={m.trend}
+        />
+      ))}
+    </motion.div>
+  );
+}
+
+function MedicationsContent({ patientId }: { patientId: string }) {
+  const patient = PATIENT_REGISTRY[patientId] ?? ACTIVE_PATIENT;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      className="flex flex-col gap-1"
+    >
+      {patient.currentMedications.map((med, i) => (
+        <PatientEntryTile
+          key={i}
+          title={med.name}
+          subtitle={`${med.dose} ${med.frequency}`}
+          date={med.prescribedDate}
+          gpName={med.prescriber}
         />
       ))}
     </motion.div>
@@ -296,7 +351,7 @@ export function PatientSummaryCard({
   }
 
   return (
-    <div className={`h-full grid grid-cols-3 grid-rows-2 gap-6 ${className}`}>
+    <div className={`grid grid-cols-3 gap-6 pb-10 ${className}`} style={{ gridAutoRows: 'auto' }}>
       {WIDGETS.map((widget, index) => (
         <motion.div
           key={widget.id}
@@ -332,14 +387,18 @@ export function PatientSummaryCard({
           {/* Breaker line */}
           <div className="border-t border-border" />
 
-          {/* Widget content */}
-          {widget.title === 'Recent encounters' ? (
-            <EncountersContent patientId={resolvedPatientId} />
-          ) : (
-            <div className="p-4">
+          {/* Widget content — 16px padding all sides */}
+          <div className="p-4">
+            {widget.title === 'Recent encounters' ? (
+              <EncountersContent patientId={resolvedPatientId} />
+            ) : widget.title === 'Current medications' ? (
+              <MedicationsContent patientId={resolvedPatientId} />
+            ) : widget.title === 'Lifestyle & examinations' ? (
+              <LifestyleContent patientId={resolvedPatientId} />
+            ) : (
               <WidgetContent title={widget.title} patientId={resolvedPatientId} />
-            </div>
-          )}
+            )}
+          </div>
         </motion.div>
       ))}
     </div>

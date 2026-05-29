@@ -27,7 +27,7 @@ export interface Patient {
   lifestyleAndRiskFactors: Record<string, string>;
   problemsDiagnoses: Array<{ condition: string; status: string; diagnosed: string }>;
   allergies: Array<{ substance: string; reaction: string }>;
-  currentMedications: Array<{ name: string; dose: string; frequency: string }>;
+  currentMedications: Array<{ name: string; dose: string; frequency: string; prescriber: string; prescribedDate: string }>;
   encounters: Array<{
     date: string;
     time: string;
@@ -43,6 +43,13 @@ export interface Patient {
     bloodPressure?: Array<{ date: string; value: string }>;
     weight?: Array<{ date: string; value: string }>;
   };
+  lifestyleMetrics?: Array<{
+    label: string;
+    value: string;
+    unit: string;
+    date: string;
+    trend: 'up' | 'down' | 'neutral';
+  }>;
   investigations: Array<{ test: string; result: string; flag?: string; date?: string; category?: string }>;
   carePlans?: Array<{ area: string; plan: string }>;
   aiSummary: {
@@ -86,8 +93,8 @@ export const PATIENT_HARPER: Patient = {
   ],
   allergies: [{ substance: 'Penicillin', reaction: 'Rash' }],
   currentMedications: [
-    { name: 'Cetirizine', dose: '10 mg', frequency: 'PRN' },
-    { name: 'Propranolol', dose: '10 mg', frequency: 'PRN for anxiety episodes' },
+    { name: 'Cetirizine', dose: '10 mg', frequency: 'PRN', prescriber: 'Dr Priya Nair', prescribedDate: '22 May 2025' },
+    { name: 'Propranolol', dose: '10 mg', frequency: 'PRN for anxiety', prescriber: 'Dr Samuel Reeves', prescribedDate: '18 Mar 2025' },
   ],
   encounters: [
     {
@@ -149,6 +156,13 @@ export const PATIENT_HARPER: Patient = {
     },
   ],
   observations: {},
+  lifestyleMetrics: [
+    { label: 'Weight', value: '82', unit: 'kg', date: '10 Jan 2025', trend: 'neutral' },
+    { label: 'Height', value: '181', unit: 'cm', date: '10 Jan 2025', trend: 'neutral' },
+    { label: 'BMI', value: '25.0', unit: 'kg/m²', date: '10 Jan 2025', trend: 'neutral' },
+    { label: 'Blood pressure', value: '126/80', unit: 'mmHg', date: '18 Mar 2025', trend: 'up' },
+    { label: 'Pulse', value: '76', unit: 'bpm', date: '18 Mar 2025', trend: 'neutral' },
+  ],
   investigations: [
     { test: 'HbA1c', result: '5.2%', flag: 'Normal', date: 'Jan 2025', category: 'Blood' },
     { test: 'Cholesterol', result: '4.4 mmol/L', flag: 'Normal', date: 'Jan 2025', category: 'Blood' },
@@ -206,12 +220,12 @@ export const PATIENT_ELLISON: Patient = {
   ],
   allergies: [],
   currentMedications: [
-    { name: 'Salbutamol Inhaler', dose: '100 mcg', frequency: 'PRN' },
-    { name: 'Tiotropium', dose: '18 mcg', frequency: 'Daily' },
-    { name: 'Ramipril', dose: '5 mg', frequency: 'Daily' },
-    { name: 'Metformin', dose: '500 mg', frequency: 'Twice daily' },
-    { name: 'Atorvastatin', dose: '20 mg', frequency: 'Nightly' },
-    { name: 'Paracetamol', dose: '1 g', frequency: 'PRN' },
+    { name: 'Salbutamol Inhaler', dose: '100 mcg', frequency: 'PRN', prescriber: 'Dr Helen Murray', prescribedDate: '11 Feb 2025' },
+    { name: 'Tiotropium', dose: '18 mcg', frequency: 'Daily', prescriber: 'Dr Helen Murray', prescribedDate: '11 Feb 2025' },
+    { name: 'Ramipril', dose: '5 mg', frequency: 'Daily', prescriber: 'Dr Rebecca Collins', prescribedDate: '01 Sep 2025' },
+    { name: 'Metformin', dose: '500 mg', frequency: 'Twice daily', prescriber: 'Dr Helen Murray', prescribedDate: '14 Jun 2025' },
+    { name: 'Atorvastatin', dose: '20 mg', frequency: 'Nightly', prescriber: 'Dr Marcus Allen', prescribedDate: '26 Apr 2025' },
+    { name: 'Paracetamol', dose: '1 g', frequency: 'PRN', prescriber: 'Dr Rebecca Collins', prescribedDate: '01 Sep 2025' },
   ],
   encounters: [
     {
@@ -306,6 +320,15 @@ export const PATIENT_ELLISON: Patient = {
       { date: 'Sep 2025', value: '70 kg' },
     ],
   },
+  lifestyleMetrics: [
+    { label: 'Weight', value: '70', unit: 'kg', date: '01 Sep 2025', trend: 'down' },
+    { label: 'Height', value: '159', unit: 'cm', date: '11 Feb 2025', trend: 'neutral' },
+    { label: 'BMI', value: '28.1', unit: 'kg/m²', date: '11 Feb 2025', trend: 'down' },
+    { label: 'Blood pressure', value: '150/90', unit: 'mmHg', date: '01 Sep 2025', trend: 'up' },
+    { label: 'SpO₂', value: '93', unit: '%', date: '11 Feb 2025', trend: 'down' },
+    { label: 'Smoking status', value: 'Ex-smoker', unit: '', date: '11 Feb 2025', trend: 'neutral' },
+    { label: 'Alcohol', value: '14', unit: 'units/wk', date: '11 Feb 2025', trend: 'neutral' },
+  ],
   investigations: [
     { test: 'HbA1c', result: '7.4%', flag: 'Borderline high', category: 'Blood' },
     { test: 'eGFR', result: '68 mL/min/1.73m²', flag: 'Normal', category: 'Blood' },
@@ -355,6 +378,6 @@ export const MOCK_SUMMARIES: Record<string, string> = {
   'Recent tests':
     '• HbA1c (Jun 2025) — 7.4%; moderately suboptimal, dietary intervention arranged\n• Chest X-ray (Apr 2025) — Hyperinflation consistent with COPD; no pneumonia\n• CRP — Mildly elevated; consistent with recent exacerbation\n• Total cholesterol — 5.1 mmol/L; borderline elevated, currently on atorvastatin\n• eGFR — 68 mL/min/1.73m²; CKD Stage 2, within safe range for current medications',
 
-  Medications:
+  'Current medications':
     'Ms Ellison is prescribed six regular medications across four therapeutic categories: respiratory (salbutamol PRN, tiotropium daily), cardiovascular (ramipril, atorvastatin), metabolic (metformin), and analgesic (paracetamol PRN). The combination of ramipril and metformin in the context of CKD Stage 2 requires routine renal function monitoring. No new medications were added at the most recent encounter; medication burden is moderate but appropriate to her condition complexity.',
 };
