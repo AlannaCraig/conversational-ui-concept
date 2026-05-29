@@ -26,6 +26,8 @@ export interface Message {
   suggestedActions?: { id: string; text: string }[];
   // Large data return flag
   largeData?: boolean;
+  // Patient ID to display when largeDataType is 'patient-summary'
+  patientId?: string;
   // Follow-up text that appears after cards/actions
   followUpText?: string;
   // Form data
@@ -53,6 +55,7 @@ export interface MockResponse {
   suggestedActions?: { id: string; text: string }[];
   largeData?: boolean;
   largeDataType?: string;
+  patientId?: string;
   followUpText?: string;
   showInDialogForm?: boolean;
   showPopOutForm?: boolean;

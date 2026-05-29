@@ -77,6 +77,7 @@ export default function Home() {
   const [showPatientHeader, setShowPatientHeader] = useState(false);
   const [showPopOutForm, setShowPopOutForm] = useState(false);
   const [popOutFormData, setPopOutFormData] = useState<{ title: string; subtitle?: string; formId?: string } | null>(null);
+  const [activePatientId, setActivePatientId] = useState<string>('PT-10002');
 
   // Refs
   const chatHistoryButtonRef = useRef<HTMLButtonElement>(null);
@@ -212,6 +213,9 @@ export default function Home() {
           if (mockResponse.largeDataType === 'patient-summary') {
             setBreadcrumbs(['Patient summary']);
             setShowPatientHeader(true);
+            if (mockResponse.patientId) {
+              setActivePatientId(mockResponse.patientId);
+            }
           }
         }
         if (!layout) {
@@ -617,7 +621,7 @@ export default function Home() {
                           {/* Persistent Patient Header - only shown for patient-related views */}
                           {showPatientHeader && (
                             <div className="flex-shrink-0 mb-6">
-                              <PatientHeader />
+                              <PatientHeader activePatientId={activePatientId} />
                             </div>
                           )}
 
@@ -632,7 +636,7 @@ export default function Home() {
                             {largeCardLayout.type === 'kanban' && <KanbanCard />}
                             {largeCardLayout.type === 'analytics' && <AnalyticsCard />}
                             {largeCardLayout.type === 'patient-summary' && (
-                              <PatientSummaryCard onWidgetClick={handleWidgetClick} />
+                              <PatientSummaryCard onWidgetClick={handleWidgetClick} activePatientId={activePatientId} />
                             )}
                           </div>
                         </div>

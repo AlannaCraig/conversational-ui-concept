@@ -14,6 +14,7 @@ import {
 } from './adaptiveCardSelector';
 import { getStoryOpening, getStoryContinuation } from './storyGenerator';
 import { getStartingNode, getGameNode } from './gameData';
+import { pickRandomAppointment, APPOINTMENT_POOL } from './appointmentData';
 
 const responseVariations = [
   "Behold, your results have arrived.",
@@ -231,7 +232,7 @@ export function getMockResponse(userMessage: string, gameNodeId?: string): MockR
   if (userMessage.toLowerCase().includes('blood pressure') ||
       (userMessage.toLowerCase().includes('bp') && userMessage.toLowerCase().includes('reading'))) {
     return {
-      content: "Here are the blood pressure readings taken in the last 6 months for Mr Robert Smith, presented in a line graph to show static readings and trends over time.",
+      content: "Here are the blood pressure readings taken in the last 6 months for Ms Margaret Ellison, presented in a line graph to show static readings and trends over time.",
       delay: 1000,
       adaptiveCards: [
         {
@@ -247,11 +248,21 @@ export function getMockResponse(userMessage: string, gameNodeId?: string): MockR
   // Priority 0b: Check for patient summary request
   if (userMessage.toLowerCase().includes('view patient summary') ||
       userMessage.toLowerCase().includes('patient summary')) {
+    // Detect which patient is being asked about by scanning the message for known names
+    const lowerMsg = userMessage.toLowerCase();
+    const matched = APPOINTMENT_POOL.find(
+      a => lowerMsg.includes(a.patientName.toLowerCase()) ||
+           lowerMsg.includes(a.patientNameDisplay.toLowerCase())
+    );
+    const patientName = matched ? matched.patientName : 'Ms Margaret Ellison';
+    const patientId = matched ? matched.patientId : 'PT-10002';
+
     return {
-      content: "I have created a Patient Summary for Mr Robert Smith as requested.",
+      content: `I have created a Patient Summary for ${patientName} as requested.`,
       delay: 1000,
       largeData: true,
       largeDataType: 'patient-summary',
+      patientId,
       suggestedActions: [
         { id: 'action-encounter', text: 'Start new encounter' },
         { id: 'action-med-reviews', text: 'Action outstanding medication reviews' },
@@ -262,34 +273,34 @@ export function getMockResponse(userMessage: string, gameNodeId?: string): MockR
   // Priority 0b: Check for specific appointment request
   if (userMessage.toLowerCase().includes('show me my next appointment') ||
       userMessage.toLowerCase().includes('next appointment')) {
-    // Calculate time 12 minutes from now
+    const appt = pickRandomAppointment();
+
     const appointmentTime = new Date();
-    appointmentTime.setMinutes(appointmentTime.getMinutes() + 12);
+    appointmentTime.setMinutes(appointmentTime.getMinutes() + appt.minutesUntil);
     const hours = appointmentTime.getHours().toString().padStart(2, '0');
     const minutes = appointmentTime.getMinutes().toString().padStart(2, '0');
     const timeString = `${hours}:${minutes}`;
 
     return {
-      content: `Your next appointment today is in 12 minutes at ${timeString} with Mr Robert Smith.`,
+      content: `Your next appointment today is in ${appt.minutesUntil} minutes at ${timeString} with ${appt.patientName}.`,
       delay: 1000,
       adaptiveCards: [
         {
           id: 'patient-card-1',
           type: 'patient-card',
           data: {
-            patientName: 'SMITH, Robert (Mr)',
-            dateOfBirth: 'DD-Mon-YYYY',
-            patientId: '123 456 7890',
-            sex: 'Male',
+            patientName: appt.patientNameDisplay,
+            dateOfBirth: appt.dateOfBirth,
+            patientId: appt.patientId,
+            sex: appt.sex,
           },
         },
       ],
       suggestedActions: [
-        { id: 'action-1', text: 'View patient summary for Mr Robert Smith' },
-        { id: 'action-2', text: "View Mr Robert Smith's Clinical Record entries associated with Problem: COPD" },
-        { id: 'action-3', text: 'Summarise the recent treatment Mr Robert Smith has received for this Problem: COPD' },
+        { id: 'action-view-summary', text: `View patient summary for ${appt.patientName}` },
+        ...appt.suggestedActions.slice(1),
       ],
-      followUpText: "Mr Robert Smith has requested this appointment to discuss his current health concerns. He reports a worsening wheeze and persistent cough, with a constant dull headache and aversion to bright lights. From a brief review of Mr Robert Smith's patient record I can see that he has a recorded COPD Problem already.",
+      followUpText: appt.followUpText,
     };
   }
 
