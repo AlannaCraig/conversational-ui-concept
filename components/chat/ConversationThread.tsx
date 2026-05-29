@@ -29,8 +29,6 @@ export function ConversationThread({ messages, onSelectGameOption, onSelectSugge
       {messages.map((message, index) => {
         const nextMessage = messages[index + 1];
         const prevMessage = messages[index - 1];
-        const showBreaker = message.role === 'assistant' && nextMessage;
-
         // Tighter spacing between user and assistant messages
         const isUserBeforeAssistant = message.role === 'user' && nextMessage?.role === 'assistant';
         const isAssistantAfterUser = message.role === 'assistant' && prevMessage?.role === 'user';
@@ -73,10 +71,6 @@ export function ConversationThread({ messages, onSelectGameOption, onSelectSugge
               </div>
             )}
 
-            {/* Breaker line only after assistant messages (not after the last message) */}
-            {showBreaker && (
-              <div className="border-t border-border"></div>
-            )}
           </div>
         );
       })}

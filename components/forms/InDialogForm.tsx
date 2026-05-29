@@ -78,9 +78,6 @@ export function InDialogForm({
         )}
       </div>
 
-      {/* Breaker Line */}
-      <div className="border-t border-accent1-main" />
-
       {/* Form */}
       <form id={formId} onSubmit={handleSubmit}>
         {/* Form Fields */}
@@ -89,9 +86,6 @@ export function InDialogForm({
             {children}
           </div>
         </div>
-
-        {/* Breaker Line */}
-        <div className="border-t border-accent1-main" />
 
         {/* Footer with Submit Button */}
         <div className="p-4 flex justify-end">
