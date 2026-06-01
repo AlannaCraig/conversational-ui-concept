@@ -184,6 +184,54 @@ export function convertFigmaThemeToCSSVars(figmaTheme: FigmaTheme): Record<strin
     }
   }
 
+  // Warning → accent
+  if (figmaTheme.Warning) {
+    if ('main' in figmaTheme.Warning && '$value' in figmaTheme.Warning.main) {
+      cssVars['--accent-main'] = extractColor(figmaTheme.Warning.main as FigmaToken);
+    }
+    if ('dark' in figmaTheme.Warning && '$value' in figmaTheme.Warning.dark) {
+      cssVars['--accent-dark'] = extractColor(figmaTheme.Warning.dark as FigmaToken);
+    }
+    if ('light' in figmaTheme.Warning && '$value' in figmaTheme.Warning.light) {
+      cssVars['--accent-light'] = extractColor(figmaTheme.Warning.light as FigmaToken);
+    }
+    if ('contrast' in figmaTheme.Warning && '$value' in figmaTheme.Warning.contrast) {
+      cssVars['--accent-contrast'] = extractColor(figmaTheme.Warning.contrast as FigmaToken);
+    }
+  }
+
+  // Success
+  if (figmaTheme.Success) {
+    if ('main' in figmaTheme.Success && '$value' in figmaTheme.Success.main) {
+      cssVars['--success-main'] = extractColor(figmaTheme.Success.main as FigmaToken);
+    }
+    if ('dark' in figmaTheme.Success && '$value' in figmaTheme.Success.dark) {
+      cssVars['--success-dark'] = extractColor(figmaTheme.Success.dark as FigmaToken);
+    }
+    if ('light' in figmaTheme.Success && '$value' in figmaTheme.Success.light) {
+      cssVars['--success-light'] = extractColor(figmaTheme.Success.light as FigmaToken);
+    }
+    if ('contrast' in figmaTheme.Success && '$value' in figmaTheme.Success.contrast) {
+      cssVars['--success-contrast'] = extractColor(figmaTheme.Success.contrast as FigmaToken);
+    }
+  }
+
+  // Error
+  if (figmaTheme.Error) {
+    if ('main' in figmaTheme.Error && '$value' in figmaTheme.Error.main) {
+      cssVars['--error-main'] = extractColor(figmaTheme.Error.main as FigmaToken);
+    }
+    if ('dark' in figmaTheme.Error && '$value' in figmaTheme.Error.dark) {
+      cssVars['--error-dark'] = extractColor(figmaTheme.Error.dark as FigmaToken);
+    }
+    if ('light' in figmaTheme.Error && '$value' in figmaTheme.Error.light) {
+      cssVars['--error-light'] = extractColor(figmaTheme.Error.light as FigmaToken);
+    }
+    if ('contrast' in figmaTheme.Error && '$value' in figmaTheme.Error.contrast) {
+      cssVars['--error-contrast'] = extractColor(figmaTheme.Error.contrast as FigmaToken);
+    }
+  }
+
   // Text
   if (figmaTheme.Text) {
     if ('primary' in figmaTheme.Text && '$value' in figmaTheme.Text.primary) {
@@ -194,9 +242,26 @@ export function convertFigmaThemeToCSSVars(figmaTheme: FigmaTheme): Record<strin
     }
   }
 
-  // Add tertiary text color (derived from greyscale)
-  if (figmaTheme.Greyscale && 'grey-50' in figmaTheme.Greyscale && '$value' in figmaTheme.Greyscale['grey-50']) {
-    cssVars['--text-tertiary'] = extractColor(figmaTheme.Greyscale['grey-50'] as FigmaToken);
+  // Derived tokens from greyscale
+  if (figmaTheme.Greyscale) {
+    // text-tertiary from grey-50
+    if ('grey-50' in figmaTheme.Greyscale && '$value' in figmaTheme.Greyscale['grey-50']) {
+      cssVars['--text-tertiary'] = extractColor(figmaTheme.Greyscale['grey-50'] as FigmaToken);
+    }
+    // border-light from grey-20
+    if ('grey-20' in figmaTheme.Greyscale && '$value' in figmaTheme.Greyscale['grey-20']) {
+      cssVars['--border-light'] = extractColor(figmaTheme.Greyscale['grey-20'] as FigmaToken);
+    }
+  }
+
+  // hover-strong — slightly stronger than hover (15% vs 10%)
+  if (figmaTheme.Other && 'hover' in figmaTheme.Other && '$value' in figmaTheme.Other.hover) {
+    const hoverToken = figmaTheme.Other.hover as FigmaToken;
+    const strongHover = {
+      ...hoverToken,
+      $value: { ...hoverToken.$value, alpha: 0.10 }
+    };
+    cssVars['--hover-strong'] = extractColor(strongHover);
   }
 
   return cssVars;

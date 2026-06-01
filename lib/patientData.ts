@@ -1,6 +1,16 @@
 // Synthetic longitudinal patient dataset — for prototype use only.
 // All records are fictional and must never be interpreted as real patient information.
 
+export type ActivityEventType = 'viewed' | 'work-item' | 'filed' | 'appointment' | 'task';
+
+export interface ActivityEvent {
+  id: string;
+  type: ActivityEventType;
+  actor: { initials: string; color: string };
+  datetime: string;
+  meta?: { label: string; value: string };
+}
+
 export interface Patient {
   id: string;
   demographics: {
@@ -52,6 +62,7 @@ export interface Patient {
   }>;
   investigations: Array<{ test: string; result: string; flag?: string; date?: string; category?: string }>;
   carePlans?: Array<{ area: string; plan: string }>;
+  recentActivityFeed?: ActivityEvent[];
   aiSummary: {
     keyThemes: string[];
     recentActivity: string;
@@ -168,6 +179,13 @@ export const PATIENT_HARPER: Patient = {
     { test: 'Cholesterol', result: '4.4 mmol/L', flag: 'Normal', date: 'Jan 2025', category: 'Blood' },
     { test: 'eGFR', result: 'Normal', flag: 'Normal', date: 'Jan 2025', category: 'Blood' },
     { test: 'FBC', result: 'Normal', flag: 'Normal', date: 'Jan 2025', category: 'Blood' },
+  ],
+  recentActivityFeed: [
+    { id: 'h1', type: 'viewed',      actor: { initials: 'OP', color: '#5E7F5C' }, datetime: '22 May 2025, 11:10' },
+    { id: 'h2', type: 'work-item',   actor: { initials: 'OP', color: '#5E7F5C' }, datetime: '22 May 2025, 11:08' },
+    { id: 'h3', type: 'filed',       actor: { initials: 'PN', color: '#B67A3C' }, datetime: '22 May 2025, 11:15', meta: { label: 'Filed to', value: 'Allergic Rhinitis' } },
+    { id: 'h4', type: 'appointment', actor: { initials: 'SR', color: '#724E91' }, datetime: '18 Mar 2025, 16:40', meta: { label: 'Appointment', value: 'GP Anxiety Review' } },
+    { id: 'h5', type: 'viewed',      actor: { initials: 'AF', color: '#B24E45' }, datetime: '10 Jan 2025, 09:20' },
   ],
   aiSummary: {
     keyThemes: [
@@ -343,6 +361,13 @@ export const PATIENT_ELLISON: Patient = {
     { area: 'Diabetes', plan: 'Dietary intervention and repeat HbA1c' },
     { area: 'Social', plan: 'Community wellbeing referral' },
   ],
+  recentActivityFeed: [
+    { id: 'e1', type: 'viewed',      actor: { initials: 'RC', color: '#B24E45' }, datetime: '01 Sep 2025, 15:20' },
+    { id: 'e2', type: 'work-item',   actor: { initials: 'RC', color: '#B24E45' }, datetime: '01 Sep 2025, 15:22', meta: { label: 'Work item', value: 'Physiotherapy Referral' } },
+    { id: 'e3', type: 'filed',       actor: { initials: 'HM', color: '#5E7F5C' }, datetime: '14 Jun 2025, 14:35', meta: { label: 'Filed to', value: 'Diabetes Review' } },
+    { id: 'e4', type: 'filed',       actor: { initials: 'MA', color: '#724E91' }, datetime: '26 Apr 2025, 02:20', meta: { label: 'Filed to', value: 'COPD Exacerbation' } },
+    { id: 'e5', type: 'appointment', actor: { initials: 'HM', color: '#5E7F5C' }, datetime: '11 Feb 2025, 10:00', meta: { label: 'Appointment', value: 'Annual COPD Review' } },
+  ],
   aiSummary: {
     keyThemes: [
       'COPD, hypertension, type 2 diabetes, osteoarthritis, and CKD Stage 2',
@@ -364,7 +389,7 @@ export const ACTIVE_PATIENT = PATIENT_ELLISON;
 
 export const MOCK_SUMMARIES: Record<string, string> = {
   Summary:
-    '• History of **COPD**, **hypertension**, **type 2 diabetes**, **osteoarthritis**, and **CKD Stage 2**\n• Progressive functional decline — increasing falls risk and reduced exercise tolerance\n• Recent unplanned hospital admission; moderate frailty indicators\n\nOver the past year Ms Ellison has required four clinical contacts across respiratory, metabolic, and falls-related concerns. A **3-day hospital admission in April 2025** for acute COPD exacerbation was treated with nebulisers, steroids, and antibiotics. Subsequent reviews identified **suboptimal glycaemic control** (HbA1c 7.4%) with early peripheral neuropathic changes, and a **mechanical fall at home** in September 2025 attributed to progressive deconditioning.\n\nOverall, the clinical record reflects **high-complexity multi-morbidity** with rising healthcare dependency. Respiratory disease remains the dominant risk driver, with ongoing priorities across **exacerbation prevention**, **falls reduction**, and **long-term condition optimisation**.',
+    '**Medical History**\n• COPD (diagnosed 2016) — moderate obstructive pattern, progressive decline\n• Hypertension — suboptimally controlled, currently on ramipril\n• Type 2 Diabetes — HbA1c 7.4%, early peripheral neuropathy suspected\n• Osteoarthritis and CKD Stage 2\n• Moderate frailty indicators with increasing falls risk\n\n**Clinical Summary**\n• Four GP/hospital contacts in 2025 driven by respiratory, metabolic, and falls concerns\n• April 2025: 3-day emergency admission for acute COPD exacerbation — nebulisers, steroids, antibiotics\n• September 2025: mechanical fall at home — physiotherapy and home safety referrals initiated\n• Overall trajectory reflects high-complexity multi-morbidity with rising healthcare dependency',
 
   'Recent encounters':
     '• Feb 2025 — Annual COPD review: worsening exertional breathlessness, pulmonary rehabilitation referral initiated\n• Apr 2025 — Emergency A&E admission: acute COPD exacerbation treated with nebulisers, steroids, and antibiotics; 3-day stay\n• Jun 2025 — Diabetes review: HbA1c 7.4%, early peripheral neuropathy suspected in left foot, dietary referral arranged\n• Sep 2025 — Falls assessment: mechanical fall at home, physiotherapy and home safety assessment referrals made',

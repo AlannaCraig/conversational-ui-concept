@@ -10,7 +10,7 @@ const PATIENT_REGISTRY: Record<string, Patient> = {
 // Per-patient mock summaries keyed by patientId
 const MOCK_SUMMARIES_HARPER: Record<string, string> = {
   Summary:
-    '• History of **mild generalised anxiety disorder** and **seasonal allergic rhinitis**\n• Low chronic disease burden — all baseline investigations within normal limits\n\nOver the past year Mr Harper has attended three GP appointments: new patient registration, an anxiety review following increased workplace stress, and an acute hay fever consultation. **Propranolol 10 mg PRN** was initiated in March 2025 for situational anxiety, alongside lifestyle and sleep hygiene advice. **Cetirizine 10 mg PRN** was added in May 2025 for seasonal rhinitis.\n\nOverall, the patient reflects a low-complexity profile with no chronic disease progression. Current care focuses on **conservative symptom management**, preventative wellbeing, and monitoring for any escalation of anxiety symptoms.',
+    '**Medical History**\n• Mild generalised anxiety disorder — occupational trigger, no panic attacks or functional impairment\n• Seasonal allergic rhinitis — recurring, managed conservatively\n• No chronic disease identified — all baseline investigations within normal limits\n\n**Clinical Summary**\n• Three GP contacts in 2025: registration, anxiety review, and acute rhinitis consultation\n• Low-complexity profile with no evidence of chronic disease progression\n• Current management focused on conservative symptom control and preventative wellbeing',
 
   'Recent encounters':
     '• Jan 2025 — New patient registration: baseline review, mild situational anxiety identified, blood tests requested\n• Mar 2025 — Anxiety review: worsening work-related stress, propranolol 10 mg PRN initiated\n• May 2025 — Acute appointment: seasonal allergic rhinitis flare, cetirizine 10 mg PRN prescribed',
@@ -34,17 +34,15 @@ const MOCK_SUMMARIES_BY_PATIENT: Record<string, Record<string, string>> = {
 };
 
 const WIDGET_PROMPTS: Record<string, string> = {
-  Summary: `Write a clinical summary in this exact two-section format:
+  Summary: `Write a clinical summary in this exact sectioned format. Use only these section headings as applicable (bold, on their own line), followed by bullet points:
 
-Section 1 — Key themes (2–4 bullet points starting with •):
-Each bullet should name a key diagnosis, risk factor, or clinical concern. Use **bold** around specific condition names or significant findings.
+**Medical History**
+2–4 bullets covering active diagnoses, key risk factors, and notable clinical findings.
 
-Then one blank line, then:
+**Clinical Summary**
+3–4 bullets covering recent clinical contacts, key events, outcomes, and the overall care trajectory.
 
-Section 2 — Narrative (2–3 paragraphs):
-Paragraph 1: recent clinical activity and encounters. Paragraph 2: investigation findings and treatment response. Paragraph 3: overall longitudinal picture and priorities. Use **bold** around clinically significant terms, drug names, and key findings within the paragraphs.
-
-Be concise and clinically factual. No headers, no labels, no preamble — output only the bullets and paragraphs.`,
+Rules: Use • for every bullet. Put each section heading on its own line as **Heading**. Add a blank line between sections. Use plain clinical language. No preamble, no trailing narrative paragraphs, no labels outside the headings.`,
   'Recent encounters': `Summarise the patient's recent clinical encounters in 3–4 short bullet points, highlighting the most clinically significant events and their outcomes. Use plain clinical language.`,
   'Recent activity': `In 2–3 sentences, describe the pattern of recent clinical activity for this patient — frequency of contact, types of interactions, and any trend worth noting clinically.`,
   'Lifestyle & examinations': `Briefly summarise (2–3 sentences) the patient's lifestyle risk factors and any recent examination findings relevant to their care. Highlight the most clinically significant points.`,

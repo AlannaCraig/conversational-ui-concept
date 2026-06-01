@@ -62,3 +62,7 @@ export { CircleIcon } from './CircleIcon';
 
 // Layout icons
 export { SwapHorizontalIcon } from './SwapHorizontalIcon';
+
+// Activity timeline icons
+export { EyeIcon } from './EyeIcon';
+export { FolderIcon } from './FolderIcon';

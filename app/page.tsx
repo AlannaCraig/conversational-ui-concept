@@ -70,8 +70,7 @@ export default function Home() {
   const [largeCardLayout, setLargeCardLayout] = useState<typeof LARGE_CARD_LAYOUTS[0] | null>(null);
   const [closedLargeDataContext, setClosedLargeDataContext] = useState<{ layout: typeof LARGE_CARD_LAYOUTS[0]; messageContent: string } | null>(null);
   const [showThemeToast, setShowThemeToast] = useState(false);
-  const [showChatHistory, setShowChatHistory] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
+  const [activePopover, setActivePopover] = useState<'chatHistory' | 'notifications' | null>(null);
   const [isLayoutSwapped, setIsLayoutSwapped] = useState(false);
   const [breadcrumbs, setBreadcrumbs] = useState<string[]>(['Patient summary']);
   const [showPatientHeader, setShowPatientHeader] = useState(false);
@@ -93,11 +92,11 @@ export default function Home() {
   };
 
   const handleChatHistoryClick = () => {
-    setShowChatHistory(prev => !prev);
+    setActivePopover(prev => prev === 'chatHistory' ? null : 'chatHistory');
   };
 
   const handleNotificationsClick = () => {
-    setShowNotifications(prev => !prev);
+    setActivePopover(prev => prev === 'notifications' ? null : 'notifications');
   };
 
   const handleSelectNotification = (notificationId: string) => {
@@ -544,16 +543,16 @@ export default function Home() {
 
         {/* Chat History Popover */}
         <ChatHistoryPopover
-          isOpen={showChatHistory}
-          onClose={() => setShowChatHistory(false)}
+          isOpen={activePopover === 'chatHistory'}
+          onClose={() => setActivePopover(null)}
           buttonRef={chatHistoryButtonRef}
           onSelectChat={handleSelectChat}
         />
 
         {/* Notifications Popover */}
         <NotificationsPopover
-          isOpen={showNotifications}
-          onClose={() => setShowNotifications(false)}
+          isOpen={activePopover === 'notifications'}
+          onClose={() => setActivePopover(null)}
           buttonRef={notificationsButtonRef}
           onSelectNotification={handleSelectNotification}
         />

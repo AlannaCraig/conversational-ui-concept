@@ -45,7 +45,7 @@ export function LifestyleMetricTile({ label, value, unit, date, trend }: Lifesty
     <div className="bg-primary-contrast border border-border rounded-lg px-4 py-3">
       {/* Top row: label + date */}
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-semibold tracking-widest uppercase text-text-secondary">
+        <span className="text-sm font-medium text-text-primary">
           {label}
         </span>
         <span className="text-xs text-text-secondary">{date}</span>

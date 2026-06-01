@@ -11,9 +11,13 @@ import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { PatientIcon, MoreVerticalIcon, ArrowRightIcon } from '@/components/icons';
 import { ACTIVE_PATIENT, PATIENT_HARPER, PATIENT_ELLISON, type Patient } from '@/lib/patientData';
+import { calcComplexity, calcRisk } from '@/lib/clinicalCalculators';
 import { PatientEntryTile } from '@/components/ui/PatientEntryTile';
 import { AllergyChip, type AllergyStatus } from '@/components/ui/AllergyChip';
+import { RiskStatusChip, type RiskLevel } from '@/components/ui/RiskStatusChip';
+import { ActivityTimeline } from '@/components/ui/ActivityTimeline';
 import { LifestyleMetricTile } from '@/components/ui/LifestyleMetricTile';
+import { RecentTestTile } from '@/components/ui/RecentTestTile';
 
 function getAllergyStatus(allergyText: string): AllergyStatus {
   const lower = allergyText.toLowerCase();
@@ -43,10 +47,10 @@ interface PatientSummaryCardProps {
 const WIDGETS = [
   { id: 'summary', title: 'Summary' },
   { id: 'encounters', title: 'Recent encounters' },
-  { id: 'activity', title: 'Recent activity' },
+  { id: 'medications', title: 'Current medications' },
   { id: 'lifestyle', title: 'Lifestyle & examinations' },
   { id: 'tests', title: 'Recent tests' },
-  { id: 'medications', title: 'Current medications' },
+  { id: 'activity', title: 'Recent activity' },
 ];
 
 // Separate Patient Header component for reuse
@@ -124,6 +128,10 @@ function WidgetContent({ title, patientId }: { title: string; patientId: string 
   // Prevent duplicate fetches in React Strict Mode
   const fetched = useRef(false);
 
+  const patient = PATIENT_REGISTRY[patientId] ?? ACTIVE_PATIENT;
+  const complexity = calcComplexity(patient).level;
+  const risk = calcRisk(patient).level;
+
   useEffect(() => {
     if (fetched.current) return;
     fetched.current = true;
@@ -148,6 +156,12 @@ function WidgetContent({ title, patientId }: { title: string; patientId: string 
   if (loading) {
     return (
       <div className="space-y-3">
+        {title === 'Summary' && (
+          <div className="flex items-center gap-2 mb-2">
+            <div className="h-6 w-28 bg-primary-light rounded-full opacity-40" />
+            <div className="h-6 w-20 bg-primary-light rounded-full opacity-40" />
+          </div>
+        )}
         <SkeletonLine width="3/4" />
         <SkeletonLine width="full" />
         <SkeletonLine width="2/3" />
@@ -171,10 +185,15 @@ function WidgetContent({ title, patientId }: { title: string; patientId: string 
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
     >
-      {title === 'Summary'
-        ? <SummaryContent text={summary!} />
-        : <BulletOrParagraph text={summary!} />
-      }
+      {title === 'Summary' ? (
+        <SummaryContent
+          text={summary!}
+          complexity={complexity}
+          risk={risk}
+        />
+      ) : (
+        <BulletOrParagraph text={summary!} />
+      )}
     </motion.div>
   );
 }
@@ -193,39 +212,75 @@ function RichText({ text, className = '', boldColor }: { text: string; className
   );
 }
 
-// Summary widget: bullet list at top, then narrative paragraphs
-function SummaryContent({ text }: { text: string }) {
-  const lines = text.split('\n');
-  const bullets: string[] = [];
-  const paragraphs: string[] = [];
-  let inParagraphs = false;
+// Parses sectioned summary text: **Heading** lines introduce bullet groups
+function parseSummarySections(text: string): Array<{ heading: string | null; bullets: string[] }> {
+  const sections: Array<{ heading: string | null; bullets: string[] }> = [];
+  let current: { heading: string | null; bullets: string[] } = { heading: null, bullets: [] };
 
-  for (const line of lines) {
-    if (!line.trim()) { inParagraphs = true; continue; }
-    if (!inParagraphs && line.startsWith('•')) {
-      bullets.push(line.slice(1).trim());
+  for (const raw of text.split('\n')) {
+    const line = raw.trim();
+    if (!line) continue;
+    const headingMatch = line.match(/^\*\*(.+?)\*\*$/);
+    if (headingMatch) {
+      if (current.bullets.length > 0 || current.heading !== null) {
+        sections.push(current);
+      }
+      current = { heading: headingMatch[1], bullets: [] };
+    } else if (line.startsWith('•')) {
+      current.bullets.push(line.slice(1).trim());
     } else {
-      inParagraphs = true;
-      if (line.trim()) paragraphs.push(line.trim());
+      current.bullets.push(line);
     }
   }
+  if (current.bullets.length > 0 || current.heading !== null) {
+    sections.push(current);
+  }
+  return sections;
+}
+
+// Summary widget: Complexity/Risk chips, then sectioned bullet content
+function SummaryContent({ text, complexity, risk }: { text: string; complexity?: RiskLevel; risk?: RiskLevel }) {
+  const sections = parseSummarySections(text);
 
   return (
     <div className="space-y-3">
-      {bullets.length > 0 && (
-        <ul className="space-y-1.5">
-          {bullets.map((b, i) => (
-            <li key={i} className="flex items-start gap-1.5">
-              <span className="mt-1.5 w-1 h-1 rounded-full bg-text-primary flex-shrink-0" />
-              <RichText text={b} className="text-sm text-text-primary leading-relaxed" boldColor="var(--accent1-main)" />
-            </li>
-          ))}
-        </ul>
+      {/* Complexity / Risk chips */}
+      {(complexity || risk) && (
+        <div className="flex items-center gap-3 flex-wrap">
+          {complexity && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-semibold text-text-primary">Complexity</span>
+              <span className="text-sm text-text-secondary">:</span>
+              <RiskStatusChip level={complexity} />
+            </div>
+          )}
+          {risk && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-semibold text-text-primary">Risk</span>
+              <span className="text-sm text-text-secondary">:</span>
+              <RiskStatusChip level={risk} />
+            </div>
+          )}
+        </div>
       )}
-      {paragraphs.map((p, i) => (
-        <p key={i} className="text-sm text-text-primary leading-relaxed">
-          <RichText text={p} boldColor="var(--accent1-main)" />
-        </p>
+
+      {/* Sectioned content */}
+      {sections.map((section, si) => (
+        <div key={si} className="space-y-1.5">
+          {section.heading && (
+            <p className="text-sm font-semibold text-text-primary">{section.heading}</p>
+          )}
+          {section.bullets.length > 0 && (
+            <ul className="space-y-1">
+              {section.bullets.map((b, i) => (
+                <li key={i} className="flex items-start gap-1.5">
+                  <span className="mt-2 w-1 h-1 rounded-full bg-text-secondary flex-shrink-0" />
+                  <RichText text={b} className="text-sm text-text-primary leading-relaxed" />
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       ))}
     </div>
   );
@@ -315,6 +370,45 @@ function LifestyleContent({ patientId }: { patientId: string }) {
   );
 }
 
+function TestsContent({ patientId }: { patientId: string }) {
+  const patient = PATIENT_REGISTRY[patientId] ?? ACTIVE_PATIENT;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      className="flex flex-col gap-2"
+    >
+      {patient.investigations.map((inv, i) => (
+        <RecentTestTile
+          key={i}
+          test={inv.test}
+          result={inv.result}
+          flag={inv.flag}
+          date={inv.date}
+          category={inv.category}
+        />
+      ))}
+    </motion.div>
+  );
+}
+
+function ActivityContent({ patientId }: { patientId: string }) {
+  const patient = PATIENT_REGISTRY[patientId] ?? ACTIVE_PATIENT;
+  const events = patient.recentActivityFeed ?? [];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+    >
+      <ActivityTimeline events={events} />
+    </motion.div>
+  );
+}
+
 function MedicationsContent({ patientId }: { patientId: string }) {
   const patient = PATIENT_REGISTRY[patientId] ?? ACTIVE_PATIENT;
 
@@ -351,7 +445,7 @@ export function PatientSummaryCard({
   }
 
   return (
-    <div className={`grid grid-cols-3 gap-6 pb-10 ${className}`} style={{ gridAutoRows: 'auto' }}>
+    <div className={`grid grid-cols-2 xl:grid-cols-3 gap-6 pb-10 ${className}`} style={{ gridAutoRows: 'auto' }}>
       {WIDGETS.map((widget, index) => (
         <motion.div
           key={widget.id}
@@ -395,6 +489,10 @@ export function PatientSummaryCard({
               <MedicationsContent patientId={resolvedPatientId} />
             ) : widget.title === 'Lifestyle & examinations' ? (
               <LifestyleContent patientId={resolvedPatientId} />
+            ) : widget.title === 'Recent tests' ? (
+              <TestsContent patientId={resolvedPatientId} />
+            ) : widget.title === 'Recent activity' ? (
+              <ActivityContent patientId={resolvedPatientId} />
             ) : (
               <WidgetContent title={widget.title} patientId={resolvedPatientId} />
             )}
