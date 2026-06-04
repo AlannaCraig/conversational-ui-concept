@@ -1,35 +1,14 @@
-/**
- * NotificationsPopover Component
- *
- * Displays notifications in a popover aligned with the navigation rail button
- * Follows the same design pattern as ChatHistoryPopover
- */
-
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  NotificationIcon,
-  AppWindowIcon,
-  AlertTriangleIcon,
-  AlertCircleIcon,
-  CircleIcon,
-  ChevronDownIcon,
-} from '@/components/icons';
 import { useState, useMemo } from 'react';
-import { StatusChip } from '@/components/ui/StatusChip';
+import { BellOff, MoreVertical } from 'lucide-react';
 import {
   getMockNotifications,
   groupNotificationsByTime,
   formatNotificationTime,
   type Notification,
 } from '@/lib/mockNotifications';
-
-interface NotificationGroup {
-  id: string;
-  title: string;
-  notifications: Notification[];
-}
 
 interface NotificationsPopoverProps {
   isOpen: boolean;
@@ -38,206 +17,223 @@ interface NotificationsPopoverProps {
   onSelectNotification?: (notificationId: string) => void;
 }
 
+const AVATAR_COLORS = [
+  { bg: 'var(--accent-main)',  text: 'var(--accent-contrast)'  },
+  { bg: 'var(--accent1-main)', text: 'var(--accent1-contrast)' },
+  { bg: 'var(--accent2-main)', text: 'var(--accent2-contrast)' },
+  { bg: 'var(--accent3-main)', text: 'var(--accent3-contrast)' },
+  { bg: 'var(--primary-main)', text: 'var(--primary-contrast)' },
+];
+
+function getAvatarColor(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function getInitials(name: string) {
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function SenderAvatar({ name, isUnread }: { name: string; isUnread: boolean }) {
+  const color = getAvatarColor(name);
+  const initials = getInitials(name);
+  return (
+    <div className="relative flex-shrink-0">
+      <div
+        className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold"
+        style={{ backgroundColor: color.bg, color: color.text }}
+      >
+        {initials}
+      </div>
+      {isUnread && (
+        <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-primary-main border-2 border-background" />
+      )}
+    </div>
+  );
+}
+
+function NotificationItem({
+  notification,
+  onClick,
+  index,
+}: {
+  notification: Notification;
+  onClick: () => void;
+  index: number;
+}) {
+  return (
+    <motion.button
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.2, delay: index * 0.04 }}
+      onClick={onClick}
+      className={`w-full text-left flex items-start gap-3 p-2 rounded-lg hover:bg-background-soft transition-colors ${
+        !notification.isRead ? 'bg-primary-light/5' : ''
+      }`}
+    >
+      <SenderAvatar
+        name={notification.sender ?? notification.sourceApp}
+        isUnread={!notification.isRead}
+      />
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-2 mb-0.5">
+          <p className={`text-sm leading-snug ${!notification.isRead ? 'font-semibold text-text-primary' : 'font-medium text-text-primary'}`}>
+            {notification.title}
+          </p>
+          <span className="text-xs text-text-secondary whitespace-nowrap flex-shrink-0 mt-0.5">
+            {formatNotificationTime(notification.timestamp)}
+          </span>
+        </div>
+        <p className="text-xs text-text-secondary leading-relaxed line-clamp-2">
+          {notification.description}
+        </p>
+        <p className="text-xs text-text-tertiary mt-1">{notification.sourceApp}</p>
+      </div>
+    </motion.button>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+      <div className="w-12 h-12 rounded-full bg-background-soft flex items-center justify-center mb-4">
+        <BellOff size={20} className="text-text-tertiary" />
+      </div>
+      <p className="text-sm font-medium text-text-primary mb-1">You're all caught up</p>
+      <p className="text-xs text-text-secondary">No unread notifications</p>
+    </div>
+  );
+}
+
 export function NotificationsPopover({
   isOpen,
   onClose,
-  buttonRef,
   onSelectNotification,
 }: NotificationsPopoverProps) {
   const [showOnlyUnread, setShowOnlyUnread] = useState(false);
-  const notifications = getMockNotifications();
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
 
-  // Filter notifications based on toggle
-  const filteredNotifications = showOnlyUnread
-    ? notifications.filter(n => !n.isRead)
-    : notifications;
+  const allNotifications = useMemo(() => {
+    return getMockNotifications().map(n => ({
+      ...n,
+      isRead: n.isRead || readIds.has(n.id),
+    }));
+  }, [readIds]);
 
-  const groupedNotifications = groupNotificationsByTime(filteredNotifications);
+  const filtered = showOnlyUnread
+    ? allNotifications.filter(n => !n.isRead)
+    : allNotifications;
 
-  const groups: NotificationGroup[] = useMemo(
-    () => [
-      {
-        id: 'group-today',
-        title: 'Today',
-        notifications: groupedNotifications.today,
-      },
-      {
-        id: 'group-yesterday',
-        title: 'Yesterday',
-        notifications: groupedNotifications.yesterday,
-      },
-      {
-        id: 'group-lastweek',
-        title: 'Last 7 days',
-        notifications: groupedNotifications.lastWeek,
-      },
-    ].filter(g => g.notifications.length > 0),
-    [groupedNotifications]
-  );
+  const grouped = groupNotificationsByTime(filtered);
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const sections = useMemo(() => [
+    { id: 'today',     label: 'Today',       items: grouped.today },
+    { id: 'yesterday', label: 'Yesterday',   items: grouped.yesterday },
+    { id: 'lastWeek',  label: 'Last 7 days', items: grouped.lastWeek },
+  ].filter(s => s.items.length > 0), [grouped]);
 
-  const getPriorityIcon = (notification: Notification) => {
-    if (notification.isUrgent) {
-      return <AlertCircleIcon size={16} className="text-[#ef4444]" />;
-    }
-    if (notification.priority === 'high') {
-      return <AlertTriangleIcon size={16} className="text-[#f59e0b]" />;
-    }
-    return null;
+  const unreadCount = allNotifications.filter(n => !n.isRead).length;
+
+  const handleMarkAllRead = () => {
+    setReadIds(new Set(allNotifications.map(n => n.id)));
   };
 
-  const getStatusVariant = (status?: string) => {
-    switch (status) {
-      case 'completed':
-        return 'success';
-      case 'in progress':
-        return 'info';
-      case 'to do':
-        return 'warning';
-      case 'pending':
-      case 'review':
-        return 'default';
-      default:
-        return 'default';
-    }
+  const handleSelect = (id: string) => {
+    setReadIds(prev => new Set([...prev, id]));
+    onSelectNotification?.(id);
+    onClose();
   };
+
+  let itemIndex = 0;
 
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.15 }}
             className="fixed inset-0 z-40"
             onClick={onClose}
           />
 
-          {/* Popover */}
           <motion.div
             initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -8 }}
             transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-            className="fixed left-[68px] top-[216px] z-50 w-[392px] bg-background border border-border rounded-[12px] shadow-lg"
-            style={{
-              maxHeight: 'calc(100vh - 232px)',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
+            className="fixed left-[68px] top-[216px] z-50 w-[400px] bg-background border border-border rounded-[12px] shadow-lg flex flex-col"
+            style={{ maxHeight: 'calc(100vh - 232px)' }}
           >
             {/* Header */}
             <div className="flex-shrink-0 px-5 pt-5 pb-4">
-              <div className="flex items-center gap-3">
-                <NotificationIcon size={24} className="text-text-primary" />
-                <h2 className="text-base font-semibold text-text-primary">
-                  Notifications {unreadCount > 0 && `(${unreadCount} new)`}
-                </h2>
-              </div>
+              <h2 className="text-base font-semibold text-text-primary">Notifications</h2>
             </div>
 
-            {/* Divider */}
             <div className="flex-shrink-0 px-5">
               <div className="border-t border-border" />
             </div>
 
-            {/* Show only unread toggle - below divider */}
-            <div className="flex-shrink-0 px-5 pt-4 pb-2">
-              <div className="flex items-center justify-end">
+            {/* Controls */}
+            <div className="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-3">
+              {unreadCount > 0 ? (
+                <p className="text-xs text-text-secondary">{unreadCount} unread</p>
+              ) : (
+                <span />
+              )}
+              <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setShowOnlyUnread(!showOnlyUnread)}
-                  className="flex items-center gap-2 px-3 py-1.5 border border-border rounded-full hover:bg-hover cursor-pointer transition-colors"
+                  onClick={() => setShowOnlyUnread(v => !v)}
+                  className="flex items-center gap-1.5 text-xs text-text-secondary hover:text-text-primary transition-colors"
                 >
-                  <span className="text-xs text-text-secondary">Show only unread</span>
                   <div
-                    className={`relative w-8 h-4 rounded-full transition-colors ${
+                    className={`relative w-7 h-3.5 rounded-full transition-colors ${
                       showOnlyUnread ? 'bg-primary-main' : 'bg-border'
                     }`}
                   >
                     <div
-                      className={`absolute top-0.5 w-3 h-3 rounded-full bg-background transition-transform ${
-                        showOnlyUnread ? 'translate-x-[18px]' : 'translate-x-0.5'
+                      className={`absolute top-0.5 w-2.5 h-2.5 rounded-full bg-white transition-transform ${
+                        showOnlyUnread ? 'translate-x-[14px]' : 'translate-x-0.5'
                       }`}
                     />
                   </div>
+                  Unread only
+                </button>
+                <button className="text-text-secondary hover:text-text-primary transition-colors">
+                  <MoreVertical size={16} />
                 </button>
               </div>
             </div>
 
-            {/* Scrollable Notifications List */}
-            <div className="flex-1 overflow-y-auto conversation-scroll px-5 pb-4">
-              <div className="space-y-4">
-                {groups.map((group) => (
-                  <div key={group.id}>
-                    {/* Caption-style date heading */}
-                    <div className="mb-3">
-                      <span className="text-xs font-medium text-text-secondary uppercase tracking-wide">
-                        {group.title}
-                      </span>
+            {/* List */}
+            <div className="flex-1 overflow-y-auto conversation-scroll">
+              {sections.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <div className="p-2 space-y-4">
+                  {sections.map(section => (
+                    <div key={section.id}>
+                      <p className="text-xs font-medium text-text-secondary uppercase tracking-wide px-2 mb-2">
+                        {section.label}
+                      </p>
+                      <div className="space-y-2">
+                        {section.items.map(notification => (
+                          <NotificationItem
+                            key={notification.id}
+                            notification={notification}
+                            onClick={() => handleSelect(notification.id)}
+                            index={itemIndex++}
+                          />
+                        ))}
+                      </div>
                     </div>
-
-                    {/* Notification items */}
-                    <div className="space-y-2">
-                      {group.notifications.map((notification) => (
-                        <button
-                          key={notification.id}
-                          onClick={() => {
-                            if (onSelectNotification) {
-                              onSelectNotification(notification.id);
-                              onClose();
-                            }
-                          }}
-                          className={`w-full text-left bg-background border border-border rounded-lg p-4 hover:bg-hover cursor-pointer transition-colors ${
-                            !notification.isRead ? 'bg-primary-light/5' : ''
-                          }`}
-                        >
-                          {/* Header row: App/workflow + Status + Time */}
-                          <div className="flex items-center justify-between gap-2 mb-2">
-                            <div className="flex items-center gap-2 min-w-0 flex-1">
-                              <AppWindowIcon size={16} className="text-text-secondary flex-shrink-0" />
-                              <span className="text-xs text-text-secondary truncate">
-                                {notification.sourceApp}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                              {notification.status && (
-                                <StatusChip
-                                  label={notification.status}
-                                  variant={getStatusVariant(notification.status)}
-                                />
-                              )}
-                              {getPriorityIcon(notification)}
-                              <span className="text-xs text-text-secondary">
-                                {formatNotificationTime(notification.timestamp)}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Title row with unread indicator */}
-                          <div className="flex items-start gap-2 mb-2">
-                            {!notification.isRead && (
-                              <CircleIcon size={8} className="text-primary-main flex-shrink-0 mt-1" />
-                            )}
-                            <h3 className="text-sm font-medium text-text-primary">
-                              {notification.title}
-                            </h3>
-                          </div>
-
-                          {/* Description */}
-                          <p className="text-xs text-text-secondary leading-relaxed line-clamp-2">
-                            {notification.description}
-                          </p>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </motion.div>
         </>

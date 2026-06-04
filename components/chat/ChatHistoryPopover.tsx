@@ -130,30 +130,7 @@ export function ChatHistoryPopover({ isOpen, onClose, buttonRef, onSelectChat }:
           >
             {/* Header */}
             <div className="flex-shrink-0 px-5 pt-5 pb-4">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <ChatHistoryIcon size={24} className="text-text-primary" />
-                  <h2 className="text-base font-semibold text-text-primary">Chat history</h2>
-                </div>
-
-                {/* Sort by chip */}
-                <button className="flex items-center gap-2 px-3 py-1.5 border border-border rounded-full hover:bg-hover cursor-pointer transition-colors">
-                  <span className="text-sm text-text-secondary">Sort by</span>
-                  <ChevronDownIcon size={16} className="text-text-secondary" />
-                </button>
-              </div>
-
-              {/* Search Input */}
-              <div className="relative">
-                <SearchIcon size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
-                <input
-                  type="text"
-                  placeholder="Search chat history..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 text-sm text-text-primary placeholder:text-text-secondary bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent"
-                />
-              </div>
+              <h2 className="text-base font-semibold text-text-primary">Chat history</h2>
             </div>
 
             {/* Divider */}
@@ -161,13 +138,34 @@ export function ChatHistoryPopover({ isOpen, onClose, buttonRef, onSelectChat }:
               <div className="border-t border-border" />
             </div>
 
+            {/* Controls */}
+            <div className="flex-shrink-0 flex items-center justify-between gap-3 px-5 pt-5 pb-3">
+              {/* Search Input */}
+              <div className="relative flex-1">
+                <SearchIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
+                <input
+                  type="text"
+                  placeholder="Search chat history..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-8 pr-4 py-1.5 text-xs text-text-primary placeholder:text-text-secondary bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light focus:border-transparent"
+                />
+              </div>
+
+              {/* Sort by chip */}
+              <button className="flex items-center gap-1.5 px-3 py-1.5 border border-border rounded-full hover:bg-hover cursor-pointer transition-colors flex-shrink-0">
+                <span className="text-xs text-text-secondary">Sort by</span>
+                <ChevronDownIcon size={14} className="text-text-secondary" />
+              </button>
+            </div>
+
             {/* Scrollable Chat List */}
-            <div className="flex-1 overflow-y-auto conversation-scroll px-5 py-4">
+            <div className="flex-1 overflow-y-auto conversation-scroll px-5 pt-2 pb-4">
               <div className="space-y-4">
                 {groups.map((group, groupIndex) => (
                   <div key={group.id}>
                     {/* Caption-style date heading */}
-                    <div className="mb-3">
+                    <div className="mb-2">
                       <span className="text-xs font-medium text-text-secondary uppercase tracking-wide">
                         {group.title}
                       </span>

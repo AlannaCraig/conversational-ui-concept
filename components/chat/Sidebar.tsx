@@ -29,9 +29,10 @@ interface SidebarProps {
   notificationsButtonRef?: React.RefObject<HTMLButtonElement>;
   isOnHome?: boolean;
   unreadNotificationCount?: number;
+  activePopover?: 'chatHistory' | 'notifications' | null;
 }
 
-export function Sidebar({ onHomeClick, onHelpClick, onChatHistoryClick, onNotificationsClick, chatHistoryButtonRef, notificationsButtonRef, isOnHome = true, unreadNotificationCount = 0 }: SidebarProps) {
+export function Sidebar({ onHomeClick, onHelpClick, onChatHistoryClick, onNotificationsClick, chatHistoryButtonRef, notificationsButtonRef, isOnHome = true, unreadNotificationCount = 0, activePopover }: SidebarProps) {
   return (
     <aside className="fixed left-0 top-0 h-screen w-16 bg-background border-r border-border flex flex-col items-center py-6 z-50">
       {/* Logo */}
@@ -47,6 +48,7 @@ export function Sidebar({ onHomeClick, onHelpClick, onChatHistoryClick, onNotifi
           icon={ChatHistoryIcon}
           label="Chat History"
           onClick={onChatHistoryClick}
+          disableTooltip={activePopover === 'chatHistory'}
         />
       </nav>
 
@@ -59,6 +61,7 @@ export function Sidebar({ onHomeClick, onHelpClick, onChatHistoryClick, onNotifi
           label="Notifications"
           onClick={onNotificationsClick}
           badge={unreadNotificationCount}
+          disableTooltip={activePopover === 'notifications'}
         />
         <SidebarItem icon={HelpIcon} label="Help" onClick={onHelpClick} />
         <SidebarItem icon={SettingsIcon} label="Settings" />

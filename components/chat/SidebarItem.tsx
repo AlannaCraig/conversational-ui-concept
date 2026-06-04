@@ -18,12 +18,13 @@ interface SidebarItemProps {
   active?: boolean;
   onClick?: () => void;
   badge?: number;
+  disableTooltip?: boolean;
 }
 
 export const SidebarItem = forwardRef<HTMLButtonElement, SidebarItemProps>(
-  function SidebarItem({ icon: Icon, label, active = false, onClick, badge }, ref) {
+  function SidebarItem({ icon: Icon, label, active = false, onClick, badge, disableTooltip = false }, ref) {
     return (
-      <Tooltip text={label} position="right" gap={8}>
+      <Tooltip text={label} position="right" gap={8} disabled={disableTooltip}>
         <motion.button
           ref={ref}
           onClick={onClick}

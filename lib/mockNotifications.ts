@@ -11,6 +11,7 @@ export interface Notification {
   id: string;
   sourceApp: string;
   sourceIcon?: string;
+  sender?: string;
   title: string;
   description: string;
   timestamp: Date;
@@ -31,92 +32,93 @@ export function getMockNotifications(): Notification[] {
     {
       id: 'notif-1',
       sourceApp: 'Task Manager',
+      sender: 'James Patel',
       title: 'Critical deadline approaching',
       description: 'Q2 budget review is due in 2 hours. Please complete the financial analysis section before the deadline.',
-      timestamp: new Date(now.getTime() - 30 * 60 * 1000), // 30 minutes ago
+      timestamp: new Date(now.getTime() - 30 * 60 * 1000),
       isRead: false,
       priority: 'high',
       isUrgent: true,
       status: 'to do',
     },
-    // Today - unread high priority
     {
       id: 'notif-2',
       sourceApp: 'Workflow Engine',
+      sender: 'Priya Nair',
       title: 'Approval required for project proposal',
       description: 'New project proposal from Design Team requires your review and approval. 3 stakeholders are waiting.',
-      timestamp: new Date(now.getTime() - 1 * 60 * 60 * 1000), // 1 hour ago
+      timestamp: new Date(now.getTime() - 1 * 60 * 60 * 1000),
       isRead: false,
       priority: 'high',
       isUrgent: false,
       status: 'pending',
     },
-    // Today - read
     {
       id: 'notif-3',
       sourceApp: 'Calendar',
+      sender: 'Helen Murray',
       title: 'Meeting reminder: Sprint planning',
       description: 'Your sprint planning meeting starts in 30 minutes. Location: Conference Room B. 8 attendees confirmed.',
-      timestamp: new Date(now.getTime() - 2 * 60 * 60 * 1000), // 2 hours ago
+      timestamp: new Date(now.getTime() - 2 * 60 * 60 * 1000),
       isRead: true,
       priority: 'medium',
       isUrgent: false,
       status: 'in progress',
     },
-    // Today - read
     {
       id: 'notif-4',
       sourceApp: 'Analytics Dashboard',
+      sender: 'Rebecca Collins',
       title: 'Weekly report ready for review',
       description: 'Your weekly performance metrics report has been generated and is ready for review in the dashboard.',
-      timestamp: new Date(now.getTime() - 3 * 60 * 60 * 1000), // 3 hours ago
+      timestamp: new Date(now.getTime() - 3 * 60 * 60 * 1000),
       isRead: true,
       priority: 'low',
       isUrgent: false,
       status: 'review',
     },
-    // Yesterday - unread
     {
       id: 'notif-5',
       sourceApp: 'Document Manager',
+      sender: 'Sarah Martinez',
       title: 'New documents shared with you',
       description: 'Sarah Martinez shared 3 documents with you: Q2 Strategy.pdf, Budget_Draft.xlsx, Timeline_v2.docx.',
-      timestamp: new Date(now.getTime() - 20 * 60 * 60 * 1000), // 20 hours ago
+      timestamp: new Date(now.getTime() - 20 * 60 * 60 * 1000),
       isRead: false,
       priority: 'medium',
       isUrgent: false,
     },
-    // Yesterday - read
     {
       id: 'notif-6',
       sourceApp: 'Project Hub',
+      sender: 'Marcus Allen',
       title: 'Project milestone completed',
       description: 'Congratulations! The UX Design phase has been completed. Ready to move to development phase.',
-      timestamp: new Date(now.getTime() - 26 * 60 * 60 * 1000), // 26 hours ago
+      timestamp: new Date(now.getTime() - 26 * 60 * 60 * 1000),
       isRead: true,
       priority: 'none',
       isUrgent: false,
       status: 'completed',
     },
-    // Last 7 days - read
     {
       id: 'notif-7',
       sourceApp: 'System Monitor',
+      sender: 'System',
       title: 'Scheduled maintenance completed',
       description: 'System maintenance was successfully completed. All services are now running normally with improved performance.',
-      timestamp: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+      timestamp: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),
       isRead: true,
       priority: 'low',
       isUrgent: false,
       status: 'completed',
     },
-    // Last 7 days - read
     {
       id: 'notif-8',
       sourceApp: 'Team Chat',
+      sender: 'Marcus Chen',
       title: 'You were mentioned in a discussion',
       description: 'Marcus Chen mentioned you in the Infrastructure Planning channel regarding cloud migration strategy.',
-      timestamp: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
+      timestamp: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000),
       isRead: true,
       priority: 'medium',
       isUrgent: false,

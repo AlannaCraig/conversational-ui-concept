@@ -539,6 +539,7 @@ export default function Home() {
           notificationsButtonRef={notificationsButtonRef}
           isOnHome={uiState === 'landing'}
           unreadNotificationCount={unreadNotificationCount}
+          activePopover={activePopover}
         />
 
         {/* Chat History Popover */}

@@ -14,9 +14,10 @@ interface TooltipProps {
   text: string;
   position?: 'top' | 'bottom' | 'left' | 'right';
   gap?: number; // gap in pixels between element and tooltip
+  disabled?: boolean;
 }
 
-export function Tooltip({ children, text, position = 'right', gap = 8 }: TooltipProps) {
+export function Tooltip({ children, text, position = 'right', gap = 8, disabled = false }: TooltipProps) {
   // Position classes for the tooltip container
   const positionClasses = {
     top: 'bottom-full left-1/2 -translate-x-1/2',
@@ -49,7 +50,7 @@ export function Tooltip({ children, text, position = 'right', gap = 8 }: Tooltip
       <div
         className={`
           absolute ${positionClasses[position]}
-          opacity-0 group-hover:opacity-100
+          opacity-0 ${disabled ? '' : 'group-hover:opacity-100'}
           pointer-events-none
           transition-opacity duration-200
           z-50
