@@ -8,16 +8,17 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { PatientIcon, MoreVerticalIcon, ArrowRightIcon } from '@/components/icons';
+import { PatientIcon, MoreVerticalIcon, ArrowRightIcon, TaskListIcon, ReferralIcon, PillIcon, CalendarIcon } from '@/components/icons';
+import { ChevronRightIcon } from '@/components/ui/ChevronRightIcon';
 import { ACTIVE_PATIENT, PATIENT_HARPER, PATIENT_ELLISON, type Patient } from '@/lib/patientData';
 import { calcComplexity, calcRisk } from '@/lib/clinicalCalculators';
 import { PatientEntryTile } from '@/components/ui/PatientEntryTile';
 import { AllergyChip, type AllergyStatus } from '@/components/ui/AllergyChip';
 import { RiskStatusChip, type RiskLevel } from '@/components/ui/RiskStatusChip';
-import { ActivityTimeline } from '@/components/ui/ActivityTimeline';
 import { LifestyleMetricTile } from '@/components/ui/LifestyleMetricTile';
-import { RecentTestTile } from '@/components/ui/RecentTestTile';
+import { TestGroupTile } from '@/components/ui/RecentTestTile';
 
 function getAllergyStatus(allergyText: string): AllergyStatus {
   const lower = allergyText.toLowerCase();
@@ -44,13 +45,11 @@ interface PatientSummaryCardProps {
   activePatientId?: string;
 }
 
-const WIDGETS = [
-  { id: 'summary', title: 'Summary' },
+const SUMMARY_WIDGET = { id: 'summary', title: 'Summary' };
+const STACK_WIDGETS = [
   { id: 'encounters', title: 'Recent encounters' },
   { id: 'medications', title: 'Current medications' },
-  { id: 'lifestyle', title: 'Lifestyle & examinations' },
   { id: 'tests', title: 'Recent tests' },
-  { id: 'activity', title: 'Recent activity' },
 ];
 
 // Separate Patient Header component for reuse
@@ -322,9 +321,92 @@ function encounterLabel(type: string): string {
   return 'Consultation';
 }
 
+function EncounterTile({ enc }: { enc: NonNullable<Patient['encounters'][number]> }) {
+  const [expanded, setExpanded] = useState(false);
+  const { bg: avatarBg, text: avatarText } = (() => {
+    const AVATAR_TOKENS = [
+      { bg: 'var(--accent-main)',   text: 'var(--accent-contrast)'  },
+      { bg: 'var(--accent1-main)',  text: 'var(--accent1-contrast)' },
+      { bg: 'var(--accent2-main)',  text: 'var(--accent2-contrast)' },
+      { bg: 'var(--accent3-main)',  text: 'var(--accent3-contrast)' },
+      { bg: 'var(--success-main)',  text: 'var(--success-contrast)' },
+    ];
+    let hash = 0;
+    for (let i = 0; i < enc.clinician.length; i++) hash = enc.clinician.charCodeAt(i) + ((hash << 5) - hash);
+    return AVATAR_TOKENS[Math.abs(hash) % AVATAR_TOKENS.length];
+  })();
+  const initials = enc.clinician.replace(/^Dr\s+/i, '').split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+
+  return (
+    <div className="bg-primary-contrast border border-border rounded-lg overflow-hidden">
+      <button
+        onClick={() => setExpanded(e => !e)}
+        className="w-full flex items-center gap-3 px-3 py-3 hover:bg-hover transition-colors text-left"
+      >
+        <span
+          className="text-primary-main flex-shrink-0 transition-transform duration-200"
+          style={{ transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
+        >
+          <ChevronRightIcon size={16} />
+        </span>
+        <span className="flex-1 min-w-0 text-sm font-medium text-text-primary">{encounterLabel(enc.type)}</span>
+        <span className="text-xs text-text-primary flex-shrink-0 whitespace-nowrap">
+          <span className="mr-1">Date</span>{enc.date}
+        </span>
+        <div
+          className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
+          style={{ backgroundColor: avatarBg, color: avatarText }}
+        >
+          {initials}
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-border">
+          {/* Notes */}
+          <div className="px-4 py-3 border-b border-border">
+            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Notes</p>
+            <p className="text-sm text-text-primary leading-relaxed">{enc.summaryNotes}</p>
+          </div>
+
+          {/* Observations */}
+          {enc.observations && Object.keys(enc.observations).length > 0 && (
+            <div className="px-4 py-3 border-b border-border">
+              <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Observations</p>
+              <div className="flex flex-wrap gap-x-6 gap-y-2">
+                {Object.entries(enc.observations).map(([key, val]) => (
+                  <div key={key} className="flex flex-col">
+                    <span className="text-xs text-text-secondary">{key}</span>
+                    <span className="text-sm font-medium text-text-primary">{val}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Diagnosis */}
+          {enc.diagnosis && enc.diagnosis.length > 0 && (
+            <div className="px-4 py-3">
+              <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Diagnosis</p>
+              <ul className="space-y-1">
+                {enc.diagnosis.map((d, i) => (
+                  <li key={i} className="flex items-start gap-1.5">
+                    <span className="mt-2 w-1 h-1 rounded-full bg-text-secondary flex-shrink-0" />
+                    <span className="text-sm text-text-primary">{d}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function EncountersContent({ patientId }: { patientId: string }) {
   const patient = PATIENT_REGISTRY[patientId] ?? ACTIVE_PATIENT;
-  const encounters = [...patient.encounters].reverse(); // most recent first
+  const encounters = [...patient.encounters].reverse();
 
   return (
     <motion.div
@@ -334,12 +416,7 @@ function EncountersContent({ patientId }: { patientId: string }) {
       className="flex flex-col gap-1"
     >
       {encounters.map((enc, i) => (
-        <PatientEntryTile
-          key={i}
-          title={encounterLabel(enc.type)}
-          subtitle={`${enc.date} at ${enc.time}`}
-          gpName={enc.clinician}
-        />
+        <EncounterTile key={i} enc={enc} />
       ))}
     </motion.div>
   );
@@ -354,7 +431,7 @@ function LifestyleContent({ patientId }: { patientId: string }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="flex flex-col gap-2"
+      style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(155px, 1fr))', gap: '8px' }}
     >
       {metrics.map((m, i) => (
         <LifestyleMetricTile
@@ -373,22 +450,26 @@ function LifestyleContent({ patientId }: { patientId: string }) {
 function TestsContent({ patientId }: { patientId: string }) {
   const patient = PATIENT_REGISTRY[patientId] ?? ACTIVE_PATIENT;
 
+  const groups: { date: string; context: string; items: typeof patient.investigations }[] = [];
+  const seen = new Map<string, number>();
+  for (const inv of patient.investigations) {
+    const key = inv.requestGroup ?? inv.date ?? 'Unknown';
+    if (!seen.has(key)) {
+      seen.set(key, groups.length);
+      groups.push({ date: key, context: inv.requestContext ?? key, items: [] });
+    }
+    groups[seen.get(key)!].items.push(inv);
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="flex flex-col gap-2"
+      className="flex flex-col gap-1"
     >
-      {patient.investigations.map((inv, i) => (
-        <RecentTestTile
-          key={i}
-          test={inv.test}
-          result={inv.result}
-          flag={inv.flag}
-          date={inv.date}
-          category={inv.category}
-        />
+      {groups.map((g, i) => (
+        <TestGroupTile key={i} date={g.date} context={g.context} items={g.items} />
       ))}
     </motion.div>
   );
@@ -409,6 +490,103 @@ function ActivityContent({ patientId }: { patientId: string }) {
   );
 }
 
+function MedicationTile({ med }: { med: Patient['currentMedications'][number] }) {
+  const [expanded, setExpanded] = useState(false);
+  const { bg: avatarBg, text: avatarText } = (() => {
+    const AVATAR_TOKENS = [
+      { bg: 'var(--accent-main)',   text: 'var(--accent-contrast)'  },
+      { bg: 'var(--accent1-main)',  text: 'var(--accent1-contrast)' },
+      { bg: 'var(--accent2-main)',  text: 'var(--accent2-contrast)' },
+      { bg: 'var(--accent3-main)',  text: 'var(--accent3-contrast)' },
+      { bg: 'var(--success-main)',  text: 'var(--success-contrast)' },
+    ];
+    let hash = 0;
+    for (let i = 0; i < med.prescriber.length; i++) hash = med.prescriber.charCodeAt(i) + ((hash << 5) - hash);
+    return AVATAR_TOKENS[Math.abs(hash) % AVATAR_TOKENS.length];
+  })();
+  const initials = med.prescriber.replace(/^Dr\s+/i, '').split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+
+  const chipColors: Record<string, { bg: string; text: string }> = {
+    Repeat: { bg: 'var(--primary-main)', text: 'var(--primary-contrast)' },
+    Acute:  { bg: 'var(--accent-main)',  text: 'var(--accent-contrast)'  },
+  };
+  const chip = med.prescriptionType ? (chipColors[med.prescriptionType] ?? { bg: 'var(--accent2-main)', text: 'var(--accent2-contrast)' }) : null;
+
+  return (
+    <div className="bg-primary-contrast border border-border rounded-lg overflow-hidden">
+      <button
+        onClick={() => setExpanded(e => !e)}
+        className="w-full flex items-center gap-3 px-3 py-3 hover:bg-hover transition-colors text-left"
+      >
+        <span
+          className="text-primary-main flex-shrink-0 transition-transform duration-200"
+          style={{ transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
+        >
+          <ChevronRightIcon size={16} />
+        </span>
+        <span className="flex-1 min-w-0 text-sm font-medium text-text-primary truncate">{med.name}</span>
+        <span className="text-xs text-text-primary flex-shrink-0 whitespace-nowrap">
+          <span className="mr-1">Prescribed</span>{med.prescribedDate}
+        </span>
+        {chip && med.prescriptionType && (
+          <span
+            className="text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0"
+            style={{ backgroundColor: chip.bg, color: chip.text }}
+          >
+            {med.prescriptionType}
+          </span>
+        )}
+        <div
+          className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
+          style={{ backgroundColor: avatarBg, color: avatarText }}
+        >
+          {initials}
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-border">
+          {/* Dosage & frequency */}
+          <div className="px-4 py-3 border-b border-border">
+            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Dosage & frequency</p>
+            <div className="flex flex-wrap gap-x-6 gap-y-2">
+              <div className="flex flex-col">
+                <span className="text-xs text-text-secondary">Dose</span>
+                <span className="text-sm font-medium text-text-primary">{med.dose}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-text-secondary">Frequency</span>
+                <span className="text-sm font-medium text-text-primary">{med.frequency}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Metadata */}
+          <div className="px-4 py-3">
+            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Details</p>
+            <div className="flex flex-wrap gap-x-6 gap-y-2">
+              <div className="flex flex-col">
+                <span className="text-xs text-text-secondary">Prescriber</span>
+                <span className="text-sm font-medium text-text-primary">{med.prescriber}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-text-secondary">Prescribed</span>
+                <span className="text-sm font-medium text-text-primary">{med.prescribedDate}</span>
+              </div>
+              {med.prescriptionType && (
+                <div className="flex flex-col">
+                  <span className="text-xs text-text-secondary">Type</span>
+                  <span className="text-sm font-medium text-text-primary">{med.prescriptionType}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MedicationsContent({ patientId }: { patientId: string }) {
   const patient = PATIENT_REGISTRY[patientId] ?? ACTIVE_PATIENT;
 
@@ -420,15 +598,220 @@ function MedicationsContent({ patientId }: { patientId: string }) {
       className="flex flex-col gap-1"
     >
       {patient.currentMedications.map((med, i) => (
-        <PatientEntryTile
-          key={i}
-          title={med.name}
-          subtitle={`${med.dose} ${med.frequency}`}
-          date={med.prescribedDate}
-          gpName={med.prescriber}
-        />
+        <MedicationTile key={i} med={med} />
       ))}
     </motion.div>
+  );
+}
+
+function AllergyTile({ a }: { a: Patient['allergies'][number] }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const chipColors: Record<string, { bg: string; text: string }> = {
+    Drug:  { bg: 'var(--primary-main)', text: 'var(--primary-contrast)' },
+    Food:  { bg: 'var(--accent-main)',  text: 'var(--accent-contrast)'  },
+    Other: { bg: 'var(--accent3-main)', text: 'var(--accent3-contrast)' },
+  };
+  const chip = a.type ? (chipColors[a.type] ?? { bg: 'var(--accent2-main)', text: 'var(--accent2-contrast)' }) : null;
+
+  const severityColors: Record<string, { bg: string; text: string }> = {
+    Mild:     { bg: 'var(--success-main)',  text: 'var(--success-contrast)'  },
+    Moderate: { bg: 'var(--accent-main)',   text: 'var(--accent-contrast)'   },
+    Severe:   { bg: 'var(--error-main)',    text: 'var(--error-contrast)'    },
+  };
+  const severityChip = a.severity ? (severityColors[a.severity] ?? { bg: 'var(--accent2-main)', text: 'var(--accent2-contrast)' }) : null;
+
+  return (
+    <div className="bg-primary-contrast border border-border rounded-lg overflow-hidden">
+      <button
+        onClick={() => setExpanded(e => !e)}
+        className="w-full flex items-center gap-3 px-3 py-3 min-h-[52px] hover:bg-hover transition-colors text-left"
+      >
+        <span
+          className="text-primary-main flex-shrink-0 transition-transform duration-200"
+          style={{ transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
+        >
+          <ChevronRightIcon size={16} />
+        </span>
+        <span className="flex-1 min-w-0 text-sm font-medium text-text-primary truncate">{a.substance}</span>
+        {a.recordedDate && (
+          <span className="text-xs text-text-primary flex-shrink-0 whitespace-nowrap">
+            <span className="mr-1">Recorded</span>{a.recordedDate}
+          </span>
+        )}
+        {chip && a.type && (
+          <span
+            className="text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0"
+            style={{ backgroundColor: chip.bg, color: chip.text }}
+          >
+            {a.type}
+          </span>
+        )}
+        {severityChip && a.severity && (
+          <span
+            className="text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0"
+            style={{ backgroundColor: severityChip.bg, color: severityChip.text }}
+          >
+            {a.severity}
+          </span>
+        )}
+      </button>
+
+      {expanded && (
+        <div className="border-t border-border">
+          <div className="px-4 py-3 border-b border-border">
+            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Reaction</p>
+            <p className="text-sm text-text-primary">{a.reaction}</p>
+          </div>
+          <div className="px-4 py-3">
+            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Details</p>
+            <div className="flex flex-wrap gap-x-6 gap-y-2">
+              {a.severity && (
+                <div className="flex flex-col">
+                  <span className="text-xs text-text-secondary">Severity</span>
+                  <span className="text-sm font-medium text-text-primary">{a.severity}</span>
+                </div>
+              )}
+              {a.status && (
+                <div className="flex flex-col">
+                  <span className="text-xs text-text-secondary">Status</span>
+                  <span className="text-sm font-medium text-text-primary">{a.status}</span>
+                </div>
+              )}
+              {a.recordedDate && (
+                <div className="flex flex-col">
+                  <span className="text-xs text-text-secondary">Recorded</span>
+                  <span className="text-sm font-medium text-text-primary">{a.recordedDate}</span>
+                </div>
+              )}
+              {a.recordedBy && (
+                <div className="flex flex-col">
+                  <span className="text-xs text-text-secondary">Recorded by</span>
+                  <span className="text-sm font-medium text-text-primary">{a.recordedBy}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AllergiesContent({ patientId }: { patientId: string }) {
+  const patient = PATIENT_REGISTRY[patientId] ?? ACTIVE_PATIENT;
+  const allergies = patient.allergies;
+
+  if (allergies.length === 0) {
+    return <p className="text-sm text-text-secondary italic">No known drug allergies</p>;
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      {allergies.map((a, i) => (
+        <AllergyTile key={i} a={a} />
+      ))}
+    </div>
+  );
+}
+
+function SummaryWidgetContent({ patientId }: { patientId: string }) {
+  function SectionHeading({ title }: { title: string }) {
+    return (
+      <div className="mt-8 mb-3">
+        <p className="text-sm font-semibold text-text-primary">{title}</p>
+        <div className="border-t border-border mt-2" />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <WidgetContent title="Summary" patientId={patientId} />
+
+      <SectionHeading title="Allergies" />
+      <AllergiesContent patientId={patientId} />
+
+      <SectionHeading title="Lifestyle & examinations" />
+      <LifestyleContent patientId={patientId} />
+    </div>
+  );
+}
+
+function TrackerIconButton({ icon: Icon, label, count }: { icon: React.FC<{ size?: number; className?: string }>; label: string; count: number }) {
+  const [visible, setVisible] = useState(false);
+  const [coords, setCoords] = useState({ top: 0, left: 0 });
+  const [mounted, setMounted] = useState(false);
+  const ref = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  const handleMouseEnter = () => {
+    if (!ref.current) return;
+    const rect = ref.current.getBoundingClientRect();
+    setCoords({ top: rect.top - 8, left: rect.left + rect.width / 2 });
+    setVisible(true);
+  };
+
+  const tooltip = visible && mounted ? createPortal(
+    <div className="pointer-events-none fixed z-[9999]" style={{ top: coords.top, left: coords.left, transform: 'translate(-50%, -100%)' }}>
+      <div className="bg-primary-dark text-primary-contrast text-xs font-medium px-3 py-2 rounded-md whitespace-nowrap shadow-lg">
+        {label}
+        <div className="absolute left-1/2 top-full -translate-x-1/2 w-0 h-0" style={{ borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid var(--primary-dark)' }} />
+      </div>
+    </div>,
+    document.body
+  ) : null;
+
+  return (
+    <>
+      <button
+        ref={ref}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={() => setVisible(false)}
+        className="relative w-10 h-10 rounded-full border border-border bg-primary-contrast flex items-center justify-center hover:bg-hover transition-colors flex-shrink-0"
+        aria-label={label}
+      >
+        <Icon size={18} className="text-text-secondary" />
+        <span
+          className="absolute -bottom-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-semibold rounded-full leading-none px-1"
+          style={{ backgroundColor: count > 0 ? 'var(--accent-dark)' : 'var(--grey-80)', color: 'var(--primary-contrast)' }}
+        >
+          {count}
+        </span>
+      </button>
+      {tooltip}
+    </>
+  );
+}
+
+function PatientTracker({ patientId }: { patientId: string }) {
+  const patient = PATIENT_REGISTRY[patientId] ?? ACTIVE_PATIENT;
+  const tracker = patient.patientTracker;
+  if (!tracker) return null;
+
+  return (
+    <div className="inline-flex items-center gap-2 mb-4 self-start">
+      {/* Icon buttons with badge counts */}
+      <TrackerIconButton icon={TaskListIcon} label="Outstanding tasks" count={tracker.outstandingTasks} />
+      <TrackerIconButton icon={ReferralIcon} label="Open referrals" count={tracker.openReferrals} />
+      <TrackerIconButton icon={PillIcon} label="Medication reviews due" count={tracker.medicationReviewsDue} />
+
+      {/* Divider */}
+      <div className="w-px h-8 bg-border mx-1 flex-shrink-0" />
+
+      {/* Appointment pills */}
+      {[
+        { label: 'Last appointment', value: tracker.lastAppointment },
+        { label: 'Next appointment', value: tracker.nextAppointment },
+      ].map(({ label, value }) => (
+        <div key={label} className="h-10 flex items-center gap-2 border border-border rounded-full bg-primary-contrast px-3 flex-shrink-0">
+          <CalendarIcon size={18} className="text-text-secondary flex-shrink-0" />
+          <span className="text-xs text-text-secondary whitespace-nowrap">{label}:</span>
+          <span className="text-xs font-semibold text-text-primary whitespace-nowrap">{value ?? '—'}</span>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -444,61 +827,63 @@ export function PatientSummaryCard({
     return null;
   }
 
-  return (
-    <div className={`grid grid-cols-2 xl:grid-cols-3 gap-6 pb-10 ${className}`} style={{ gridAutoRows: 'auto' }}>
-      {WIDGETS.map((widget, index) => (
-        <motion.div
-          key={widget.id}
-          className="border border-border bg-primary-contrast rounded-lg overflow-hidden"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: index * 0.05 }}
-        >
-          {/* Widget Header */}
-          <div className="p-4 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-text-primary flex-1">
-              {widget.title}
-            </h3>
-
-            {/* Action buttons */}
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <button
-                onClick={() => onWidgetClick?.(widget.title)}
-                className="w-8 h-8 flex items-center justify-center hover:bg-hover transition-colors rounded cursor-pointer"
-                aria-label={`Open ${widget.title}`}
-              >
-                <ArrowRightIcon size={20} className="text-primary-main" />
-              </button>
-              <button
-                className="w-8 h-8 flex items-center justify-center hover:bg-hover transition-colors rounded cursor-pointer"
-                aria-label={`${widget.title} options`}
-              >
-                <MoreVerticalIcon size={20} className="text-primary-main" />
-              </button>
-            </div>
+  function WidgetShell({ widget, index, stretch, children }: { widget: { id: string; title: string }; index: number; stretch?: boolean; children: React.ReactNode }) {
+    return (
+      <motion.div
+        key={widget.id}
+        className={`border border-border bg-primary-contrast rounded-lg overflow-hidden flex flex-col${stretch ? ' flex-1' : ''}`}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: index * 0.05 }}
+      >
+        <div className="p-4 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-text-primary flex-1">{widget.title}</h3>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={() => onWidgetClick?.(widget.title)}
+              className="w-8 h-8 flex items-center justify-center hover:bg-hover transition-colors rounded cursor-pointer"
+              aria-label={`Open ${widget.title}`}
+            >
+              <ArrowRightIcon size={20} className="text-primary-main" />
+            </button>
+            <button
+              className="w-8 h-8 flex items-center justify-center hover:bg-hover transition-colors rounded cursor-pointer"
+              aria-label={`${widget.title} options`}
+            >
+              <MoreVerticalIcon size={20} className="text-primary-main" />
+            </button>
           </div>
+        </div>
+        <div className="border-t border-border" />
+        <div className="p-4">{children}</div>
+      </motion.div>
+    );
+  }
 
-          {/* Breaker line */}
-          <div className="border-t border-border" />
+  return (
+    <div className={`flex gap-6 items-stretch ${className}`}>
+      {/* Left column — Summary (50%) */}
+      <div className="flex-1 min-w-0 flex flex-col pb-10">
+        <PatientTracker patientId={resolvedPatientId} />
+        <WidgetShell widget={SUMMARY_WIDGET} index={0} stretch>
+          <SummaryWidgetContent patientId={resolvedPatientId} />
+        </WidgetShell>
+      </div>
 
-          {/* Widget content — 16px padding all sides */}
-          <div className="p-4">
+      {/* Right column — stacked widgets (50%) */}
+      <div className="flex-1 min-w-0 flex flex-col gap-6 pb-10">
+        {STACK_WIDGETS.map((widget, index) => (
+          <WidgetShell key={widget.id} widget={widget} index={index + 1}>
             {widget.title === 'Recent encounters' ? (
               <EncountersContent patientId={resolvedPatientId} />
             ) : widget.title === 'Current medications' ? (
               <MedicationsContent patientId={resolvedPatientId} />
-            ) : widget.title === 'Lifestyle & examinations' ? (
-              <LifestyleContent patientId={resolvedPatientId} />
             ) : widget.title === 'Recent tests' ? (
               <TestsContent patientId={resolvedPatientId} />
-            ) : widget.title === 'Recent activity' ? (
-              <ActivityContent patientId={resolvedPatientId} />
-            ) : (
-              <WidgetContent title={widget.title} patientId={resolvedPatientId} />
-            )}
-          </div>
-        </motion.div>
-      ))}
+            ) : null}
+          </WidgetShell>
+        ))}
+      </div>
     </div>
   );
 }

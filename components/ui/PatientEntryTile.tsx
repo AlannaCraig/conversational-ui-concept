@@ -4,6 +4,19 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronRightIcon } from './ChevronRightIcon';
 
+const CHIP_COLORS: Record<string, { bg: string; text: string }> = {
+  Drug:    { bg: 'var(--primary-main)',  text: 'var(--primary-contrast)' },
+  Food:    { bg: 'var(--accent-main)',   text: 'var(--accent-contrast)'  },
+  Other:   { bg: 'var(--accent3-main)',  text: 'var(--accent3-contrast)' },
+  Repeat:  { bg: 'var(--primary-main)',  text: 'var(--primary-contrast)' },
+  Acute:   { bg: 'var(--accent-main)',   text: 'var(--accent-contrast)'  },
+  Default: { bg: 'var(--accent2-main)',  text: 'var(--accent2-contrast)' },
+};
+
+function getChipColors(chip: string) {
+  return CHIP_COLORS[chip] ?? CHIP_COLORS.Default;
+}
+
 const AVATAR_TOKENS = [
   { bg: 'var(--accent-main)',   text: 'var(--accent-contrast)'  },
   { bg: 'var(--accent-dark)',   text: 'var(--accent-contrast)'  },
@@ -91,41 +104,55 @@ function AvatarWithTooltip({ name, initials, token }: AvatarTooltipProps) {
 
 export interface PatientEntryTileProps {
   title: string;
-  subtitle: string;
   gpName: string;
   date?: string;
+  dateLabel?: string;
+  chip?: string;
+  hideAvatar?: boolean;
   onClick?: () => void;
 }
 
-export function PatientEntryTile({ title, subtitle, gpName, date, onClick }: PatientEntryTileProps) {
+export function PatientEntryTile({ title, gpName, date, dateLabel, chip, hideAvatar, onClick }: PatientEntryTileProps) {
   const token = getAvatarToken(gpName);
   const initials = getInitials(gpName);
 
   return (
     <button
       onClick={onClick}
-      className="w-full flex items-center gap-3 px-3 py-3 bg-primary-contrast border border-border hover:bg-hover transition-colors rounded-lg text-left group"
+      className="w-full flex items-center gap-3 px-3 py-3 min-h-[52px] bg-primary-contrast border border-border hover:bg-hover transition-colors rounded-lg text-left group"
     >
-      {/* Chevron — primary-main colour */}
+      {/* Chevron */}
       <span className="text-primary-main flex-shrink-0">
         <ChevronRightIcon size={16} />
       </span>
 
-      {/* Text */}
+      {/* Title */}
       <div className="flex-1 min-w-0">
         <div className="text-sm font-medium text-text-primary truncate">{title}</div>
-        <div className="text-xs text-text-secondary mt-0.5">{subtitle}</div>
       </div>
 
-      {/* Optional date — centred between text and avatar */}
+      {/* Labelled date */}
       {date && (
-        <span className="text-xs text-text-secondary flex-shrink-0 mx-2 whitespace-nowrap">
-          {date}
+        <span className="text-xs text-text-primary flex-shrink-0 whitespace-nowrap">
+          {dateLabel ? <span className="mr-1">{dateLabel}</span> : null}{date}
         </span>
       )}
 
-      {/* GP Avatar — tooltip only fires on hover of this element */}
-      <AvatarWithTooltip name={gpName} initials={initials} token={token} />
+      {/* Type chip */}
+      {chip && (() => {
+        const { bg, text } = getChipColors(chip);
+        return (
+          <span
+            className="text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0"
+            style={{ backgroundColor: bg, color: text }}
+          >
+            {chip}
+          </span>
+        );
+      })()}
+
+      {/* GP Avatar */}
+      {!hideAvatar && <AvatarWithTooltip name={gpName} initials={initials} token={token} />}
     </button>
   );
 }

@@ -36,8 +36,8 @@ export interface Patient {
   };
   lifestyleAndRiskFactors: Record<string, string>;
   problemsDiagnoses: Array<{ condition: string; status: string; diagnosed: string }>;
-  allergies: Array<{ substance: string; reaction: string }>;
-  currentMedications: Array<{ name: string; dose: string; frequency: string; prescriber: string; prescribedDate: string }>;
+  allergies: Array<{ substance: string; reaction: string; type?: string; recordedDate?: string; severity?: string; status?: string; recordedBy?: string }>;
+  currentMedications: Array<{ name: string; dose: string; frequency: string; prescriber: string; prescribedDate: string; prescriptionType?: string }>;
   encounters: Array<{
     date: string;
     time: string;
@@ -46,6 +46,7 @@ export interface Patient {
     observations?: Record<string, string | number>;
     presentingComplaint?: string;
     summaryNotes: string;
+    diagnosis?: string[];
     outcome: string[];
     treatmentPlan: string[];
   }>;
@@ -60,13 +61,20 @@ export interface Patient {
     date: string;
     trend: 'up' | 'down' | 'neutral';
   }>;
-  investigations: Array<{ test: string; result: string; flag?: string; date?: string; category?: string }>;
+  investigations: Array<{ test: string; result: string; flag?: string; date?: string; category?: string; requestGroup?: string; requestContext?: string }>;
   carePlans?: Array<{ area: string; plan: string }>;
   recentActivityFeed?: ActivityEvent[];
   aiSummary: {
     keyThemes: string[];
     recentActivity: string;
     longitudinalSummary: string;
+  };
+  patientTracker?: {
+    outstandingTasks: number;
+    openReferrals: number;
+    medicationReviewsDue: number;
+    nextAppointment: string | null;
+    lastAppointment: string | null;
   };
 }
 
@@ -102,10 +110,10 @@ export const PATIENT_HARPER: Patient = {
     { condition: 'Mild Generalised Anxiety', status: 'Active', diagnosed: '2024' },
     { condition: 'Seasonal Allergic Rhinitis', status: 'Active', diagnosed: 'Childhood' },
   ],
-  allergies: [{ substance: 'Penicillin', reaction: 'Rash' }],
+  allergies: [{ substance: 'Penicillin', reaction: 'Rash', type: 'Drug', recordedDate: '14 Feb 2024', severity: 'Mild', status: 'Active', recordedBy: 'Dr Amelia Foster' }],
   currentMedications: [
-    { name: 'Cetirizine', dose: '10 mg', frequency: 'PRN', prescriber: 'Dr Priya Nair', prescribedDate: '22 May 2025' },
-    { name: 'Propranolol', dose: '10 mg', frequency: 'PRN for anxiety', prescriber: 'Dr Samuel Reeves', prescribedDate: '18 Mar 2025' },
+    { name: 'Cetirizine', dose: '10 mg', frequency: 'PRN', prescriber: 'Dr Priya Nair', prescribedDate: '22 May 2025', prescriptionType: 'Acute' },
+    { name: 'Propranolol', dose: '10 mg', frequency: 'PRN for anxiety', prescriber: 'Dr Samuel Reeves', prescribedDate: '18 Mar 2025', prescriptionType: 'Acute' },
   ],
   encounters: [
     {
@@ -116,6 +124,7 @@ export const PATIENT_HARPER: Patient = {
       observations: { BP: '124/78', Pulse: 72, Weight: '81 kg' },
       summaryNotes:
         'Patient attended for initial NHS registration and routine health review. Reports intermittent anxiety symptoms associated with workplace deadlines and high-pressure projects. No panic attacks, self-harm thoughts, or functional impairment reported. Sleep noted to be inconsistent during periods of occupational stress. General examination unremarkable. Baseline cardiovascular observations within normal limits.',
+      diagnosis: ['Mild situational anxiety disorder'],
       outcome: [
         'Diagnosed with mild situational anxiety',
         'Baseline blood tests requested',
@@ -135,6 +144,7 @@ export const PATIENT_HARPER: Patient = {
       observations: { BP: '126/80', Pulse: 76 },
       summaryNotes:
         'Patient requested follow-up review due to increasing work-related stress over previous two months. Reports racing thoughts, intermittent palpitations during presentations, and difficulty switching off after work. Symptoms occurring several times weekly but continues functioning well occupationally and socially. No depressive symptoms identified. No substance misuse concerns.',
+      diagnosis: ['Generalised anxiety disorder — mild to moderate'],
       outcome: [
         'Anxiety symptoms remain mild-to-moderate',
         'No escalation to secondary mental health services required',
@@ -154,6 +164,7 @@ export const PATIENT_HARPER: Patient = {
       type: 'GP Acute Appointment',
       summaryNotes:
         'Patient presented with worsening seasonal allergy symptoms including sneezing, nasal congestion, itchy eyes, and disturbed sleep over previous three weeks. Symptoms worse outdoors and during morning commute. No wheeze, chest tightness, or infective symptoms. Examination consistent with allergic rhinitis with no evidence of respiratory involvement.',
+      diagnosis: ['Seasonal allergic rhinitis — acute flare'],
       outcome: [
         'Seasonal allergic rhinitis flare confirmed',
         'Symptoms managed conservatively',
@@ -171,14 +182,22 @@ export const PATIENT_HARPER: Patient = {
     { label: 'Weight', value: '82', unit: 'kg', date: '10 Jan 2025', trend: 'neutral' },
     { label: 'Height', value: '181', unit: 'cm', date: '10 Jan 2025', trend: 'neutral' },
     { label: 'BMI', value: '25.0', unit: 'kg/m²', date: '10 Jan 2025', trend: 'neutral' },
-    { label: 'Blood pressure', value: '126/80', unit: 'mmHg', date: '18 Mar 2025', trend: 'up' },
+    { label: 'BP', value: '126/80', unit: 'mmHg', date: '18 Mar 2025', trend: 'up' },
     { label: 'Pulse', value: '76', unit: 'bpm', date: '18 Mar 2025', trend: 'neutral' },
+    { label: 'Respiratory rate', value: '15', unit: 'brpm', date: '10 Jan 2025', trend: 'neutral' },
+    { label: 'Peak flow', value: '580', unit: 'L/min', date: '10 Jan 2025', trend: 'neutral' },
+    { label: 'Postural drop', value: 'None', unit: '', date: '10 Jan 2025', trend: 'neutral' },
+    { label: 'Smoking status', value: 'Never', unit: '', date: '10 Jan 2025', trend: 'neutral' },
+    { label: 'Alcohol', value: 'Social', unit: '', date: '10 Jan 2025', trend: 'neutral' },
   ],
   investigations: [
-    { test: 'HbA1c', result: '5.2%', flag: 'Normal', date: 'Jan 2025', category: 'Blood' },
-    { test: 'Cholesterol', result: '4.4 mmol/L', flag: 'Normal', date: 'Jan 2025', category: 'Blood' },
-    { test: 'eGFR', result: 'Normal', flag: 'Normal', date: 'Jan 2025', category: 'Blood' },
-    { test: 'FBC', result: 'Normal', flag: 'Normal', date: 'Jan 2025', category: 'Blood' },
+    { test: 'HbA1c',          result: '5.2%',              flag: 'Normal', date: '10 Jan 2025', category: 'Blood',  requestGroup: '10 Jan 2025', requestContext: 'GP Registration — Bloods' },
+    { test: 'Total cholesterol', result: '4.4 mmol/L',     flag: 'Normal', date: '10 Jan 2025', category: 'Blood',  requestGroup: '10 Jan 2025', requestContext: 'GP Registration — Bloods' },
+    { test: 'eGFR',           result: '88 mL/min/1.73m²',  flag: 'Normal', date: '10 Jan 2025', category: 'Blood',  requestGroup: '10 Jan 2025', requestContext: 'GP Registration — Bloods' },
+    { test: 'FBC',            result: 'Normal',             flag: 'Normal', date: '10 Jan 2025', category: 'Blood',  requestGroup: '10 Jan 2025', requestContext: 'GP Registration — Bloods' },
+    { test: 'LFTs',           result: 'Normal',             flag: 'Normal', date: '10 Jan 2025', category: 'Blood',  requestGroup: '10 Jan 2025', requestContext: 'GP Registration — Bloods' },
+    { test: 'TSH',            result: '2.1 mIU/L',          flag: 'Normal', date: '10 Jan 2025', category: 'Blood',  requestGroup: '10 Jan 2025', requestContext: 'GP Registration — Bloods' },
+    { test: 'Urine dipstick', result: 'No abnormality',     flag: 'Normal', date: '10 Jan 2025', category: 'Urine',  requestGroup: '10 Jan 2025', requestContext: 'GP Registration — Bloods' },
   ],
   recentActivityFeed: [
     { id: 'h1', type: 'viewed',      actor: { initials: 'OP', color: '#5E7F5C' }, datetime: '22 May 2025, 11:10' },
@@ -198,6 +217,13 @@ export const PATIENT_HARPER: Patient = {
       'Over the past year the patient has attended routine GP reviews primarily relating to episodic anxiety symptoms and seasonal allergy management. Recent encounters describe stress-related racing thoughts associated with occupational pressures, with initiation of low-dose propranolol alongside lifestyle advice. Baseline blood investigations and cardiovascular risk markers remain within normal limits.',
     longitudinalSummary:
       'The patient demonstrates low healthcare utilisation with minimal chronic disease burden. Current care remains focused on symptom management, preventative wellbeing measures, sleep consistency, and maintaining physical activity.',
+  },
+  patientTracker: {
+    outstandingTasks: 1,
+    openReferrals: 0,
+    medicationReviewsDue: 0,
+    nextAppointment: '14 Aug 2025',
+    lastAppointment: '22 May 2025',
   },
 };
 
@@ -238,12 +264,12 @@ export const PATIENT_ELLISON: Patient = {
   ],
   allergies: [],
   currentMedications: [
-    { name: 'Salbutamol Inhaler', dose: '100 mcg', frequency: 'PRN', prescriber: 'Dr Helen Murray', prescribedDate: '11 Feb 2025' },
-    { name: 'Tiotropium', dose: '18 mcg', frequency: 'Daily', prescriber: 'Dr Helen Murray', prescribedDate: '11 Feb 2025' },
-    { name: 'Ramipril', dose: '5 mg', frequency: 'Daily', prescriber: 'Dr Rebecca Collins', prescribedDate: '01 Sep 2025' },
-    { name: 'Metformin', dose: '500 mg', frequency: 'Twice daily', prescriber: 'Dr Helen Murray', prescribedDate: '14 Jun 2025' },
-    { name: 'Atorvastatin', dose: '20 mg', frequency: 'Nightly', prescriber: 'Dr Marcus Allen', prescribedDate: '26 Apr 2025' },
-    { name: 'Paracetamol', dose: '1 g', frequency: 'PRN', prescriber: 'Dr Rebecca Collins', prescribedDate: '01 Sep 2025' },
+    { name: 'Salbutamol Inhaler', dose: '100 mcg', frequency: 'PRN', prescriber: 'Dr Helen Murray', prescribedDate: '11 Feb 2025', prescriptionType: 'Repeat' },
+    { name: 'Tiotropium', dose: '18 mcg', frequency: 'Daily', prescriber: 'Dr Helen Murray', prescribedDate: '11 Feb 2025', prescriptionType: 'Repeat' },
+    { name: 'Ramipril', dose: '5 mg', frequency: 'Daily', prescriber: 'Dr Rebecca Collins', prescribedDate: '01 Sep 2025', prescriptionType: 'Repeat' },
+    { name: 'Metformin', dose: '500 mg', frequency: 'Twice daily', prescriber: 'Dr Helen Murray', prescribedDate: '14 Jun 2025', prescriptionType: 'Repeat' },
+    { name: 'Atorvastatin', dose: '20 mg', frequency: 'Nightly', prescriber: 'Dr Marcus Allen', prescribedDate: '26 Apr 2025', prescriptionType: 'Repeat' },
+    { name: 'Paracetamol', dose: '1 g', frequency: 'PRN', prescriber: 'Dr Rebecca Collins', prescribedDate: '01 Sep 2025', prescriptionType: 'Acute' },
   ],
   encounters: [
     {
@@ -254,6 +280,7 @@ export const PATIENT_ELLISON: Patient = {
       observations: { BP: '142/86', SpO2: '93%', Weight: '73 kg' },
       summaryNotes:
         'Patient attended annual COPD review reporting worsening breathlessness on exertion over previous six months. Increasing difficulty walking longer distances and climbing stairs. Intermittent productive cough without haemoptysis. Appetite reduced during recent flare periods. Respiratory examination demonstrated reduced air entry bilaterally with scattered expiratory wheeze. Spirometry consistent with moderate obstructive disease progression.',
+      diagnosis: ['COPD — moderate, progressive'],
       outcome: [
         'COPD symptoms progressing gradually',
         'Functional exercise tolerance reduced',
@@ -273,6 +300,7 @@ export const PATIENT_ELLISON: Patient = {
       observations: { Presentation: 'Acute COPD exacerbation', CXR: 'No pneumonia', 'Length of Stay': '3 days' },
       summaryNotes:
         'Patient admitted via emergency department following worsening shortness of breath, productive cough, and wheeze over five days. Oxygen saturations reduced on presentation with increased work of breathing. Chest X-ray excluded focal pneumonia. Treated with nebulised bronchodilators, oral steroids, and antibiotics with gradual symptomatic improvement over admission.',
+      diagnosis: ['Acute exacerbation of COPD'],
       outcome: [
         'Acute COPD exacerbation managed successfully',
         'No invasive respiratory support required',
@@ -293,6 +321,7 @@ export const PATIENT_ELLISON: Patient = {
       observations: { HbA1c: '7.4%' },
       summaryNotes:
         'Routine diabetic monitoring appointment. Patient reports variable appetite and reduced activity levels since recent respiratory admission. Mild numbness affecting left foot reported intermittently over previous months. Foot examination demonstrated mildly reduced sensation over plantar surface of left forefoot. No ulceration or skin breakdown identified.',
+      diagnosis: ['Type 2 diabetes mellitus — suboptimal control', 'Suspected early diabetic peripheral neuropathy'],
       outcome: [
         'Diabetes control moderately suboptimal',
         'Early peripheral neuropathic changes suspected',
@@ -312,6 +341,7 @@ export const PATIENT_ELLISON: Patient = {
       type: 'GP Falls Assessment',
       summaryNotes:
         'Patient reviewed following fall at home while mobilising between kitchen and hallway. Sustained minor bruising to left wrist without fracture symptoms. Reports increasing unsteadiness and reduced confidence mobilising outdoors over previous several months. Mobility assessment demonstrated poor balance and lower limb deconditioning. No syncope or acute neurological symptoms reported.',
+      diagnosis: ['Mechanical fall — frailty and lower limb deconditioning', 'Increased falls risk'],
       outcome: [
         'Mechanical fall likely related to frailty and deconditioning',
         'Increased falls risk identified',
@@ -342,18 +372,28 @@ export const PATIENT_ELLISON: Patient = {
     { label: 'Weight', value: '70', unit: 'kg', date: '01 Sep 2025', trend: 'down' },
     { label: 'Height', value: '159', unit: 'cm', date: '11 Feb 2025', trend: 'neutral' },
     { label: 'BMI', value: '28.1', unit: 'kg/m²', date: '11 Feb 2025', trend: 'down' },
-    { label: 'Blood pressure', value: '150/90', unit: 'mmHg', date: '01 Sep 2025', trend: 'up' },
+    { label: 'BP', value: '150/90', unit: 'mmHg', date: '01 Sep 2025', trend: 'up' },
+    { label: 'Pulse', value: '88', unit: 'bpm', date: '01 Sep 2025', trend: 'up' },
     { label: 'SpO₂', value: '93', unit: '%', date: '11 Feb 2025', trend: 'down' },
+    { label: 'Respiratory rate', value: '22', unit: 'brpm', date: '11 Feb 2025', trend: 'up' },
+    { label: 'Peak flow', value: '210', unit: 'L/min', date: '11 Feb 2025', trend: 'down' },
+    { label: 'Postural drop', value: '18/10', unit: 'mmHg', date: '01 Sep 2025', trend: 'neutral' },
     { label: 'Smoking status', value: 'Ex-smoker', unit: '', date: '11 Feb 2025', trend: 'neutral' },
-    { label: 'Alcohol', value: '14', unit: 'units/wk', date: '11 Feb 2025', trend: 'neutral' },
+    { label: 'Alcohol', value: 'Rare', unit: '', date: '11 Feb 2025', trend: 'neutral' },
   ],
   investigations: [
-    { test: 'HbA1c', result: '7.4%', flag: 'Borderline high', category: 'Blood' },
-    { test: 'eGFR', result: '68 mL/min/1.73m²', flag: 'Normal', category: 'Blood' },
-    { test: 'CRP', result: 'Mildly elevated', flag: 'Abnormal', category: 'Blood' },
-    { test: 'Total cholesterol', result: '5.1 mmol/L', flag: 'Borderline high', category: 'Blood' },
-    { test: 'Chest X-ray', result: 'Hyperinflation consistent with COPD', flag: 'Abnormal', category: 'Imaging' },
-    { test: 'ECG', result: 'Sinus rhythm', flag: 'Normal', category: 'Imaging' },
+    { test: 'FBC',               result: 'Normal',                              flag: 'Normal',          date: '11 Feb 2025', category: 'Blood',       requestGroup: '11 Feb 2025', requestContext: 'Annual COPD Review — Bloods' },
+    { test: 'U&Es',              result: 'Na 140, K 4.3, Cr 98 µmol/L',        flag: 'Normal',          date: '11 Feb 2025', category: 'Blood',       requestGroup: '11 Feb 2025', requestContext: 'Annual COPD Review — Bloods' },
+    { test: 'ECG',               result: 'Sinus rhythm',                        flag: 'Normal',          date: '11 Feb 2025', category: 'Imaging',     requestGroup: '11 Feb 2025', requestContext: 'Annual COPD Review — Bloods' },
+    { test: 'Spirometry',        result: 'FEV1/FVC 0.58 — moderate obstruction', flag: 'Abnormal',       date: '11 Feb 2025', category: 'Respiratory', requestGroup: '11 Feb 2025', requestContext: 'Annual COPD Review — Bloods' },
+    { test: 'CRP',               result: 'Mildly elevated',                     flag: 'Abnormal',        date: '26 Apr 2025', category: 'Blood',       requestGroup: '26 Apr 2025', requestContext: 'A&E Admission — Bloods' },
+    { test: 'FBC',               result: 'WBC 11.2 — mildly raised',            flag: 'Abnormal',        date: '26 Apr 2025', category: 'Blood',       requestGroup: '26 Apr 2025', requestContext: 'A&E Admission — Bloods' },
+    { test: 'Chest X-ray',       result: 'Hyperinflation consistent with COPD', flag: 'Abnormal',        date: '26 Apr 2025', category: 'Imaging',     requestGroup: '26 Apr 2025', requestContext: 'A&E Admission — Bloods' },
+    { test: 'HbA1c',             result: '7.4%',                                flag: 'Borderline high', date: '14 Jun 2025', category: 'Blood',       requestGroup: '14 Jun 2025', requestContext: 'Diabetes Review — Bloods' },
+    { test: 'Total cholesterol', result: '5.1 mmol/L',                          flag: 'Borderline high', date: '14 Jun 2025', category: 'Blood',       requestGroup: '14 Jun 2025', requestContext: 'Diabetes Review — Bloods' },
+    { test: 'eGFR',              result: '68 mL/min/1.73m²',                    flag: 'Normal',          date: '14 Jun 2025', category: 'Blood',       requestGroup: '14 Jun 2025', requestContext: 'Diabetes Review — Bloods' },
+    { test: 'Urine dipstick',    result: 'Trace protein',                       flag: 'Abnormal',        date: '14 Jun 2025', category: 'Urine',       requestGroup: '14 Jun 2025', requestContext: 'Diabetes Review — Bloods' },
+    { test: 'Urine ACR',         result: '3.2 mg/mmol',                         flag: 'Normal',          date: '14 Jun 2025', category: 'Urine',       requestGroup: '14 Jun 2025', requestContext: 'Diabetes Review — Bloods' },
   ],
   carePlans: [
     { area: 'Respiratory', plan: 'Pulmonary rehabilitation referral' },
@@ -379,6 +419,13 @@ export const PATIENT_ELLISON: Patient = {
       'Over the past year the patient has required four clinical contacts relating to respiratory symptoms, diabetes monitoring, and functional decline. A COPD exacerbation resulted in a three-day hospital admission requiring nebuliser therapy, steroids, and antibiotics. Follow-up assessments demonstrate persistent breathlessness, suboptimal glycaemic control with early peripheral sensory changes, and a mechanical fall at home indicating progressive deconditioning.',
     longitudinalSummary:
       'The clinical record reflects progressive multi-morbidity with increasing frailty indicators and rising healthcare dependency. Respiratory disease remains the dominant driver of clinical risk, with ongoing focus on exacerbation prevention, falls reduction, rehabilitation support, and optimisation of long-term condition management.',
+  },
+  patientTracker: {
+    outstandingTasks: 3,
+    openReferrals: 2,
+    medicationReviewsDue: 1,
+    nextAppointment: '22 Oct 2025',
+    lastAppointment: '01 Sep 2025',
   },
 };
 

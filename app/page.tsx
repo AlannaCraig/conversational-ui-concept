@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sidebar,
@@ -77,6 +77,15 @@ export default function Home() {
   const [showPopOutForm, setShowPopOutForm] = useState(false);
   const [popOutFormData, setPopOutFormData] = useState<{ title: string; subtitle?: string; formId?: string } | null>(null);
   const [activePatientId, setActivePatientId] = useState<string>('PT-10002');
+  const [isFocusMode, setIsFocusMode] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFocusMode) setIsFocusMode(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFocusMode]);
 
   // Refs
   const chatHistoryButtonRef = useRef<HTMLButtonElement>(null);
@@ -529,18 +538,32 @@ export default function Home() {
   return (
     <main className="h-screen bg-background-soft">
       <div className="flex h-full">
-        {/* Fixed Sidebar */}
-        <Sidebar
-          onHomeClick={handleHomeClick}
-          onHelpClick={handleThemeCycle}
-          onChatHistoryClick={handleChatHistoryClick}
-          onNotificationsClick={handleNotificationsClick}
-          chatHistoryButtonRef={chatHistoryButtonRef}
-          notificationsButtonRef={notificationsButtonRef}
-          isOnHome={uiState === 'landing'}
-          unreadNotificationCount={unreadNotificationCount}
-          activePopover={activePopover}
-        />
+        {/* Fixed Sidebar — hidden in focus mode */}
+        <AnimatePresence>
+          {!isFocusMode && (
+            <motion.div
+              key="sidebar"
+              initial={{ opacity: 0, x: -64 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -64 }}
+              transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+            >
+              <Sidebar
+                onHomeClick={handleHomeClick}
+                onHelpClick={handleThemeCycle}
+                onChatHistoryClick={handleChatHistoryClick}
+                onNotificationsClick={handleNotificationsClick}
+                onSearchClick={() => setIsFocusMode(true)}
+                chatHistoryButtonRef={chatHistoryButtonRef}
+                notificationsButtonRef={notificationsButtonRef}
+                isOnHome={uiState === 'landing'}
+                unreadNotificationCount={unreadNotificationCount}
+                activePopover={activePopover}
+                isFocusMode={isFocusMode}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Chat History Popover */}
         <ChatHistoryPopover
@@ -561,7 +584,7 @@ export default function Home() {
         {/* New Chat Button is now inside dialog container for both views */}
 
         {/* Main Content Area */}
-        <section className="flex-1 ml-16">
+        <section className={`flex-1 transition-[margin] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${isFocusMode ? 'ml-0' : 'ml-16'}`}>
           <div className="h-full p-6">
             <div className="h-full flex gap-6" style={{ flexDirection: isLayoutSwapped ? 'row-reverse' : 'row' }}>
               <AnimatePresence>
@@ -597,9 +620,15 @@ export default function Home() {
                             <button className="w-10 h-10 bg-background border border-border rounded-lg flex items-center justify-center hover:bg-hover transition-colors shadow-sm cursor-pointer">
                               <div className="w-4 h-4 border border-border rounded" />
                             </button>
-                            <button className="w-10 h-10 bg-background border border-border rounded-lg flex items-center justify-center hover:bg-hover transition-colors shadow-sm cursor-pointer">
-                              <div className="w-4 h-4 border border-border rounded" />
-                            </button>
+                            {showPatientHeader && (
+                              <button
+                                onClick={() => setActivePatientId(id => id === 'PT-10002' ? 'PT-10001' : 'PT-10002')}
+                                className="w-10 h-10 bg-background border border-border rounded-lg flex items-center justify-center hover:bg-hover transition-colors shadow-sm cursor-pointer"
+                                aria-label="Switch patient"
+                              >
+                                <div className="w-4 h-4 border border-border rounded" />
+                              </button>
+                            )}
 
                             {/* Close button */}
                             <button
@@ -616,7 +645,7 @@ export default function Home() {
                       </div>
 
                       {/* Scrollable Content */}
-                      <div className="flex-1 overflow-y-auto conversation-scroll">
+                      <div className="flex-1 overflow-y-auto conversation-scroll" style={{ scrollbarGutter: 'stable' }}>
                         <div className="px-6">
                           {/* Patient Banner — sticky inside scroll container so it shares the same width as the widgets */}
                           {showPatientHeader && (
@@ -646,15 +675,15 @@ export default function Home() {
                 )}
               </AnimatePresence>
 
-              {/* Dialog Container - Full width or 1/3 width */}
+              {/* Dialog Container — hidden in focus mode */}
+              <AnimatePresence>
+              {!isFocusMode && (
               <motion.div
                 key="dialog-container"
-                initial={{ flexGrow: 1, flexBasis: 0 }}
-                animate={{
-                  flexGrow: showLargeData ? 1 : 1,
-                  flexBasis: 0
-                }}
-                transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+                initial={{ opacity: 0, flexGrow: 0, flexBasis: 0, width: 0 }}
+                animate={{ opacity: 1, flexGrow: 1, flexBasis: 0, width: 'auto' }}
+                exit={{ opacity: 0, flexGrow: 0, flexBasis: 0, width: 0 }}
+                transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                 className="h-full bg-background border border-border rounded-[12px] overflow-hidden"
                 style={{ minWidth: 0 }}
               >
@@ -805,6 +834,8 @@ export default function Home() {
               </motion.div>
             )}
             </motion.div>
+              )}
+              </AnimatePresence>
             </div>
           </div>
         </section>

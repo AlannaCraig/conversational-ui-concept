@@ -66,3 +66,9 @@ export { SwapHorizontalIcon } from './SwapHorizontalIcon';
 // Activity timeline icons
 export { EyeIcon } from './EyeIcon';
 export { FolderIcon } from './FolderIcon';
+
+// Patient tracker icons
+export { CalendarIcon } from './CalendarIcon';
+export { ReferralIcon } from './ReferralIcon';
+export { PillIcon } from './PillIcon';
+export { TaskListIcon } from './TaskListIcon';
