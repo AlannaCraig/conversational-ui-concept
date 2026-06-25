@@ -791,7 +791,7 @@ function PatientTracker({ patientId }: { patientId: string }) {
   if (!tracker) return null;
 
   return (
-    <div className="inline-flex items-center gap-2 mb-4 self-start">
+    <div className="inline-flex items-center gap-2 mb-6 self-start">
       {/* Icon buttons with badge counts */}
       <TrackerIconButton icon={TaskListIcon} label="Outstanding tasks" count={tracker.outstandingTasks} />
       <TrackerIconButton icon={ReferralIcon} label="Open referrals" count={tracker.openReferrals} />
@@ -861,10 +861,18 @@ export function PatientSummaryCard({
   }
 
   return (
-    <div className={`flex gap-6 items-stretch ${className}`}>
+    <div className={`flex flex-col gap-0 ${className}`}>
+      {/* Tracker row — aligned to left column only */}
+      <div className="flex gap-6">
+        <div className="flex-1 min-w-0">
+          <PatientTracker patientId={resolvedPatientId} />
+        </div>
+        <div className="flex-1 min-w-0" />
+      </div>
+
+      <div className="flex gap-6 items-stretch">
       {/* Left column — Summary (50%) */}
       <div className="flex-1 min-w-0 flex flex-col pb-10">
-        <PatientTracker patientId={resolvedPatientId} />
         <WidgetShell widget={SUMMARY_WIDGET} index={0} stretch>
           <SummaryWidgetContent patientId={resolvedPatientId} />
         </WidgetShell>
@@ -883,6 +891,7 @@ export function PatientSummaryCard({
             ) : null}
           </WidgetShell>
         ))}
+      </div>
       </div>
     </div>
   );
