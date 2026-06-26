@@ -645,8 +645,8 @@ export default function Home() {
                       </div>
 
                       {/* Scrollable Content */}
-                      <div className="flex-1 overflow-y-auto conversation-scroll" style={{ scrollbarGutter: 'stable' }}>
-                        <div className="px-6">
+                      <div className={`flex-1 overflow-y-auto conversation-scroll${largeCardLayout.type === 'patient-summary' ? ' flex flex-col' : ''}`} style={{ scrollbarGutter: 'stable' }}>
+                        <div className={`px-6${largeCardLayout.type === 'patient-summary' ? ' flex-1 flex flex-col' : ''}`}>
                           {/* Patient Banner — sticky inside scroll container so it shares the same width as the widgets */}
                           {showPatientHeader && (
                             <div className="sticky top-0 z-10 bg-background pb-6">
@@ -655,7 +655,7 @@ export default function Home() {
                           )}
 
                           {/* Main Content Area */}
-                          <div className="pb-6">
+                          <div className={largeCardLayout.type === 'patient-summary' ? 'flex-1 flex flex-col pb-6' : 'pb-6'}>
                             {largeCardLayout.type === 'table' && <TableCard />}
                             {largeCardLayout.type === 'dashboard' && <DashboardCard />}
                             {largeCardLayout.type === 'document' && <DocumentCard />}
@@ -664,7 +664,7 @@ export default function Home() {
                             {largeCardLayout.type === 'kanban' && <KanbanCard />}
                             {largeCardLayout.type === 'analytics' && <AnalyticsCard />}
                             {largeCardLayout.type === 'patient-summary' && (
-                              <PatientSummaryCard onWidgetClick={handleWidgetClick} activePatientId={activePatientId} />
+                              <PatientSummaryCard onWidgetClick={handleWidgetClick} activePatientId={activePatientId} className="flex-1" />
                             )}
                           </div>
                         </div>

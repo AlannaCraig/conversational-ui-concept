@@ -425,6 +425,7 @@ function EncountersContent({ patientId }: { patientId: string }) {
 function LifestyleContent({ patientId }: { patientId: string }) {
   const patient = PATIENT_REGISTRY[patientId] ?? ACTIVE_PATIENT;
   const metrics = patient.lifestyleMetrics ?? [];
+  const metricHistory = patient.metricHistory ?? {};
 
   return (
     <motion.div
@@ -441,6 +442,7 @@ function LifestyleContent({ patientId }: { patientId: string }) {
           unit={m.unit}
           date={m.date}
           trend={m.trend}
+          history={metricHistory[m.label]}
         />
       ))}
     </motion.div>
@@ -703,7 +705,7 @@ function AllergiesContent({ patientId }: { patientId: string }) {
   const allergies = patient.allergies;
 
   if (allergies.length === 0) {
-    return <p className="text-sm text-text-secondary italic">No known drug allergies</p>;
+    return <p className="text-sm text-text-secondary italic">No known allergies</p>;
   }
 
   return (
@@ -715,10 +717,102 @@ function AllergiesContent({ patientId }: { patientId: string }) {
   );
 }
 
+function MedicalHistoryTile({ d }: { d: Patient['problemsDiagnoses'][number] }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const statusColors: Record<string, { bg: string; text: string }> = {
+    Active:   { bg: 'var(--success-main)',  text: 'var(--success-contrast)'  },
+    Resolved: { bg: 'var(--grey-80)',       text: 'var(--primary-contrast)'  },
+    Inactive: { bg: 'var(--grey-80)',       text: 'var(--primary-contrast)'  },
+  };
+  const statusChip = statusColors[d.status] ?? { bg: 'var(--accent2-main)', text: 'var(--accent2-contrast)' };
+
+  return (
+    <div className="bg-primary-contrast border border-border rounded-lg overflow-hidden">
+      <button
+        onClick={() => setExpanded(e => !e)}
+        className="w-full flex items-center gap-3 px-3 py-3 min-h-[52px] hover:bg-hover transition-colors text-left"
+      >
+        <span
+          className="text-primary-main flex-shrink-0 transition-transform duration-200"
+          style={{ transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
+        >
+          <ChevronRightIcon size={16} />
+        </span>
+        <span className="flex-1 min-w-0 text-sm font-medium text-text-primary truncate">{d.condition}</span>
+        {d.diagnosed && (
+          <span className="text-xs text-text-primary flex-shrink-0 whitespace-nowrap">
+            <span className="mr-1">Diagnosed</span>{d.diagnosed}
+          </span>
+        )}
+        <span
+          className="text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0"
+          style={{ backgroundColor: statusChip.bg, color: statusChip.text }}
+        >
+          {d.status}
+        </span>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-border">
+          {d.notes && (
+            <div className="px-4 py-3 border-b border-border">
+              <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Diagnosis notes</p>
+              <p className="text-sm text-text-primary leading-relaxed">{d.notes}</p>
+            </div>
+          )}
+          <div className="px-4 py-3">
+            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Details</p>
+            <div className="flex flex-wrap gap-x-6 gap-y-2">
+              <div className="flex flex-col">
+                <span className="text-xs text-text-secondary">Status</span>
+                <span className="text-sm font-medium text-text-primary">{d.status}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-text-secondary">Diagnosed</span>
+                <span className="text-sm font-medium text-text-primary">{d.diagnosed}</span>
+              </div>
+              {d.reviewedDate && (
+                <div className="flex flex-col">
+                  <span className="text-xs text-text-secondary">Last reviewed</span>
+                  <span className="text-sm font-medium text-text-primary">{d.reviewedDate}</span>
+                </div>
+              )}
+              {d.reviewedBy && (
+                <div className="flex flex-col">
+                  <span className="text-xs text-text-secondary">Reviewed by</span>
+                  <span className="text-sm font-medium text-text-primary">{d.reviewedBy}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MedicalHistoryContent({ patientId }: { patientId: string }) {
+  const patient = PATIENT_REGISTRY[patientId] ?? ACTIVE_PATIENT;
+  const priority1 = patient.problemsDiagnoses.filter(d => d.priority === 1);
+
+  if (priority1.length === 0) {
+    return <p className="text-sm text-text-secondary italic">No Priority 1 entries</p>;
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      {priority1.map((d, i) => (
+        <MedicalHistoryTile key={i} d={d} />
+      ))}
+    </div>
+  );
+}
+
 function SummaryWidgetContent({ patientId }: { patientId: string }) {
-  function SectionHeading({ title }: { title: string }) {
+  function SectionHeading({ title, first }: { title: string; first?: boolean }) {
     return (
-      <div className="mt-8 mb-3">
+      <div className={`${first ? 'mb-3' : 'mt-8 mb-3'}`}>
         <p className="text-sm font-semibold text-text-primary">{title}</p>
         <div className="border-t border-border mt-2" />
       </div>
@@ -727,7 +821,8 @@ function SummaryWidgetContent({ patientId }: { patientId: string }) {
 
   return (
     <div>
-      <WidgetContent title="Summary" patientId={patientId} />
+      <SectionHeading title="Medical history (Priority 1)" first />
+      <MedicalHistoryContent patientId={patientId} />
 
       <SectionHeading title="Allergies" />
       <AllergiesContent patientId={patientId} />
@@ -855,7 +950,7 @@ export function PatientSummaryCard({
           </div>
         </div>
         <div className="border-t border-border" />
-        <div className="p-4">{children}</div>
+        <div className={`p-4${stretch ? ' flex-1 overflow-y-auto' : ''}`}>{children}</div>
       </motion.div>
     );
   }
@@ -870,16 +965,16 @@ export function PatientSummaryCard({
         <div className="flex-1 min-w-0" />
       </div>
 
-      <div className="flex gap-6 items-stretch">
-      {/* Left column — Summary (50%) */}
-      <div className="flex-1 min-w-0 flex flex-col pb-10">
+      <div className="flex-1 grid grid-cols-2 gap-6" style={{ alignItems: 'start' }}>
+      {/* Left column — fills available height */}
+      <div className="flex flex-col" style={{ alignSelf: 'stretch' }}>
         <WidgetShell widget={SUMMARY_WIDGET} index={0} stretch>
           <SummaryWidgetContent patientId={resolvedPatientId} />
         </WidgetShell>
       </div>
 
-      {/* Right column — stacked widgets (50%) */}
-      <div className="flex-1 min-w-0 flex flex-col gap-6 pb-10">
+      {/* Right column — hugs content */}
+      <div className="flex flex-col gap-6 pb-10">
         {STACK_WIDGETS.map((widget, index) => (
           <WidgetShell key={widget.id} widget={widget} index={index + 1}>
             {widget.title === 'Recent encounters' ? (
