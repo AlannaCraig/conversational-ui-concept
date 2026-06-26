@@ -35,7 +35,7 @@ export interface Patient {
     allergies: string;
   };
   lifestyleAndRiskFactors: Record<string, string>;
-  problemsDiagnoses: Array<{ condition: string; status: string; diagnosed: string }>;
+  problemsDiagnoses: Array<{ condition: string; status: string; diagnosed: string; priority?: 1 | 2 | 3; notes?: string; reviewedBy?: string; reviewedDate?: string }>;
   allergies: Array<{ substance: string; reaction: string; type?: string; recordedDate?: string; severity?: string; status?: string; recordedBy?: string }>;
   currentMedications: Array<{ name: string; dose: string; frequency: string; prescriber: string; prescribedDate: string; prescriptionType?: string }>;
   encounters: Array<{
@@ -54,6 +54,7 @@ export interface Patient {
     bloodPressure?: Array<{ date: string; value: string }>;
     weight?: Array<{ date: string; value: string }>;
   };
+  metricHistory?: Record<string, Array<{ date: string; value: string }>>;
   lifestyleMetrics?: Array<{
     label: string;
     value: string;
@@ -98,7 +99,7 @@ export const PATIENT_HARPER: Patient = {
     exercise: 'Gym 2× weekly',
     nhsRegion: 'Greater London',
     patientId: 'PT-10001',
-    allergies: 'Penicillin — Rash',
+    allergies: 'No known allergies',
   },
   lifestyleAndRiskFactors: {
     Diet: 'Moderate processed food intake',
@@ -110,7 +111,7 @@ export const PATIENT_HARPER: Patient = {
     { condition: 'Mild Generalised Anxiety', status: 'Active', diagnosed: '2024' },
     { condition: 'Seasonal Allergic Rhinitis', status: 'Active', diagnosed: 'Childhood' },
   ],
-  allergies: [{ substance: 'Penicillin', reaction: 'Rash', type: 'Drug', recordedDate: '14 Feb 2024', severity: 'Mild', status: 'Active', recordedBy: 'Dr Amelia Foster' }],
+  allergies: [],
   currentMedications: [
     { name: 'Cetirizine', dose: '10 mg', frequency: 'PRN', prescriber: 'Dr Priya Nair', prescribedDate: '22 May 2025', prescriptionType: 'Acute' },
     { name: 'Propranolol', dose: '10 mg', frequency: 'PRN for anxiety', prescriber: 'Dr Samuel Reeves', prescribedDate: '18 Mar 2025', prescriptionType: 'Acute' },
@@ -246,7 +247,7 @@ export const PATIENT_ELLISON: Patient = {
     livingSituation: 'Lives alone',
     mobility: 'Uses walking stick',
     patientId: 'PT-10002',
-    allergies: 'No known drug allergies',
+    allergies: 'Penicillin — Rash',
   },
   lifestyleAndRiskFactors: {
     'Falls Risk': 'Moderate',
@@ -256,13 +257,13 @@ export const PATIENT_ELLISON: Patient = {
     'Exercise Tolerance': 'Breathless after short distances',
   },
   problemsDiagnoses: [
-    { condition: 'COPD', status: 'Active', diagnosed: '2016' },
-    { condition: 'Hypertension', status: 'Active', diagnosed: '2012' },
-    { condition: 'Type 2 Diabetes', status: 'Active', diagnosed: '2018' },
-    { condition: 'Osteoarthritis', status: 'Active', diagnosed: '2014' },
-    { condition: 'Chronic Kidney Disease Stage 2', status: 'Active', diagnosed: '2022' },
+    { condition: 'COPD', status: 'Active', diagnosed: '2016', priority: 1, notes: 'Moderate severity (MRC Grade 3). Recent exacerbation requiring hospital admission Feb 2025. On maximum inhaled therapy. Pulmonology review recommended.', reviewedBy: 'Dr Helen Murray', reviewedDate: '11 Feb 2025' },
+    { condition: 'Chronic Kidney Disease Stage 2', status: 'Active', diagnosed: '2022', priority: 1, notes: 'eGFR stable at 68 ml/min. Requires 6-monthly renal function monitoring given concurrent ramipril and metformin use. Nephrology involvement not yet required.', reviewedBy: 'Dr Helen Murray', reviewedDate: '11 Feb 2025' },
+    { condition: 'Type 2 Diabetes', status: 'Active', diagnosed: '2018', priority: 1, notes: 'HbA1c 58 mmol/mol at last check — borderline controlled. Annual diabetic review overdue. Metformin dose at maximum tolerated. Consider SGLT2 inhibitor given CKD and cardiovascular risk profile.', reviewedBy: 'Dr Helen Murray', reviewedDate: '11 Feb 2025' },
+    { condition: 'Hypertension', status: 'Active', diagnosed: '2012', priority: 2, notes: 'BP well controlled on ramipril 10mg. Last reading 132/78 mmHg.' },
+    { condition: 'Osteoarthritis', status: 'Active', diagnosed: '2014', priority: 2, notes: 'Primarily affecting knees and hips. Managed with paracetamol PRN. Physio referral considered.' },
   ],
-  allergies: [],
+  allergies: [{ substance: 'Penicillin', reaction: 'Rash', type: 'Drug', recordedDate: '14 Feb 2024', severity: 'Mild', status: 'Active', recordedBy: 'Dr Amelia Foster' }],
   currentMedications: [
     { name: 'Salbutamol Inhaler', dose: '100 mcg', frequency: 'PRN', prescriber: 'Dr Helen Murray', prescribedDate: '11 Feb 2025', prescriptionType: 'Repeat' },
     { name: 'Tiotropium', dose: '18 mcg', frequency: 'Daily', prescriber: 'Dr Helen Murray', prescribedDate: '11 Feb 2025', prescriptionType: 'Repeat' },
@@ -381,6 +382,64 @@ export const PATIENT_ELLISON: Patient = {
     { label: 'Smoking status', value: 'Ex-smoker', unit: '', date: '11 Feb 2025', trend: 'neutral' },
     { label: 'Alcohol', value: 'Rare', unit: '', date: '11 Feb 2025', trend: 'neutral' },
   ],
+  metricHistory: {
+    'BP': [
+      { date: 'Jan 2026', value: '148/90' },
+      { date: 'Feb 2026', value: '152/92' },
+      { date: 'Mar 2026', value: '144/88' },
+      { date: 'Apr 2026', value: '146/86' },
+      { date: 'May 2026', value: '150/90' },
+      { date: 'Jun 2026', value: '150/90' },
+    ],
+    'Weight': [
+      { date: 'Jan 2026', value: '70' },
+      { date: 'Feb 2026', value: '69' },
+      { date: 'Mar 2026', value: '69' },
+      { date: 'Apr 2026', value: '68' },
+      { date: 'May 2026', value: '68' },
+      { date: 'Jun 2026', value: '68' },
+    ],
+    'BMI': [
+      { date: 'Jan 2026', value: '27.7' },
+      { date: 'Feb 2026', value: '27.3' },
+      { date: 'Mar 2026', value: '27.3' },
+      { date: 'Apr 2026', value: '26.9' },
+      { date: 'May 2026', value: '26.9' },
+      { date: 'Jun 2026', value: '26.9' },
+    ],
+    'Pulse': [
+      { date: 'Jan 2026', value: '90' },
+      { date: 'Feb 2026', value: '86' },
+      { date: 'Mar 2026', value: '88' },
+      { date: 'Apr 2026', value: '84' },
+      { date: 'May 2026', value: '87' },
+      { date: 'Jun 2026', value: '88' },
+    ],
+    'SpO₂': [
+      { date: 'Jan 2026', value: '93' },
+      { date: 'Feb 2026', value: '92' },
+      { date: 'Mar 2026', value: '94' },
+      { date: 'Apr 2026', value: '93' },
+      { date: 'May 2026', value: '91' },
+      { date: 'Jun 2026', value: '93' },
+    ],
+    'Peak flow': [
+      { date: 'Jan 2026', value: '215' },
+      { date: 'Feb 2026', value: '205' },
+      { date: 'Mar 2026', value: '220' },
+      { date: 'Apr 2026', value: '210' },
+      { date: 'May 2026', value: '200' },
+      { date: 'Jun 2026', value: '210' },
+    ],
+    'Respiratory rate': [
+      { date: 'Jan 2026', value: '21' },
+      { date: 'Feb 2026', value: '23' },
+      { date: 'Mar 2026', value: '20' },
+      { date: 'Apr 2026', value: '22' },
+      { date: 'May 2026', value: '24' },
+      { date: 'Jun 2026', value: '22' },
+    ],
+  },
   investigations: [
     { test: 'FBC',               result: 'Normal',                              flag: 'Normal',          date: '11 Feb 2025', category: 'Blood',       requestGroup: '11 Feb 2025', requestContext: 'Annual COPD Review — Bloods' },
     { test: 'U&Es',              result: 'Na 140, K 4.3, Cr 98 µmol/L',        flag: 'Normal',          date: '11 Feb 2025', category: 'Blood',       requestGroup: '11 Feb 2025', requestContext: 'Annual COPD Review — Bloods' },
