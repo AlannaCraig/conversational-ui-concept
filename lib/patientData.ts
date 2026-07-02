@@ -36,12 +36,13 @@ export interface Patient {
   };
   lifestyleAndRiskFactors: Record<string, string>;
   problemsDiagnoses: Array<{ condition: string; status: string; diagnosed: string; priority?: 1 | 2 | 3; notes?: string; reviewedBy?: string; reviewedDate?: string }>;
-  allergies: Array<{ substance: string; reaction: string; type?: string; recordedDate?: string; severity?: string; status?: string; recordedBy?: string }>;
-  currentMedications: Array<{ name: string; dose: string; frequency: string; prescriber: string; prescribedDate: string; prescriptionType?: string }>;
+  allergies: Array<{ substance: string; reaction: string; type?: string; recordedDate?: string; severity?: string; status?: string; recordedBy?: string; drugForm?: string; strength?: string }>;
+  currentMedications: Array<{ name: string; dose: string; frequency: string; prescriber: string; prescribedDate: string; prescriptionType?: string; drugForm?: string; strength?: string }>;
   encounters: Array<{
     date: string;
     time: string;
     clinician: string;
+    location?: string;
     type: string;
     observations?: Record<string, string | number>;
     presentingComplaint?: string;
@@ -62,6 +63,23 @@ export interface Patient {
     date: string;
     trend: 'up' | 'down' | 'neutral';
   }>;
+  lifestyleEntries?: {
+    occupation?: { date: string; term: string; value: string };
+    smoking?: { date: string; term: string; status: string; consumption?: string };
+    alcohol?: { date: string; term: string; consumption: string };
+    exercise?: { date: string; term: string; type: string };
+    contraception?: { date: string; term: string; iucdFitted?: string };
+    diet?: { date: string; term: string; habit: string; type?: string };
+    residence?: { date: string; term: string; type: string };
+  };
+  examinationEntries?: {
+    weight?: { date: string; term: string; value: string; bmi?: string };
+    bloodPressure?: { date: string; term: string; systolic: string; diastolic: string };
+    waistCircumference?: { date: string; systolic: string; diastolic: string };
+    pulse?: { date: string; term: string; value: string };
+    oxygenSaturation?: { date: string; term: string; value: string; unit: string };
+    temperature?: { date: string; term: string; value: string; unit: string; qualifier?: string };
+  };
   investigations: Array<{ test: string; result: string; flag?: string; date?: string; category?: string; requestGroup?: string; requestContext?: string }>;
   carePlans?: Array<{ area: string; plan: string }>;
   recentActivityFeed?: ActivityEvent[];
@@ -113,14 +131,15 @@ export const PATIENT_HARPER: Patient = {
   ],
   allergies: [],
   currentMedications: [
-    { name: 'Cetirizine', dose: '10 mg', frequency: 'PRN', prescriber: 'Dr Priya Nair', prescribedDate: '22 May 2025', prescriptionType: 'Acute' },
-    { name: 'Propranolol', dose: '10 mg', frequency: 'PRN for anxiety', prescriber: 'Dr Samuel Reeves', prescribedDate: '18 Mar 2025', prescriptionType: 'Acute' },
+    { name: 'Cetirizine', dose: '10 mg', frequency: 'PRN', prescriber: 'Dr Priya Nair', prescribedDate: '22 May 2025', prescriptionType: 'Acute', drugForm: 'Tablet', strength: '10 mg' },
+    { name: 'Propranolol', dose: '10 mg', frequency: 'PRN for anxiety', prescriber: 'Dr Samuel Reeves', prescribedDate: '18 Mar 2025', prescriptionType: 'Acute', drugForm: 'Tablet', strength: '10 mg' },
   ],
   encounters: [
     {
       date: '10 Jan 2025',
       time: '09:20',
       clinician: 'Dr Amelia Foster',
+      location: 'In practice',
       type: 'GP Registration Appointment',
       observations: { BP: '124/78', Pulse: 72, Weight: '81 kg' },
       summaryNotes:
@@ -141,6 +160,7 @@ export const PATIENT_HARPER: Patient = {
       date: '18 Mar 2025',
       time: '16:40',
       clinician: 'Dr Samuel Reeves',
+      location: 'In practice',
       type: 'GP Review Appointment',
       observations: { BP: '126/80', Pulse: 76 },
       summaryNotes:
@@ -162,6 +182,7 @@ export const PATIENT_HARPER: Patient = {
       date: '22 May 2025',
       time: '11:10',
       clinician: 'Dr Priya Nair',
+      location: 'In practice',
       type: 'GP Acute Appointment',
       summaryNotes:
         'Patient presented with worsening seasonal allergy symptoms including sneezing, nasal congestion, itchy eyes, and disturbed sleep over previous three weeks. Symptoms worse outdoors and during morning commute. No wheeze, chest tightness, or infective symptoms. Examination consistent with allergic rhinitis with no evidence of respiratory involvement.',
@@ -179,6 +200,20 @@ export const PATIENT_HARPER: Patient = {
     },
   ],
   observations: {},
+  lifestyleEntries: {
+    occupation:  { date: '10 Jan 2025', term: 'Occupation',         value: 'Graphic Designer' },
+    smoking:     { date: '10 Jan 2025', term: 'Smoking status',     status: 'Never smoker' },
+    alcohol:     { date: '10 Jan 2025', term: 'Alcohol consumption', consumption: 'Social drinker' },
+    exercise:    { date: '10 Jan 2025', term: 'Exercise',           type: 'Gym 2× weekly' },
+    diet:        { date: '10 Jan 2025', term: 'Diet',               habit: 'Moderate', type: 'Moderate processed food intake' },
+    residence:   { date: '10 Jan 2025', term: 'Residence',         type: 'Urban — Greater London' },
+  },
+  examinationEntries: {
+    weight:          { date: '10 Jan 2025', term: 'Weight',            value: '82 kg',  bmi: '25.0 kg/m²' },
+    bloodPressure:   { date: '18 Mar 2025', term: 'Blood pressure',    systolic: '126', diastolic: '80' },
+    pulse:           { date: '18 Mar 2025', term: 'Pulse',             value: '76 bpm' },
+    oxygenSaturation:{ date: '10 Jan 2025', term: 'Oxygen saturation', value: '99', unit: '%' },
+  },
   lifestyleMetrics: [
     { label: 'Weight', value: '82', unit: 'kg', date: '10 Jan 2025', trend: 'neutral' },
     { label: 'Height', value: '181', unit: 'cm', date: '10 Jan 2025', trend: 'neutral' },
@@ -263,20 +298,21 @@ export const PATIENT_ELLISON: Patient = {
     { condition: 'Hypertension', status: 'Active', diagnosed: '2012', priority: 2, notes: 'BP well controlled on ramipril 10mg. Last reading 132/78 mmHg.' },
     { condition: 'Osteoarthritis', status: 'Active', diagnosed: '2014', priority: 2, notes: 'Primarily affecting knees and hips. Managed with paracetamol PRN. Physio referral considered.' },
   ],
-  allergies: [{ substance: 'Penicillin', reaction: 'Rash', type: 'Drug', recordedDate: '14 Feb 2024', severity: 'Mild', status: 'Active', recordedBy: 'Dr Amelia Foster' }],
+  allergies: [{ substance: 'Penicillin', reaction: 'Rash', type: 'Drug', recordedDate: '14 Feb 2024', severity: 'Mild', status: 'Active', recordedBy: 'Dr Amelia Foster', drugForm: 'Tablet', strength: '500 mg' }],
   currentMedications: [
-    { name: 'Salbutamol Inhaler', dose: '100 mcg', frequency: 'PRN', prescriber: 'Dr Helen Murray', prescribedDate: '11 Feb 2025', prescriptionType: 'Repeat' },
-    { name: 'Tiotropium', dose: '18 mcg', frequency: 'Daily', prescriber: 'Dr Helen Murray', prescribedDate: '11 Feb 2025', prescriptionType: 'Repeat' },
-    { name: 'Ramipril', dose: '5 mg', frequency: 'Daily', prescriber: 'Dr Rebecca Collins', prescribedDate: '01 Sep 2025', prescriptionType: 'Repeat' },
-    { name: 'Metformin', dose: '500 mg', frequency: 'Twice daily', prescriber: 'Dr Helen Murray', prescribedDate: '14 Jun 2025', prescriptionType: 'Repeat' },
-    { name: 'Atorvastatin', dose: '20 mg', frequency: 'Nightly', prescriber: 'Dr Marcus Allen', prescribedDate: '26 Apr 2025', prescriptionType: 'Repeat' },
-    { name: 'Paracetamol', dose: '1 g', frequency: 'PRN', prescriber: 'Dr Rebecca Collins', prescribedDate: '01 Sep 2025', prescriptionType: 'Acute' },
+    { name: 'Salbutamol Inhaler', dose: '100 mcg', frequency: 'PRN', prescriber: 'Dr Helen Murray', prescribedDate: '11 Feb 2025', prescriptionType: 'Repeat', drugForm: 'Inhaler', strength: '100 mcg/actuation' },
+    { name: 'Tiotropium', dose: '18 mcg', frequency: 'Daily', prescriber: 'Dr Helen Murray', prescribedDate: '11 Feb 2025', prescriptionType: 'Repeat', drugForm: 'Inhaler (capsule)', strength: '18 mcg' },
+    { name: 'Ramipril', dose: '5 mg', frequency: 'Daily', prescriber: 'Dr Rebecca Collins', prescribedDate: '01 Sep 2025', prescriptionType: 'Repeat', drugForm: 'Capsule', strength: '5 mg' },
+    { name: 'Metformin', dose: '500 mg', frequency: 'Twice daily', prescriber: 'Dr Helen Murray', prescribedDate: '14 Jun 2025', prescriptionType: 'Repeat', drugForm: 'Tablet', strength: '500 mg' },
+    { name: 'Atorvastatin', dose: '20 mg', frequency: 'Nightly', prescriber: 'Dr Marcus Allen', prescribedDate: '26 Apr 2025', prescriptionType: 'Repeat', drugForm: 'Tablet', strength: '20 mg' },
+    { name: 'Paracetamol', dose: '1 g', frequency: 'PRN', prescriber: 'Dr Rebecca Collins', prescribedDate: '01 Sep 2025', prescriptionType: 'Acute', drugForm: 'Tablet', strength: '500 mg' },
   ],
   encounters: [
     {
       date: '11 Feb 2025',
       time: '10:00',
       clinician: 'Dr Helen Murray',
+      location: 'In practice',
       type: 'GP Annual COPD Review',
       observations: { BP: '142/86', SpO2: '93%', Weight: '73 kg' },
       summaryNotes:
@@ -297,6 +333,7 @@ export const PATIENT_ELLISON: Patient = {
       date: '26 Apr 2025',
       time: '02:15',
       clinician: 'Dr Marcus Allen',
+      location: 'Emergency department',
       type: 'A&E Admission',
       observations: { Presentation: 'Acute COPD exacerbation', CXR: 'No pneumonia', 'Length of Stay': '3 days' },
       summaryNotes:
@@ -318,6 +355,7 @@ export const PATIENT_ELLISON: Patient = {
       date: '14 Jun 2025',
       time: '14:30',
       clinician: 'Dr Helen Murray',
+      location: 'In practice',
       type: 'GP Diabetes Review',
       observations: { HbA1c: '7.4%' },
       summaryNotes:
@@ -339,6 +377,7 @@ export const PATIENT_ELLISON: Patient = {
       date: '01 Sep 2025',
       time: '15:20',
       clinician: 'Dr Rebecca Collins',
+      location: 'Home visit',
       type: 'GP Falls Assessment',
       summaryNotes:
         'Patient reviewed following fall at home while mobilising between kitchen and hallway. Sustained minor bruising to left wrist without fracture symptoms. Reports increasing unsteadiness and reduced confidence mobilising outdoors over previous several months. Mobility assessment demonstrated poor balance and lower limb deconditioning. No syncope or acute neurological symptoms reported.',
@@ -368,6 +407,19 @@ export const PATIENT_ELLISON: Patient = {
       { date: 'Apr 2025', value: '71 kg' },
       { date: 'Sep 2025', value: '70 kg' },
     ],
+  },
+  lifestyleEntries: {
+    occupation:  { date: '11 Feb 2025', term: 'Occupation',          value: 'Retired' },
+    smoking:     { date: '11 Feb 2025', term: 'Smoking status',      status: 'Ex-smoker', consumption: '40 pack-year history' },
+    alcohol:     { date: '11 Feb 2025', term: 'Alcohol consumption', consumption: 'Rare' },
+    diet:        { date: '11 Feb 2025', term: 'Diet',                habit: 'Poor appetite during COPD flare-ups', type: 'Reduced oral intake' },
+    residence:   { date: '11 Feb 2025', term: 'Residence',           type: 'Lives alone' },
+  },
+  examinationEntries: {
+    weight:           { date: '01 Sep 2025', term: 'Weight',            value: '70 kg',  bmi: '28.1 kg/m²' },
+    bloodPressure:    { date: '01 Sep 2025', term: 'Blood pressure',    systolic: '150', diastolic: '90' },
+    pulse:            { date: '01 Sep 2025', term: 'Pulse',             value: '88 bpm' },
+    oxygenSaturation: { date: '11 Feb 2025', term: 'Oxygen saturation', value: '93', unit: '%' },
   },
   lifestyleMetrics: [
     { label: 'Weight', value: '70', unit: 'kg', date: '01 Sep 2025', trend: 'down' },

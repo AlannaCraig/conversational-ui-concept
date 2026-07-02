@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { PatientIcon, MoreVerticalIcon, ArrowRightIcon, TaskListIcon, ReferralIcon, PillIcon, CalendarIcon } from '@/components/icons';
@@ -19,6 +19,7 @@ import { AllergyChip, type AllergyStatus } from '@/components/ui/AllergyChip';
 import { RiskStatusChip, type RiskLevel } from '@/components/ui/RiskStatusChip';
 import { LifestyleMetricTile } from '@/components/ui/LifestyleMetricTile';
 import { TestGroupTile } from '@/components/ui/RecentTestTile';
+import { ActivityTimeline } from '@/components/ui/ActivityTimeline';
 
 function getAllergyStatus(allergyText: string): AllergyStatus {
   const lower = allergyText.toLowerCase();
@@ -109,15 +110,9 @@ export function PatientHeader({
   );
 }
 
-// Skeleton shimmer line
+// Skeleton shimmer line — CSS animation only, no JS RAF loop
 function SkeletonLine({ width = 'full' }: { width?: string }) {
-  return (
-    <motion.div
-      className={`h-3 w-${width} bg-primary-light rounded`}
-      animate={{ opacity: [0.4, 0.8, 0.4] }}
-      transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-    />
-  );
+  return <div className={`h-3 w-${width} bg-primary-light rounded animate-pulse`} />;
 }
 
 function WidgetContent({ title, patientId }: { title: string; patientId: string }) {
@@ -239,7 +234,7 @@ function parseSummarySections(text: string): Array<{ heading: string | null; bul
 
 // Summary widget: Complexity/Risk chips, then sectioned bullet content
 function SummaryContent({ text, complexity, risk }: { text: string; complexity?: RiskLevel; risk?: RiskLevel }) {
-  const sections = parseSummarySections(text);
+  const sections = useMemo(() => parseSummarySections(text), [text]);
 
   return (
     <div className="space-y-3">
@@ -323,19 +318,6 @@ function encounterLabel(type: string): string {
 
 function EncounterTile({ enc }: { enc: NonNullable<Patient['encounters'][number]> }) {
   const [expanded, setExpanded] = useState(false);
-  const { bg: avatarBg, text: avatarText } = (() => {
-    const AVATAR_TOKENS = [
-      { bg: 'var(--accent-main)',   text: 'var(--accent-contrast)'  },
-      { bg: 'var(--accent1-main)',  text: 'var(--accent1-contrast)' },
-      { bg: 'var(--accent2-main)',  text: 'var(--accent2-contrast)' },
-      { bg: 'var(--accent3-main)',  text: 'var(--accent3-contrast)' },
-      { bg: 'var(--success-main)',  text: 'var(--success-contrast)' },
-    ];
-    let hash = 0;
-    for (let i = 0; i < enc.clinician.length; i++) hash = enc.clinician.charCodeAt(i) + ((hash << 5) - hash);
-    return AVATAR_TOKENS[Math.abs(hash) % AVATAR_TOKENS.length];
-  })();
-  const initials = enc.clinician.replace(/^Dr\s+/i, '').split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
     <div className="bg-primary-contrast border border-border rounded-lg overflow-hidden">
@@ -351,18 +333,29 @@ function EncounterTile({ enc }: { enc: NonNullable<Patient['encounters'][number]
         </span>
         <span className="flex-1 min-w-0 text-sm font-medium text-text-primary">{encounterLabel(enc.type)}</span>
         <span className="text-xs text-text-primary flex-shrink-0 whitespace-nowrap">
-          <span className="mr-1">Date</span>{enc.date}
+          On {enc.date} at {enc.time}
         </span>
-        <div
-          className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
-          style={{ backgroundColor: avatarBg, color: avatarText }}
-        >
-          {initials}
-        </div>
       </button>
 
       {expanded && (
         <div className="border-t border-border">
+          {/* Clinician & Location */}
+          <div className="px-4 py-3 border-b border-border">
+            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Clinician &amp; Location</p>
+            <div className="flex flex-wrap gap-x-6 gap-y-2">
+              <div className="flex flex-col">
+                <span className="text-xs text-text-secondary">GP</span>
+                <span className="text-sm font-medium text-text-primary">{enc.clinician}</span>
+              </div>
+              {enc.location && (
+                <div className="flex flex-col">
+                  <span className="text-xs text-text-secondary">Location</span>
+                  <span className="text-sm font-medium text-text-primary">{enc.location}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Notes */}
           <div className="px-4 py-3 border-b border-border">
             <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Notes</p>
@@ -422,29 +415,61 @@ function EncountersContent({ patientId }: { patientId: string }) {
   );
 }
 
+function LifestyleEntry({ term, date, value }: { term: string; date: string; value: string }) {
+  return (
+    <div className="flex items-baseline gap-2 py-2 border-b border-border last:border-0">
+      <span className="text-sm text-text-secondary flex-shrink-0">{term}</span>
+      <span className="mx-0.5 text-text-secondary opacity-40 flex-shrink-0">·</span>
+      <span className="text-sm font-medium text-text-primary flex-1 min-w-0">{value}</span>
+      <span className="text-xs text-text-secondary flex-shrink-0 whitespace-nowrap">{date}</span>
+    </div>
+  );
+}
+
 function LifestyleContent({ patientId }: { patientId: string }) {
   const patient = PATIENT_REGISTRY[patientId] ?? ACTIVE_PATIENT;
-  const metrics = patient.lifestyleMetrics ?? [];
-  const metricHistory = patient.metricHistory ?? {};
+  const ls = patient.lifestyleEntries;
+  const ex = patient.examinationEntries;
+
+  const hasLifestyle = ls && Object.keys(ls).length > 0;
+  const hasExaminations = ex && Object.keys(ex).length > 0;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.4 }}
-      style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(155px, 1fr))', gap: '8px' }}
-    >
-      {metrics.map((m, i) => (
-        <LifestyleMetricTile
-          key={i}
-          label={m.label}
-          value={m.value}
-          unit={m.unit}
-          date={m.date}
-          trend={m.trend}
-          history={metricHistory[m.label]}
-        />
-      ))}
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="flex flex-col gap-6">
+      {/* Lifestyle */}
+      <div>
+        <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-3">Lifestyle</p>
+        {!hasLifestyle ? (
+          <p className="text-sm text-text-secondary italic">No lifestyle information recorded</p>
+        ) : (
+          <div className="flex flex-col">
+            {ls?.occupation && <LifestyleEntry term={ls.occupation.term} date={ls.occupation.date} value={ls.occupation.value} />}
+            {ls?.smoking && <LifestyleEntry term={ls.smoking.term} date={ls.smoking.date} value={ls.smoking.consumption ? `${ls.smoking.status} · ${ls.smoking.consumption}` : ls.smoking.status} />}
+            {ls?.alcohol && <LifestyleEntry term={ls.alcohol.term} date={ls.alcohol.date} value={ls.alcohol.consumption} />}
+            {ls?.exercise && <LifestyleEntry term={ls.exercise.term} date={ls.exercise.date} value={ls.exercise.type} />}
+            {ls?.contraception && ls.contraception.iucdFitted && <LifestyleEntry term={ls.contraception.term} date={ls.contraception.date} value={ls.contraception.iucdFitted} />}
+            {ls?.diet && <LifestyleEntry term={ls.diet.term} date={ls.diet.date} value={ls.diet.type ? `${ls.diet.habit} · ${ls.diet.type}` : ls.diet.habit} />}
+            {ls?.residence && <LifestyleEntry term={ls.residence.term} date={ls.residence.date} value={ls.residence.type} />}
+          </div>
+        )}
+      </div>
+
+      {/* Examinations */}
+      <div>
+        <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-3">Examinations</p>
+        {!hasExaminations ? (
+          <p className="text-sm text-text-secondary italic">No examination data recorded</p>
+        ) : (
+          <div className="flex flex-col">
+            {ex?.weight && <LifestyleEntry term={ex.weight.term} date={ex.weight.date} value={ex.weight.bmi ? `${ex.weight.value} · BMI ${ex.weight.bmi}` : ex.weight.value} />}
+            {ex?.bloodPressure && <LifestyleEntry term={ex.bloodPressure.term} date={ex.bloodPressure.date} value={`${ex.bloodPressure.systolic}/${ex.bloodPressure.diastolic} mmHg`} />}
+            {ex?.waistCircumference && <LifestyleEntry term="Waist circumference" date={ex.waistCircumference.date} value={`${ex.waistCircumference.systolic}/${ex.waistCircumference.diastolic}`} />}
+            {ex?.pulse && <LifestyleEntry term={ex.pulse.term} date={ex.pulse.date} value={ex.pulse.value} />}
+            {ex?.oxygenSaturation && <LifestyleEntry term={ex.oxygenSaturation.term} date={ex.oxygenSaturation.date} value={`${ex.oxygenSaturation.value} ${ex.oxygenSaturation.unit}`} />}
+            {ex?.temperature && <LifestyleEntry term={ex.temperature.term} date={ex.temperature.date} value={ex.temperature.qualifier ? `${ex.temperature.value} ${ex.temperature.unit} · ${ex.temperature.qualifier}` : `${ex.temperature.value} ${ex.temperature.unit}`} />}
+          </div>
+        )}
+      </div>
     </motion.div>
   );
 }
@@ -494,19 +519,6 @@ function ActivityContent({ patientId }: { patientId: string }) {
 
 function MedicationTile({ med }: { med: Patient['currentMedications'][number] }) {
   const [expanded, setExpanded] = useState(false);
-  const { bg: avatarBg, text: avatarText } = (() => {
-    const AVATAR_TOKENS = [
-      { bg: 'var(--accent-main)',   text: 'var(--accent-contrast)'  },
-      { bg: 'var(--accent1-main)',  text: 'var(--accent1-contrast)' },
-      { bg: 'var(--accent2-main)',  text: 'var(--accent2-contrast)' },
-      { bg: 'var(--accent3-main)',  text: 'var(--accent3-contrast)' },
-      { bg: 'var(--success-main)',  text: 'var(--success-contrast)' },
-    ];
-    let hash = 0;
-    for (let i = 0; i < med.prescriber.length; i++) hash = med.prescriber.charCodeAt(i) + ((hash << 5) - hash);
-    return AVATAR_TOKENS[Math.abs(hash) % AVATAR_TOKENS.length];
-  })();
-  const initials = med.prescriber.replace(/^Dr\s+/i, '').split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
 
   const chipColors: Record<string, { bg: string; text: string }> = {
     Repeat: { bg: 'var(--primary-main)', text: 'var(--primary-contrast)' },
@@ -526,9 +538,16 @@ function MedicationTile({ med }: { med: Patient['currentMedications'][number] })
         >
           <ChevronRightIcon size={16} />
         </span>
-        <span className="flex-1 min-w-0 text-sm font-medium text-text-primary truncate">{med.name}</span>
+        <span className="flex-1 min-w-0 flex flex-col">
+          <span className="text-sm font-medium text-text-primary truncate">{med.name}</span>
+          {(med.strength || med.drugForm) && (
+            <span className="text-xs text-text-secondary truncate">
+              {[med.strength, med.drugForm].filter(Boolean).join(' · ')}
+            </span>
+          )}
+        </span>
         <span className="text-xs text-text-primary flex-shrink-0 whitespace-nowrap">
-          <span className="mr-1">Prescribed</span>{med.prescribedDate}
+          Prescribed on {med.prescribedDate}
         </span>
         {chip && med.prescriptionType && (
           <span
@@ -538,12 +557,6 @@ function MedicationTile({ med }: { med: Patient['currentMedications'][number] })
             {med.prescriptionType}
           </span>
         )}
-        <div
-          className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
-          style={{ backgroundColor: avatarBg, color: avatarText }}
-        >
-          {initials}
-        </div>
       </button>
 
       {expanded && (
@@ -665,6 +678,25 @@ function AllergyTile({ a }: { a: Patient['allergies'][number] }) {
             <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Reaction</p>
             <p className="text-sm text-text-primary">{a.reaction}</p>
           </div>
+          {a.type === 'Drug' && (a.drugForm || a.strength) && (
+            <div className="px-4 py-3 border-b border-border">
+              <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Medication details</p>
+              <div className="flex flex-wrap gap-x-6 gap-y-2">
+                {a.drugForm && (
+                  <div className="flex flex-col">
+                    <span className="text-xs text-text-secondary">Drug Form</span>
+                    <span className="text-sm font-medium text-text-primary">{a.drugForm}</span>
+                  </div>
+                )}
+                {a.strength && (
+                  <div className="flex flex-col">
+                    <span className="text-xs text-text-secondary">Strength</span>
+                    <span className="text-sm font-medium text-text-primary">{a.strength}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           <div className="px-4 py-3">
             <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Details</p>
             <div className="flex flex-wrap gap-x-6 gap-y-2">
@@ -704,28 +736,31 @@ function AllergiesContent({ patientId }: { patientId: string }) {
   const patient = PATIENT_REGISTRY[patientId] ?? ACTIVE_PATIENT;
   const allergies = patient.allergies;
 
-  if (allergies.length === 0) {
-    return <p className="text-sm text-text-secondary italic">No known allergies</p>;
-  }
+  const drugAllergies = allergies.filter(a => a.type === 'Drug');
+  const nonDrugAllergies = allergies.filter(a => a.type !== 'Drug');
 
   return (
-    <div className="flex flex-col gap-1">
-      {allergies.map((a, i) => (
-        <AllergyTile key={i} a={a} />
-      ))}
+    <div className="flex flex-col gap-6">
+      <div>
+        <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-3">Drug allergies</p>
+        {drugAllergies.length === 0
+          ? <p className="text-sm text-text-secondary italic">No known drug allergies</p>
+          : <div className="flex flex-col gap-1">{drugAllergies.map((a, i) => <AllergyTile key={i} a={a} />)}</div>
+        }
+      </div>
+      <div>
+        <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-3">Non-drug allergies</p>
+        {nonDrugAllergies.length === 0
+          ? <p className="text-sm text-text-secondary italic">No known non-drug allergies</p>
+          : <div className="flex flex-col gap-1">{nonDrugAllergies.map((a, i) => <AllergyTile key={i} a={a} />)}</div>
+        }
+      </div>
     </div>
   );
 }
 
 function MedicalHistoryTile({ d }: { d: Patient['problemsDiagnoses'][number] }) {
   const [expanded, setExpanded] = useState(false);
-
-  const statusColors: Record<string, { bg: string; text: string }> = {
-    Active:   { bg: 'var(--success-main)',  text: 'var(--success-contrast)'  },
-    Resolved: { bg: 'var(--grey-80)',       text: 'var(--primary-contrast)'  },
-    Inactive: { bg: 'var(--grey-80)',       text: 'var(--primary-contrast)'  },
-  };
-  const statusChip = statusColors[d.status] ?? { bg: 'var(--accent2-main)', text: 'var(--accent2-contrast)' };
 
   return (
     <div className="bg-primary-contrast border border-border rounded-lg overflow-hidden">
@@ -742,15 +777,9 @@ function MedicalHistoryTile({ d }: { d: Patient['problemsDiagnoses'][number] }) 
         <span className="flex-1 min-w-0 text-sm font-medium text-text-primary truncate">{d.condition}</span>
         {d.diagnosed && (
           <span className="text-xs text-text-primary flex-shrink-0 whitespace-nowrap">
-            <span className="mr-1">Diagnosed</span>{d.diagnosed}
+            From {d.diagnosed}
           </span>
         )}
-        <span
-          className="text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0"
-          style={{ backgroundColor: statusChip.bg, color: statusChip.text }}
-        >
-          {d.status}
-        </span>
       </button>
 
       {expanded && (
@@ -765,25 +794,9 @@ function MedicalHistoryTile({ d }: { d: Patient['problemsDiagnoses'][number] }) 
             <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Details</p>
             <div className="flex flex-wrap gap-x-6 gap-y-2">
               <div className="flex flex-col">
-                <span className="text-xs text-text-secondary">Status</span>
-                <span className="text-sm font-medium text-text-primary">{d.status}</span>
-              </div>
-              <div className="flex flex-col">
                 <span className="text-xs text-text-secondary">Diagnosed</span>
                 <span className="text-sm font-medium text-text-primary">{d.diagnosed}</span>
               </div>
-              {d.reviewedDate && (
-                <div className="flex flex-col">
-                  <span className="text-xs text-text-secondary">Last reviewed</span>
-                  <span className="text-sm font-medium text-text-primary">{d.reviewedDate}</span>
-                </div>
-              )}
-              {d.reviewedBy && (
-                <div className="flex flex-col">
-                  <span className="text-xs text-text-secondary">Reviewed by</span>
-                  <span className="text-sm font-medium text-text-primary">{d.reviewedBy}</span>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -827,7 +840,7 @@ function SummaryWidgetContent({ patientId }: { patientId: string }) {
       <SectionHeading title="Allergies" />
       <AllergiesContent patientId={patientId} />
 
-      <SectionHeading title="Lifestyle & examinations" />
+      <SectionHeading title="Lifestyle &amp; examinations" />
       <LifestyleContent patientId={patientId} />
     </div>
   );
@@ -910,6 +923,39 @@ function PatientTracker({ patientId }: { patientId: string }) {
   );
 }
 
+function WidgetShell({ widget, index, stretch, onWidgetClick, children }: { widget: { id: string; title: string }; index: number; stretch?: boolean; onWidgetClick?: (title: string) => void; children: React.ReactNode }) {
+  return (
+    <motion.div
+      key={widget.id}
+      className={`border border-border bg-primary-contrast rounded-lg overflow-hidden flex flex-col${stretch ? ' flex-1' : ''}`}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.05 }}
+    >
+      <div className="p-4 flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-text-primary flex-1">{widget.title}</h3>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={() => onWidgetClick?.(widget.title)}
+            className="w-8 h-8 flex items-center justify-center hover:bg-hover transition-colors rounded cursor-pointer"
+            aria-label={`Open ${widget.title}`}
+          >
+            <ArrowRightIcon size={20} className="text-primary-main" />
+          </button>
+          <button
+            className="w-8 h-8 flex items-center justify-center hover:bg-hover transition-colors rounded cursor-pointer"
+            aria-label={`${widget.title} options`}
+          >
+            <MoreVerticalIcon size={20} className="text-primary-main" />
+          </button>
+        </div>
+      </div>
+      <div className="border-t border-border" />
+      <div className={`p-4${stretch ? ' flex-1 overflow-y-auto' : ''}`}>{children}</div>
+    </motion.div>
+  );
+}
+
 export function PatientSummaryCard({
   onWidgetClick,
   showWidgets = true,
@@ -920,39 +966,6 @@ export function PatientSummaryCard({
 
   if (!showWidgets) {
     return null;
-  }
-
-  function WidgetShell({ widget, index, stretch, children }: { widget: { id: string; title: string }; index: number; stretch?: boolean; children: React.ReactNode }) {
-    return (
-      <motion.div
-        key={widget.id}
-        className={`border border-border bg-primary-contrast rounded-lg overflow-hidden flex flex-col${stretch ? ' flex-1' : ''}`}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: index * 0.05 }}
-      >
-        <div className="p-4 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-text-primary flex-1">{widget.title}</h3>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <button
-              onClick={() => onWidgetClick?.(widget.title)}
-              className="w-8 h-8 flex items-center justify-center hover:bg-hover transition-colors rounded cursor-pointer"
-              aria-label={`Open ${widget.title}`}
-            >
-              <ArrowRightIcon size={20} className="text-primary-main" />
-            </button>
-            <button
-              className="w-8 h-8 flex items-center justify-center hover:bg-hover transition-colors rounded cursor-pointer"
-              aria-label={`${widget.title} options`}
-            >
-              <MoreVerticalIcon size={20} className="text-primary-main" />
-            </button>
-          </div>
-        </div>
-        <div className="border-t border-border" />
-        <div className={`p-4${stretch ? ' flex-1 overflow-y-auto' : ''}`}>{children}</div>
-      </motion.div>
-    );
   }
 
   return (
@@ -968,7 +981,7 @@ export function PatientSummaryCard({
       <div className="flex-1 grid grid-cols-2 gap-6" style={{ alignItems: 'start' }}>
       {/* Left column — fills available height */}
       <div className="flex flex-col" style={{ alignSelf: 'stretch' }}>
-        <WidgetShell widget={SUMMARY_WIDGET} index={0} stretch>
+        <WidgetShell widget={SUMMARY_WIDGET} index={0} stretch onWidgetClick={onWidgetClick}>
           <SummaryWidgetContent patientId={resolvedPatientId} />
         </WidgetShell>
       </div>
@@ -976,7 +989,7 @@ export function PatientSummaryCard({
       {/* Right column — hugs content */}
       <div className="flex flex-col gap-6 pb-10">
         {STACK_WIDGETS.map((widget, index) => (
-          <WidgetShell key={widget.id} widget={widget} index={index + 1}>
+          <WidgetShell key={widget.id} widget={widget} index={index + 1} onWidgetClick={onWidgetClick}>
             {widget.title === 'Recent encounters' ? (
               <EncountersContent patientId={resolvedPatientId} />
             ) : widget.title === 'Current medications' ? (
