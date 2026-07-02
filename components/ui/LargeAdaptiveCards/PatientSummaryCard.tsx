@@ -909,7 +909,6 @@ function PatientTracker({ patientId }: { patientId: string }) {
 
       {/* Appointment pills */}
       {[
-        { label: 'Last appointment', value: tracker.lastAppointment },
         { label: 'Next appointment', value: tracker.nextAppointment },
       ].map(({ label, value }) => (
         <div key={label} className="h-10 flex items-center gap-2 border border-border rounded-full bg-primary-contrast px-3 flex-shrink-0">
