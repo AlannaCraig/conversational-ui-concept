@@ -417,9 +417,8 @@ function EncountersContent({ patientId }: { patientId: string }) {
 
 function LifestyleEntry({ term, date, value }: { term: string; date: string; value: string }) {
   return (
-    <div className="flex items-baseline gap-2 py-2 border-b border-border last:border-0">
-      <span className="text-sm text-text-secondary flex-shrink-0">{term}</span>
-      <span className="mx-0.5 text-text-secondary opacity-40 flex-shrink-0">·</span>
+    <div className="flex items-baseline gap-3 py-2 border-b border-border last:border-0">
+      <span className="text-sm text-text-secondary flex-shrink-0 w-40 truncate">{term}</span>
       <span className="text-sm font-medium text-text-primary flex-1 min-w-0">{value}</span>
       <span className="text-xs text-text-secondary flex-shrink-0 whitespace-nowrap">{date}</span>
     </div>
