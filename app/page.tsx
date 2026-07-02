@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sidebar,
@@ -78,6 +78,7 @@ export default function Home() {
   const [popOutFormData, setPopOutFormData] = useState<{ title: string; subtitle?: string; formId?: string } | null>(null);
   const [activePatientId, setActivePatientId] = useState<string>('PT-10002');
   const [isFocusMode, setIsFocusMode] = useState(false);
+  const [careMode, setCareMode] = useState<'primary' | 'urgent'>('primary');
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -532,8 +533,7 @@ export default function Home() {
     }
   };
 
-  // Get unread notification count
-  const unreadNotificationCount = getMockNotifications().filter(n => !n.isRead).length;
+  const unreadNotificationCount = useMemo(() => getMockNotifications().filter(n => !n.isRead).length, []);
 
   return (
     <main className="h-screen bg-background-soft">
@@ -616,9 +616,19 @@ export default function Home() {
 
                           {/* Action buttons */}
                           <div className="flex items-center gap-2">
-                            {/* Placeholder buttons */}
-                            <button className="w-10 h-10 bg-background border border-border rounded-lg flex items-center justify-center hover:bg-hover transition-colors shadow-sm cursor-pointer">
-                              <div className="w-4 h-4 border border-border rounded" />
+                            {/* Care mode toggle */}
+                            <button
+                              onClick={() => {
+                                const next = careMode === 'primary' ? 'urgent' : 'primary';
+                                setCareMode(next);
+                                if (next === 'urgent') setActivePatientId('PT-10003');
+                                else setActivePatientId('PT-10002');
+                              }}
+                              className={`w-10 h-10 border rounded-lg flex items-center justify-center transition-colors shadow-sm cursor-pointer text-xs font-semibold ${careMode === 'urgent' ? 'bg-primary-main text-primary-contrast border-primary-main' : 'bg-background border-border text-text-secondary hover:bg-hover'}`}
+                              aria-label="Toggle care mode"
+                              title={careMode === 'primary' ? 'Switch to urgent care view' : 'Switch to primary care view'}
+                            >
+                              {careMode === 'urgent' ? 'UC' : 'PC'}
                             </button>
                             {showPatientHeader && (
                               <button
@@ -664,7 +674,7 @@ export default function Home() {
                             {largeCardLayout.type === 'kanban' && <KanbanCard />}
                             {largeCardLayout.type === 'analytics' && <AnalyticsCard />}
                             {largeCardLayout.type === 'patient-summary' && (
-                              <PatientSummaryCard onWidgetClick={handleWidgetClick} activePatientId={activePatientId} className="flex-1" />
+                              <PatientSummaryCard onWidgetClick={handleWidgetClick} activePatientId={activePatientId} className="flex-1" careMode={careMode} />
                             )}
                           </div>
                         </div>

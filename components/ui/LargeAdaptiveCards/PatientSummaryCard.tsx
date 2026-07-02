@@ -12,12 +12,12 @@ import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { PatientIcon, MoreVerticalIcon, ArrowRightIcon, TaskListIcon, ReferralIcon, PillIcon, CalendarIcon } from '@/components/icons';
 import { ChevronRightIcon } from '@/components/ui/ChevronRightIcon';
-import { ACTIVE_PATIENT, PATIENT_HARPER, PATIENT_ELLISON, type Patient } from '@/lib/patientData';
+import { ACTIVE_PATIENT, PATIENT_HARPER, PATIENT_ELLISON, PATIENT_OKAFOR, type Patient } from '@/lib/patientData';
 import { calcComplexity, calcRisk } from '@/lib/clinicalCalculators';
 import { PatientEntryTile } from '@/components/ui/PatientEntryTile';
 import { AllergyChip, type AllergyStatus } from '@/components/ui/AllergyChip';
 import { RiskStatusChip, type RiskLevel } from '@/components/ui/RiskStatusChip';
-import { LifestyleMetricTile } from '@/components/ui/LifestyleMetricTile';
+import { LifestyleMetricTile, SparkDialog, type MetricHistoryPoint } from '@/components/ui/LifestyleMetricTile';
 import { TestGroupTile } from '@/components/ui/RecentTestTile';
 import { ActivityTimeline } from '@/components/ui/ActivityTimeline';
 
@@ -32,6 +32,7 @@ function getAllergyStatus(allergyText: string): AllergyStatus {
 const PATIENT_REGISTRY: Record<string, Patient> = {
   'PT-10001': PATIENT_HARPER,
   'PT-10002': PATIENT_ELLISON,
+  'PT-10003': PATIENT_OKAFOR,
 };
 
 interface PatientSummaryCardProps {
@@ -44,13 +45,20 @@ interface PatientSummaryCardProps {
   showWidgets?: boolean;
   className?: string;
   activePatientId?: string;
+  careMode?: 'primary' | 'urgent';
 }
 
 const SUMMARY_WIDGET = { id: 'summary', title: 'Summary' };
-const STACK_WIDGETS = [
+const STACK_WIDGETS_PRIMARY = [
   { id: 'encounters', title: 'Recent encounters' },
   { id: 'medications', title: 'Current medications' },
   { id: 'tests', title: 'Recent tests' },
+];
+const STACK_WIDGETS_URGENT = [
+  { id: 'medications', title: 'Current medications' },
+  { id: 'encounters', title: 'Recent encounters' },
+  { id: 'immunisations', title: 'Immunisations' },
+  { id: 'referrals', title: 'Primary care outbound referrals' },
 ];
 
 // Separate Patient Header component for reuse
@@ -63,22 +71,22 @@ export function PatientHeader({
   className = '',
   activePatientId,
 }: Omit<PatientSummaryCardProps, 'onWidgetClick' | 'showWidgets'>) {
-  // If an activePatientId is provided, use that patient's data instead of the defaults
   const resolved = activePatientId ? PATIENT_REGISTRY[activePatientId] : null;
+  let patientIdType: 'CHI' | 'NHS' | undefined;
   if (resolved) {
     patientName = resolved.demographics.displayName;
     dateOfBirth = resolved.demographics.dateOfBirth;
     patientId = resolved.demographics.patientId;
+    patientIdType = resolved.demographics.patientIdType;
     sex = resolved.demographics.sex;
     allergyStatus = resolved.demographics.allergies;
+  } else {
+    patientIdType = ACTIVE_PATIENT.demographics.patientIdType;
   }
+  const idLabel = patientIdType === 'NHS' ? 'NHS number' : patientIdType === 'CHI' ? 'CHI number' : 'Patient identifier';
+
   return (
     <div className={`border border-border bg-background-soft rounded-lg p-4 flex items-center gap-4 ${className}`}>
-      {/* Patient Icon */}
-      <div className="w-10 h-10 flex items-center justify-center bg-primary-contrast border border-border rounded flex-shrink-0">
-        <PatientIcon size={24} className="text-primary-main" />
-      </div>
-
       {/* Patient Information */}
       <div className="flex-1 min-w-0">
         {/* Patient Name */}
@@ -90,7 +98,7 @@ export function PatientHeader({
         <div className="text-sm text-text-secondary flex items-center gap-2 flex-wrap">
           <span>Born: {dateOfBirth}</span>
           <span className="opacity-50">•</span>
-          <span>Patient identifier: {patientId}</span>
+          <span>{idLabel}: {patientId}</span>
           <span className="opacity-50">•</span>
           <span>Sex: {sex}</span>
         </div>
@@ -415,13 +423,116 @@ function EncountersContent({ patientId }: { patientId: string }) {
   );
 }
 
-function LifestyleEntry({ term, date, value }: { term: string; date: string; value: string }) {
+function LifestyleEntry({ term, date, value, history, unit }: {
+  term: string;
+  date: string;
+  value: string;
+  history?: MetricHistoryPoint[];
+  unit?: string;
+}) {
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [tooltipVisible, setTooltipVisible] = useState(false);
+  const [tooltipCoords, setTooltipCoords] = useState({ top: 0, left: 0 });
+  const [mounted, setMounted] = useState(false);
+  const [sparkOpen, setSparkOpen] = useState(false);
+  const [anchorRect, setAnchorRect] = useState<DOMRect | null>(null);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  const valueRef = useRef<HTMLSpanElement>(null);
+  const [truncated, setTruncated] = useState(false);
+  useEffect(() => {
+    const el = valueRef.current;
+    if (!el) return;
+    const check = () => setTruncated(el.scrollWidth > el.clientWidth);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [value]);
+
+  const handleValueMouseEnter = () => {
+    if (!valueRef.current) return;
+    const rect = valueRef.current.getBoundingClientRect();
+    setTruncated(valueRef.current.scrollWidth > valueRef.current.clientWidth);
+    setTooltipCoords({ top: rect.top - 8, left: rect.left + rect.width / 2 });
+    setTooltipVisible(true);
+  };
+
+  const handleTrendClick = () => {
+    if (!btnRef.current) return;
+    setAnchorRect(btnRef.current.getBoundingClientRect());
+    setSparkOpen(true);
+  };
+
+  const hasHistory = history && history.length > 0;
+
+  const trendDirection = useMemo(() => {
+    if (!history || history.length < 2) return null;
+    const parse = (v: string) => parseFloat(v.replace(/[^\d.]/g, ''));
+    const first = parse(history[0].value);
+    const last  = parse(history[history.length - 1].value);
+    if (isNaN(first) || isNaN(last) || first === last) return null;
+    return last > first ? 'up' : 'down';
+  }, [history]);
+
   return (
-    <div className="flex items-baseline gap-3 py-2 border-b border-border last:border-0">
-      <span className="text-sm text-text-secondary flex-shrink-0 w-40 truncate">{term}</span>
-      <span className="text-sm font-medium text-text-primary flex-1 min-w-0">{value}</span>
-      <span className="text-xs text-text-secondary flex-shrink-0 whitespace-nowrap">{date}</span>
-    </div>
+    <>
+      <div className="flex items-center gap-3 py-2 border-b border-border last:border-0">
+        <span className="text-sm text-text-secondary flex-shrink-0 w-40 truncate">{term}</span>
+        <span
+          ref={valueRef}
+          className="text-sm font-medium text-text-primary flex-1 min-w-0 truncate cursor-default"
+          onMouseEnter={handleValueMouseEnter}
+          onMouseLeave={() => setTooltipVisible(false)}
+        >
+          {value}
+        </span>
+        <span className="text-xs text-text-secondary flex-shrink-0 whitespace-nowrap">{date}</span>
+        {hasHistory && trendDirection ? (
+          <button
+            ref={btnRef}
+            onClick={handleTrendClick}
+            className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded hover:bg-hover transition-colors text-text-secondary"
+            aria-label={`Show trend for ${term}`}
+          >
+            {trendDirection === 'up' ? (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 4L4 12H9V20H15V12H20L12 4Z" />
+              </svg>
+            ) : (
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 20L20 12H15V4H9V12H4L12 20Z" />
+              </svg>
+            )}
+          </button>
+        ) : (
+          <span className="flex-shrink-0 w-6" />
+        )}
+      </div>
+
+      {/* Value tooltip */}
+      {tooltipVisible && mounted && createPortal(
+        <div className="pointer-events-none fixed z-[9999]" style={{ top: tooltipCoords.top, left: tooltipCoords.left, transform: 'translate(-50%, -100%)' }}>
+          <div className="bg-primary-dark text-primary-contrast text-xs font-medium px-3 py-2 rounded-md whitespace-nowrap shadow-lg">
+            {value}
+            <div className="absolute left-1/2 top-full -translate-x-1/2 w-0 h-0" style={{ borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid var(--primary-dark)' }} />
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Spark dialog */}
+      {sparkOpen && anchorRect && (
+        <SparkDialog
+          label={term}
+          unit={unit ?? ''}
+          history={history ?? null}
+          anchorRect={anchorRect}
+          onClose={() => setSparkOpen(false)}
+        />
+      )}
+    </>
   );
 }
 
@@ -429,6 +540,7 @@ function LifestyleContent({ patientId }: { patientId: string }) {
   const patient = PATIENT_REGISTRY[patientId] ?? ACTIVE_PATIENT;
   const ls = patient.lifestyleEntries;
   const ex = patient.examinationEntries;
+  const metricHistory = patient.metricHistory ?? {};
 
   const hasLifestyle = ls && Object.keys(ls).length > 0;
   const hasExaminations = ex && Object.keys(ex).length > 0;
@@ -460,11 +572,11 @@ function LifestyleContent({ patientId }: { patientId: string }) {
           <p className="text-sm text-text-secondary italic">No examination data recorded</p>
         ) : (
           <div className="flex flex-col">
-            {ex?.weight && <LifestyleEntry term={ex.weight.term} date={ex.weight.date} value={ex.weight.bmi ? `${ex.weight.value} · BMI ${ex.weight.bmi}` : ex.weight.value} />}
-            {ex?.bloodPressure && <LifestyleEntry term={ex.bloodPressure.term} date={ex.bloodPressure.date} value={`${ex.bloodPressure.systolic}/${ex.bloodPressure.diastolic} mmHg`} />}
+            {ex?.weight && <LifestyleEntry term={ex.weight.term} date={ex.weight.date} value={ex.weight.bmi ? `${ex.weight.value} · BMI ${ex.weight.bmi}` : ex.weight.value} history={metricHistory['Weight']} unit="kg" />}
+            {ex?.bloodPressure && <LifestyleEntry term={ex.bloodPressure.term} date={ex.bloodPressure.date} value={`${ex.bloodPressure.systolic}/${ex.bloodPressure.diastolic} mmHg`} history={metricHistory['BP']} unit="mmHg" />}
             {ex?.waistCircumference && <LifestyleEntry term="Waist circumference" date={ex.waistCircumference.date} value={`${ex.waistCircumference.systolic}/${ex.waistCircumference.diastolic}`} />}
-            {ex?.pulse && <LifestyleEntry term={ex.pulse.term} date={ex.pulse.date} value={ex.pulse.value} />}
-            {ex?.oxygenSaturation && <LifestyleEntry term={ex.oxygenSaturation.term} date={ex.oxygenSaturation.date} value={`${ex.oxygenSaturation.value} ${ex.oxygenSaturation.unit}`} />}
+            {ex?.pulse && <LifestyleEntry term={ex.pulse.term} date={ex.pulse.date} value={ex.pulse.value} history={metricHistory['Pulse']} unit="bpm" />}
+            {ex?.oxygenSaturation && <LifestyleEntry term={ex.oxygenSaturation.term} date={ex.oxygenSaturation.date} value={`${ex.oxygenSaturation.value} ${ex.oxygenSaturation.unit}`} history={metricHistory['SpO₂']} unit="%" />}
             {ex?.temperature && <LifestyleEntry term={ex.temperature.term} date={ex.temperature.date} value={ex.temperature.qualifier ? `${ex.temperature.value} ${ex.temperature.unit} · ${ex.temperature.qualifier}` : `${ex.temperature.value} ${ex.temperature.unit}`} />}
           </div>
         )}
@@ -496,6 +608,183 @@ function TestsContent({ patientId }: { patientId: string }) {
     >
       {groups.map((g, i) => (
         <TestGroupTile key={i} date={g.date} context={g.context} items={g.items} />
+      ))}
+    </motion.div>
+  );
+}
+
+function ImmunisationTile({ imm }: { imm: NonNullable<Patient['immunisations']>[number] }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="bg-primary-contrast border border-border rounded-lg overflow-hidden">
+      <button
+        onClick={() => setExpanded(e => !e)}
+        className="w-full flex items-center gap-3 px-3 py-3 hover:bg-hover transition-colors text-left"
+      >
+        <span
+          className="text-primary-main flex-shrink-0 transition-transform duration-200"
+          style={{ transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
+        >
+          <ChevronRightIcon size={16} />
+        </span>
+        <span className="flex-1 min-w-0 flex flex-col">
+          <span className="text-sm font-medium text-text-primary truncate">{imm.vaccine}</span>
+          {imm.source && <span className="text-xs text-text-secondary truncate">{imm.source}</span>}
+        </span>
+        {imm.dose && (
+          <span className="text-xs text-text-secondary flex-shrink-0 whitespace-nowrap">{imm.dose}</span>
+        )}
+        <span className="text-xs text-text-primary flex-shrink-0 whitespace-nowrap ml-2">On {imm.date}</span>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-border">
+          <div className="px-4 py-3">
+            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Details</p>
+            <div className="flex flex-wrap gap-x-6 gap-y-2">
+              <div className="flex flex-col">
+                <span className="text-xs text-text-secondary">Administered by</span>
+                <span className="text-sm font-medium text-text-primary">{imm.administeredBy}</span>
+              </div>
+              {imm.site && (
+                <div className="flex flex-col">
+                  <span className="text-xs text-text-secondary">Site</span>
+                  <span className="text-sm font-medium text-text-primary">{imm.site}</span>
+                </div>
+              )}
+              {imm.batchNumber && (
+                <div className="flex flex-col">
+                  <span className="text-xs text-text-secondary">Batch number</span>
+                  <span className="text-sm font-medium text-text-primary">{imm.batchNumber}</span>
+                </div>
+              )}
+              {imm.source && (
+                <div className="flex flex-col">
+                  <span className="text-xs text-text-secondary">Source</span>
+                  <span className="text-sm font-medium text-text-primary">{imm.source}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ImmunisationsContent({ patientId }: { patientId: string }) {
+  const patient = PATIENT_REGISTRY[patientId] ?? ACTIVE_PATIENT;
+  const immunisations = patient.immunisations ?? [];
+
+  if (immunisations.length === 0) {
+    return <p className="text-sm text-text-secondary italic">No immunisation records found</p>;
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      className="flex flex-col gap-1"
+    >
+      {immunisations.map((imm, i) => (
+        <ImmunisationTile key={i} imm={imm} />
+      ))}
+    </motion.div>
+  );
+}
+
+const REFERRAL_STATUS_COLORS: Record<string, { bg: string; text: string }> = {
+  Pending:   { bg: 'var(--accent-light)',   text: 'var(--accent-dark)'   },
+  Active:    { bg: 'var(--success-light)',  text: 'var(--success-dark)'  },
+  Completed: { bg: 'var(--primary-light)',  text: 'var(--text-secondary)' },
+};
+
+function ReferralTile({ ref: r }: { ref: NonNullable<Patient['outboundReferrals']>[number] }) {
+  const [expanded, setExpanded] = useState(false);
+  const statusCol = REFERRAL_STATUS_COLORS[r.status] ?? { bg: 'var(--accent2-light)', text: 'var(--accent2-dark)' };
+
+  return (
+    <div className="bg-primary-contrast border border-border rounded-lg overflow-hidden">
+      <button
+        onClick={() => setExpanded(e => !e)}
+        className="w-full flex items-center gap-3 px-3 py-3 hover:bg-hover transition-colors text-left"
+      >
+        <span
+          className="text-primary-main flex-shrink-0 transition-transform duration-200"
+          style={{ transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
+        >
+          <ChevronRightIcon size={16} />
+        </span>
+        <span className="flex-1 min-w-0 flex flex-col">
+          <span className="text-sm font-medium text-text-primary truncate">{r.specialty}</span>
+          {r.source && <span className="text-xs text-text-secondary truncate">{r.source}</span>}
+        </span>
+        <span className="text-xs text-text-primary flex-shrink-0 whitespace-nowrap">{r.referralDate}</span>
+        <span
+          className="text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0"
+          style={{ backgroundColor: statusCol.bg, color: statusCol.text }}
+        >
+          {r.status}
+        </span>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-border">
+          {/* Reason */}
+          <div className="px-4 py-3 border-b border-border">
+            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Reason</p>
+            <p className="text-sm text-text-primary leading-relaxed">{r.reason}</p>
+          </div>
+
+          {/* Details */}
+          <div className="px-4 py-3">
+            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Details</p>
+            <div className="flex flex-wrap gap-x-6 gap-y-2">
+              <div className="flex flex-col">
+                <span className="text-xs text-text-secondary">Referred to</span>
+                <span className="text-sm font-medium text-text-primary">{r.referredTo}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-text-secondary">Referred by</span>
+                <span className="text-sm font-medium text-text-primary">{r.referredBy}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs text-text-secondary">Urgency</span>
+                <span className="text-sm font-medium text-text-primary">{r.urgency}</span>
+              </div>
+              {r.source && (
+                <div className="flex flex-col">
+                  <span className="text-xs text-text-secondary">Source</span>
+                  <span className="text-sm font-medium text-text-primary">{r.source}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ReferralsContent({ patientId }: { patientId: string }) {
+  const patient = PATIENT_REGISTRY[patientId] ?? ACTIVE_PATIENT;
+  const referrals = patient.outboundReferrals ?? [];
+
+  if (referrals.length === 0) {
+    return <p className="text-sm text-text-secondary italic">No outbound referrals recorded</p>;
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      className="flex flex-col gap-1"
+    >
+      {referrals.map((r, i) => (
+        <ReferralTile key={i} ref={r} />
       ))}
     </motion.div>
   );
@@ -647,7 +936,10 @@ function AllergyTile({ a }: { a: Patient['allergies'][number] }) {
         >
           <ChevronRightIcon size={16} />
         </span>
-        <span className="flex-1 min-w-0 text-sm font-medium text-text-primary truncate">{a.substance}</span>
+        <span className="flex-1 min-w-0 flex flex-col">
+          <span className="text-sm font-medium text-text-primary truncate">{a.substance}</span>
+          {a.source && <span className="text-xs text-text-secondary truncate">{a.source}</span>}
+        </span>
         {a.recordedDate && (
           <span className="text-xs text-text-primary flex-shrink-0 whitespace-nowrap">
             <span className="mr-1">Recorded</span>{a.recordedDate}
@@ -821,7 +1113,80 @@ function MedicalHistoryContent({ patientId }: { patientId: string }) {
   );
 }
 
-function SummaryWidgetContent({ patientId }: { patientId: string }) {
+function ProblemItemTile({ item }: { item: NonNullable<Patient['problems']>[number]['items'][number] }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="bg-primary-contrast border border-border rounded-lg overflow-hidden">
+      <button
+        onClick={() => setExpanded(e => !e)}
+        className="w-full flex items-center gap-3 px-3 py-3 min-h-[52px] hover:bg-hover transition-colors text-left"
+      >
+        <span
+          className="text-primary-main flex-shrink-0 transition-transform duration-200"
+          style={{ transform: expanded ? 'rotate(90deg)' : 'rotate(0deg)' }}
+        >
+          <ChevronRightIcon size={16} />
+        </span>
+        <span className="flex-1 min-w-0 text-sm font-medium text-text-primary truncate">{item.condition}</span>
+        <span className="text-xs text-text-secondary flex-shrink-0 whitespace-nowrap">{item.status}</span>
+        <span className="text-xs text-text-primary flex-shrink-0 whitespace-nowrap ml-2">From {item.onset}</span>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-border">
+          {item.notes && (
+            <div className="px-4 py-3 border-b border-border">
+              <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Notes</p>
+              <p className="text-sm text-text-primary leading-relaxed">{item.notes}</p>
+            </div>
+          )}
+          {item.source && (
+            <div className="px-4 py-3">
+              <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide mb-2">Details</p>
+              <div className="flex flex-col">
+                <span className="text-xs text-text-secondary">Source</span>
+                <span className="text-sm font-medium text-text-primary">{item.source}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProblemsContent({ patientId }: { patientId: string }) {
+  const patient = PATIENT_REGISTRY[patientId] ?? ACTIVE_PATIENT;
+
+  const activeGroups = (patient.problems ?? [])
+    .map(g => ({ ...g, items: g.items.filter(i => i.status === 'Active') }))
+    .filter(g => g.items.length > 0);
+
+  if (activeGroups.length === 0) {
+    return <p className="text-sm text-text-secondary italic">No active problems recorded</p>;
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      {activeGroups.map((g, gi) => (
+        <div key={gi}>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wide">{g.groupTitle}</p>
+            {g.source && <p className="text-xs text-text-secondary">{g.source}</p>}
+          </div>
+          <div className="flex flex-col gap-1">
+            {g.items.map((item, ii) => (
+              <ProblemItemTile key={ii} item={item} />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SummaryWidgetContent({ patientId, careMode }: { patientId: string; careMode?: 'primary' | 'urgent' }) {
   function SectionHeading({ title, first }: { title: string; first?: boolean }) {
     return (
       <div className={`${first ? 'mb-3' : 'mt-8 mb-3'}`}>
@@ -833,8 +1198,17 @@ function SummaryWidgetContent({ patientId }: { patientId: string }) {
 
   return (
     <div>
-      <SectionHeading title="Medical history (Priority 1)" first />
-      <MedicalHistoryContent patientId={patientId} />
+      {careMode === 'urgent' ? (
+        <>
+          <SectionHeading title="Active problems" first />
+          <ProblemsContent patientId={patientId} />
+        </>
+      ) : (
+        <>
+          <SectionHeading title="Medical history (Priority 1)" first />
+          <MedicalHistoryContent patientId={patientId} />
+        </>
+      )}
 
       <SectionHeading title="Allergies" />
       <AllergiesContent patientId={patientId} />
@@ -892,20 +1266,24 @@ function TrackerIconButton({ icon: Icon, label, count }: { icon: React.FC<{ size
   );
 }
 
-function PatientTracker({ patientId }: { patientId: string }) {
+function PatientTracker({ patientId, careMode }: { patientId: string; careMode?: 'primary' | 'urgent' }) {
   const patient = PATIENT_REGISTRY[patientId] ?? ACTIVE_PATIENT;
   const tracker = patient.patientTracker;
   if (!tracker) return null;
 
   return (
     <div className="inline-flex items-center gap-2 mb-6 self-start">
-      {/* Icon buttons with badge counts */}
-      <TrackerIconButton icon={TaskListIcon} label="Outstanding tasks" count={tracker.outstandingTasks} />
-      <TrackerIconButton icon={ReferralIcon} label="Open referrals" count={tracker.openReferrals} />
-      <TrackerIconButton icon={PillIcon} label="Medication reviews due" count={tracker.medicationReviewsDue} />
+      {/* Icon buttons with badge counts — primary care only */}
+      {careMode !== 'urgent' && (
+        <>
+          <TrackerIconButton icon={TaskListIcon} label="Outstanding tasks" count={tracker.outstandingTasks} />
+          <TrackerIconButton icon={ReferralIcon} label="Open referrals" count={tracker.openReferrals} />
+          <TrackerIconButton icon={PillIcon} label="Medication reviews due" count={tracker.medicationReviewsDue} />
+        </>
+      )}
 
-      {/* Divider */}
-      <div className="w-px h-8 bg-border mx-1 flex-shrink-0" />
+      {/* Divider — only needed when icon buttons are visible */}
+      {careMode !== 'urgent' && <div className="w-px h-8 bg-border mx-1 flex-shrink-0" />}
 
       {/* Appointment pills */}
       {[
@@ -913,42 +1291,72 @@ function PatientTracker({ patientId }: { patientId: string }) {
       ].map(({ label, value }) => (
         <div key={label} className="h-10 flex items-center gap-2 border border-border rounded-full bg-primary-contrast px-3 flex-shrink-0">
           <CalendarIcon size={18} className="text-text-secondary flex-shrink-0" />
-          <span className="text-xs text-text-secondary whitespace-nowrap">{label}:</span>
-          <span className="text-xs font-semibold text-text-primary whitespace-nowrap">{value ?? '—'}</span>
+          <span className="text-sm text-text-secondary whitespace-nowrap">{label}:</span>
+          <span className="text-sm font-semibold text-text-primary whitespace-nowrap">{value ?? '—'}</span>
         </div>
       ))}
     </div>
   );
 }
 
-function WidgetShell({ widget, index, stretch, onWidgetClick, children }: { widget: { id: string; title: string }; index: number; stretch?: boolean; onWidgetClick?: (title: string) => void; children: React.ReactNode }) {
+function SpecialNotesContent({ patientId }: { patientId: string }) {
+  const patient = PATIENT_REGISTRY[patientId] ?? ACTIVE_PATIENT;
+  const notes = patient.specialNotes ?? [];
+
+  return (
+    <div className="flex flex-col gap-3">
+      {notes.map(n => (
+        <div key={n.id}>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--error-dark)' }}>{n.note}</p>
+          <p className="text-xs mt-1" style={{ color: 'var(--error-main)' }}>{n.recordedDate}{n.source ? ` · ${n.source}` : ''}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function WidgetShell({ widget, index, stretch, colorScheme, onWidgetClick, children }: { widget: { id: string; title: string }; index: number; stretch?: boolean; colorScheme?: 'error'; onWidgetClick?: (title: string) => void; children: React.ReactNode }) {
+  const isError = colorScheme === 'error';
   return (
     <motion.div
       key={widget.id}
-      className={`border border-border bg-primary-contrast rounded-lg overflow-hidden flex flex-col${stretch ? ' flex-1' : ''}`}
+      className={`rounded-lg overflow-hidden flex flex-col${stretch ? ' flex-1' : ''}`}
+      style={{
+        border: isError ? '1px solid var(--error-light)' : '1px solid var(--border)',
+        backgroundColor: isError ? 'var(--error-contrast)' : 'var(--primary-contrast)',
+      }}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.05 }}
     >
       <div className="p-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-text-primary flex-1">{widget.title}</h3>
+        <h3
+          className="text-sm font-semibold flex-1"
+          style={{ color: isError ? 'var(--error-dark)' : 'var(--text-primary)' }}
+        >
+          {widget.title}
+        </h3>
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
             onClick={() => onWidgetClick?.(widget.title)}
             className="w-8 h-8 flex items-center justify-center hover:bg-hover transition-colors rounded cursor-pointer"
             aria-label={`Open ${widget.title}`}
           >
-            <ArrowRightIcon size={20} className="text-primary-main" />
+            <span style={{ color: isError ? 'var(--error-main)' : 'var(--primary-main)' }}>
+              <ArrowRightIcon size={20} />
+            </span>
           </button>
           <button
             className="w-8 h-8 flex items-center justify-center hover:bg-hover transition-colors rounded cursor-pointer"
             aria-label={`${widget.title} options`}
           >
-            <MoreVerticalIcon size={20} className="text-primary-main" />
+            <span style={{ color: isError ? 'var(--error-main)' : 'var(--primary-main)' }}>
+              <MoreVerticalIcon size={20} />
+            </span>
           </button>
         </div>
       </div>
-      <div className="border-t border-border" />
+      <div style={{ borderTop: isError ? '1px solid var(--error-light)' : '1px solid var(--border)' }} />
       <div className={`p-4${stretch ? ' flex-1 overflow-y-auto' : ''}`}>{children}</div>
     </motion.div>
   );
@@ -959,6 +1367,7 @@ export function PatientSummaryCard({
   showWidgets = true,
   className = '',
   activePatientId,
+  careMode = 'primary',
 }: PatientSummaryCardProps) {
   const resolvedPatientId = activePatientId ?? ACTIVE_PATIENT.id;
 
@@ -971,22 +1380,31 @@ export function PatientSummaryCard({
       {/* Tracker row — aligned to left column only */}
       <div className="flex gap-6">
         <div className="flex-1 min-w-0">
-          <PatientTracker patientId={resolvedPatientId} />
+          <PatientTracker patientId={resolvedPatientId} careMode={careMode} />
         </div>
         <div className="flex-1 min-w-0" />
       </div>
 
       <div className="flex-1 grid grid-cols-2 gap-6" style={{ alignItems: 'start' }}>
       {/* Left column — fills available height */}
-      <div className="flex flex-col" style={{ alignSelf: 'stretch' }}>
-        <WidgetShell widget={SUMMARY_WIDGET} index={0} stretch onWidgetClick={onWidgetClick}>
-          <SummaryWidgetContent patientId={resolvedPatientId} />
+      <div className="flex flex-col gap-6" style={{ alignSelf: 'stretch' }}>
+        {/* Special notes — urgent care only, hidden when no notes */}
+        {careMode === 'urgent' && (() => {
+          const patient = PATIENT_REGISTRY[resolvedPatientId] ?? ACTIVE_PATIENT;
+          return (patient.specialNotes?.length ?? 0) > 0 ? (
+            <WidgetShell widget={{ id: 'special-notes', title: 'Special patient notes' }} index={0} colorScheme="error" onWidgetClick={onWidgetClick}>
+              <SpecialNotesContent patientId={resolvedPatientId} />
+            </WidgetShell>
+          ) : null;
+        })()}
+        <WidgetShell widget={SUMMARY_WIDGET} index={careMode === 'urgent' ? 1 : 0} stretch onWidgetClick={onWidgetClick}>
+          <SummaryWidgetContent patientId={resolvedPatientId} careMode={careMode} />
         </WidgetShell>
       </div>
 
       {/* Right column — hugs content */}
       <div className="flex flex-col gap-6 pb-10">
-        {STACK_WIDGETS.map((widget, index) => (
+        {(careMode === 'urgent' ? STACK_WIDGETS_URGENT : STACK_WIDGETS_PRIMARY).map((widget, index) => (
           <WidgetShell key={widget.id} widget={widget} index={index + 1} onWidgetClick={onWidgetClick}>
             {widget.title === 'Recent encounters' ? (
               <EncountersContent patientId={resolvedPatientId} />
@@ -994,6 +1412,10 @@ export function PatientSummaryCard({
               <MedicationsContent patientId={resolvedPatientId} />
             ) : widget.title === 'Recent tests' ? (
               <TestsContent patientId={resolvedPatientId} />
+            ) : widget.title === 'Immunisations' ? (
+              <ImmunisationsContent patientId={resolvedPatientId} />
+            ) : widget.title === 'Primary care outbound referrals' ? (
+              <ReferralsContent patientId={resolvedPatientId} />
             ) : null}
           </WidgetShell>
         ))}

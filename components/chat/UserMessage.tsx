@@ -34,12 +34,14 @@ export function UserMessage({ content, timestamp }: UserMessageProps) {
 
   useEffect(() => {
     if (!timestamp) return;
-
-    // Update timestamp every 10 seconds
+    // Only poll while the timestamp is recent (< 1 hour); older messages never change display
+    const age = Date.now() - timestamp.getTime();
+    if (age >= 3_600_000) return;
     const interval = setInterval(() => {
+      const newAge = Date.now() - timestamp.getTime();
       setTimeAgo(getTimeAgo(timestamp));
+      if (newAge >= 3_600_000) clearInterval(interval);
     }, 10000);
-
     return () => clearInterval(interval);
   }, [timestamp]);
 

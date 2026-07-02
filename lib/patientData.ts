@@ -32,11 +32,12 @@ export interface Patient {
     mobility?: string;
     nhsRegion?: string;
     patientId: string;
+    patientIdType?: 'CHI' | 'NHS';
     allergies: string;
   };
   lifestyleAndRiskFactors: Record<string, string>;
   problemsDiagnoses: Array<{ condition: string; status: string; diagnosed: string; priority?: 1 | 2 | 3; notes?: string; reviewedBy?: string; reviewedDate?: string }>;
-  allergies: Array<{ substance: string; reaction: string; type?: string; recordedDate?: string; severity?: string; status?: string; recordedBy?: string; drugForm?: string; strength?: string }>;
+  allergies: Array<{ substance: string; reaction: string; type?: string; recordedDate?: string; severity?: string; status?: string; recordedBy?: string; drugForm?: string; strength?: string; source?: string }>;
   currentMedications: Array<{ name: string; dose: string; frequency: string; prescriber: string; prescribedDate: string; prescriptionType?: string; drugForm?: string; strength?: string }>;
   encounters: Array<{
     date: string;
@@ -50,6 +51,7 @@ export interface Patient {
     diagnosis?: string[];
     outcome: string[];
     treatmentPlan: string[];
+    source?: string;
   }>;
   observations: {
     bloodPressure?: Array<{ date: string; value: string }>;
@@ -80,7 +82,7 @@ export interface Patient {
     oxygenSaturation?: { date: string; term: string; value: string; unit: string };
     temperature?: { date: string; term: string; value: string; unit: string; qualifier?: string };
   };
-  investigations: Array<{ test: string; result: string; flag?: string; date?: string; category?: string; requestGroup?: string; requestContext?: string }>;
+  investigations: Array<{ test: string; result: string; flag?: string; date?: string; category?: string; requestGroup?: string; requestContext?: string; source?: string }>;
   carePlans?: Array<{ area: string; plan: string }>;
   recentActivityFeed?: ActivityEvent[];
   aiSummary: {
@@ -95,6 +97,46 @@ export interface Patient {
     nextAppointment: string | null;
     lastAppointment: string | null;
   };
+  // Urgent care extensions
+  specialNotes?: Array<{
+    id: string;
+    category: string;
+    note: string;
+    recordedDate: string;
+    recordedBy: string;
+    source?: string;
+  }>;
+  immunisations?: Array<{
+    vaccine: string;
+    date: string;
+    dose?: string;
+    site?: string;
+    batchNumber?: string;
+    administeredBy: string;
+    source?: string;
+  }>;
+  problems?: Array<{
+    groupTitle: string;
+    source?: string;
+    items: Array<{
+      condition: string;
+      status: string;
+      onset: string;
+      notes?: string;
+      source?: string;
+    }>;
+  }>;
+  outboundReferrals?: Array<{
+    id: string;
+    referralDate: string;
+    referredTo: string;
+    specialty: string;
+    reason: string;
+    status: string;
+    urgency: string;
+    referredBy: string;
+    source?: string;
+  }>;
 }
 
 // ─── PT-10001: Daniel Harper — Low Complexity ────────────────────────────────
@@ -116,7 +158,8 @@ export const PATIENT_HARPER: Patient = {
     alcohol: 'Social',
     exercise: 'Gym 2× weekly',
     nhsRegion: 'Greater London',
-    patientId: 'PT-10001',
+    patientId: '140297 1423',
+    patientIdType: 'CHI',
     allergies: 'No known allergies',
   },
   lifestyleAndRiskFactors: {
@@ -281,7 +324,8 @@ export const PATIENT_ELLISON: Patient = {
     alcohol: 'Rare',
     livingSituation: 'Lives alone',
     mobility: 'Uses walking stick',
-    patientId: 'PT-10002',
+    patientId: '030951 8762',
+    patientIdType: 'CHI',
     allergies: 'Penicillin — Rash',
   },
   lifestyleAndRiskFactors: {
@@ -537,6 +581,265 @@ export const PATIENT_ELLISON: Patient = {
     medicationReviewsDue: 1,
     nextAppointment: '22 Oct 2025',
     lastAppointment: '01 Sep 2025',
+  },
+};
+
+// ─── PT-10003: Ryan Okafor — Urgent Care ─────────────────────────────────────
+
+export const PATIENT_OKAFOR: Patient = {
+  id: 'PT-10003',
+  demographics: {
+    name: 'Ryan Okafor',
+    displayName: 'OKAFOR, Ryan (Mr)',
+    age: 41,
+    sex: 'Male',
+    dateOfBirth: '03 May 1984',
+    height: '178 cm',
+    weight: '94 kg',
+    bmi: '29.7',
+    occupation: 'Warehouse supervisor',
+    maritalStatus: 'Married',
+    smokingStatus: 'Current smoker',
+    smokingHistory: '15 pack-year history',
+    alcohol: 'Regular',
+    livingSituation: 'Lives with family',
+    nhsRegion: 'West Midlands',
+    patientId: '485 312 6790',
+    patientIdType: 'NHS',
+    allergies: 'Penicillin — Anaphylaxis',
+  },
+  lifestyleAndRiskFactors: {
+    Smoking: '15 pack-year history, current smoker',
+    Alcohol: 'Estimated 28 units/week',
+    'Cardiovascular risk': 'Elevated — hypertension, smoker, overweight',
+    'Interpreter required': 'Yoruba — patient prefers clinical discussions in Yoruba',
+  },
+  problemsDiagnoses: [
+    { condition: 'Hypertension', status: 'Active', diagnosed: '2021', priority: 1, notes: 'Poorly controlled. Last recorded BP 168/104 mmHg. On amlodipine 10mg. Non-adherent at times.' },
+    { condition: 'Type 2 Diabetes', status: 'Active', diagnosed: '2022', priority: 1, notes: 'HbA1c 74 mmol/mol at last check — poorly controlled. On metformin 1g BD.' },
+    { condition: 'Obesity', status: 'Active', diagnosed: '2022', priority: 2, notes: 'BMI 29.7. Weight management advice given. Dietary review arranged.' },
+    { condition: 'Anxiety disorder', status: 'Active', diagnosed: '2020', priority: 2, notes: 'Managed with sertraline. Occasional panic attacks reported.' },
+  ],
+  allergies: [
+    { substance: 'Penicillin', reaction: 'Anaphylaxis', type: 'Drug', recordedDate: '15 Mar 2019', severity: 'Severe', status: 'Active', recordedBy: 'Dr James Adeyemi', drugForm: 'Tablet', strength: '500 mg', source: 'GPConnect' },
+  ],
+  currentMedications: [
+    { name: 'Amlodipine',  dose: '10 mg', frequency: 'Daily',        prescriber: 'Dr James Adeyemi', prescribedDate: '12 Jan 2026', prescriptionType: 'Repeat', drugForm: 'Tablet', strength: '10 mg' },
+    { name: 'Metformin',   dose: '1 g',   frequency: 'Twice daily',   prescriber: 'Dr James Adeyemi', prescribedDate: '08 Nov 2025', prescriptionType: 'Repeat', drugForm: 'Tablet', strength: '1 g'   },
+    { name: 'Sertraline',  dose: '50 mg', frequency: 'Daily',         prescriber: 'Dr James Adeyemi', prescribedDate: '14 Aug 2025', prescriptionType: 'Repeat', drugForm: 'Tablet', strength: '50 mg' },
+    { name: 'Aspirin',     dose: '75 mg', frequency: 'Daily',         prescriber: 'Dr James Adeyemi', prescribedDate: '12 Jan 2026', prescriptionType: 'Repeat', drugForm: 'Gastro-resistant tablet', strength: '75 mg' },
+  ],
+  encounters: [
+    {
+      date: '12 Jan 2026',
+      time: '09:45',
+      clinician: 'Dr James Adeyemi',
+      location: 'In practice',
+      type: 'GP Hypertension Review',
+      observations: { BP: '168/104', Pulse: 88, Weight: '94 kg' },
+      summaryNotes: 'Patient attended for hypertension review. BP remains significantly elevated despite amlodipine 10mg. Patient reports intermittent adherence due to shift work patterns. Discussed cardiovascular risk in context of concurrent diabetes and smoking. Cardiovascular risk score calculated at 14.2% over 10 years. Advised on smoking cessation and dietary modification.',
+      diagnosis: ['Hypertension — poorly controlled'],
+      outcome: ['BP significantly above target', 'Cardiovascular risk formally assessed', 'Smoking cessation referral made'],
+      treatmentPlan: ['Add ramipril 2.5mg — titrate to 5mg at 4 weeks', 'Smoking cessation referral', 'Repeat BP check in 4 weeks', 'HbA1c recheck in 3 months'],
+      source: 'GPConnect',
+    },
+    {
+      date: '08 Nov 2025',
+      time: '14:15',
+      clinician: 'Dr James Adeyemi',
+      location: 'In practice',
+      type: 'GP Diabetes Annual Review',
+      observations: { HbA1c: '74 mmol/mol', BP: '162/98', Weight: '96 kg' },
+      summaryNotes: 'Annual diabetes review. HbA1c poorly controlled at 74 mmol/mol. Patient reports difficulty maintaining consistent mealtimes due to rotating shifts. Foot examination unremarkable. Retinal screening up to date — no diabetic retinopathy identified. Weight increased by 2kg since last visit.',
+      diagnosis: ['Type 2 diabetes — suboptimal glycaemic control'],
+      outcome: ['HbA1c elevated — dietary review arranged', 'No diabetic complications identified', 'Retinal screening normal'],
+      treatmentPlan: ['Continue metformin 1g BD', 'Dietician referral arranged', 'Foot care education reinforced', 'Repeat HbA1c in 3 months'],
+    },
+    {
+      date: '03 Jun 2025',
+      time: '22:40',
+      clinician: 'Dr Sarah Obi',
+      location: 'Emergency department',
+      type: 'A&E Attendance',
+      observations: { BP: '182/112', Pulse: 102, 'GCS': '15/15', SpO2: '98%' },
+      presentingComplaint: 'Severe headache and visual disturbance',
+      summaryNotes: 'Patient self-presented to emergency department with 4-hour history of severe occipital headache and intermittent blurring of vision bilaterally. No focal neurology on examination. CT head unremarkable. Blood pressure critically elevated on admission at 182/112 mmHg. Urgent hypertensive urgency management initiated. No end-organ damage identified on initial workup. Discharged following BP reduction to 158/96 over 6 hours with oral labetalol.',
+      diagnosis: ['Hypertensive urgency'],
+      outcome: ['BP managed in department — no end-organ damage identified', 'Discharged with GP follow-up arranged'],
+      treatmentPlan: ['GP follow-up within 5 days', 'Continue amlodipine', 'Consider ACE inhibitor addition', 'Reinforce medication adherence'],
+      source: 'Secondary care discharge summary',
+    },
+  ],
+  observations: {
+    bloodPressure: [
+      { date: 'Jun 2025', value: '182/112' },
+      { date: 'Aug 2025', value: '174/106' },
+      { date: 'Nov 2025', value: '162/98'  },
+      { date: 'Jan 2026', value: '168/104' },
+    ],
+  },
+  metricHistory: {
+    'BP': [
+      { date: 'Jun 2025', value: '182/112' },
+      { date: 'Aug 2025', value: '174/106' },
+      { date: 'Nov 2025', value: '162/98'  },
+      { date: 'Jan 2026', value: '168/104' },
+    ],
+    'Weight': [
+      { date: 'Jun 2025', value: '97' },
+      { date: 'Nov 2025', value: '96' },
+      { date: 'Jan 2026', value: '94' },
+    ],
+    'Pulse': [
+      { date: 'Jun 2025', value: '102' },
+      { date: 'Nov 2025', value: '90'  },
+      { date: 'Jan 2026', value: '88'  },
+    ],
+  },
+  lifestyleMetrics: [
+    { label: 'Weight',     value: '94',   unit: 'kg',    date: '12 Jan 2026', trend: 'down'    },
+    { label: 'BMI',        value: '29.7', unit: 'kg/m²', date: '12 Jan 2026', trend: 'down'    },
+    { label: 'BP',         value: '168/104', unit: 'mmHg', date: '12 Jan 2026', trend: 'up'   },
+    { label: 'Pulse',      value: '88',   unit: 'bpm',   date: '12 Jan 2026', trend: 'down'    },
+    { label: 'HbA1c',      value: '74',   unit: 'mmol/mol', date: '08 Nov 2025', trend: 'up'  },
+    { label: 'SpO₂',       value: '98',   unit: '%',     date: '03 Jun 2025', trend: 'neutral' },
+  ],
+  lifestyleEntries: {
+    occupation: { date: '12 Jan 2026', term: 'Occupation',          value: 'Warehouse supervisor (rotating shifts)' },
+    smoking:    { date: '12 Jan 2026', term: 'Smoking status',      status: 'Current smoker', consumption: '15 pack-years' },
+    alcohol:    { date: '12 Jan 2026', term: 'Alcohol consumption', consumption: 'Regular — approx. 28 units/week' },
+    residence:  { date: '12 Jan 2026', term: 'Residence',           type: 'Lives with family' },
+    diet:       { date: '08 Nov 2025', term: 'Diet',                habit: 'Irregular mealtimes due to shift work', type: 'High processed food intake' },
+  },
+  examinationEntries: {
+    weight:        { date: '12 Jan 2026', term: 'Weight',            value: '94 kg',  bmi: '29.7 kg/m²' },
+    bloodPressure: { date: '12 Jan 2026', term: 'Blood pressure',    systolic: '168', diastolic: '104'   },
+    pulse:         { date: '12 Jan 2026', term: 'Pulse',             value: '88 bpm'                     },
+    oxygenSaturation: { date: '03 Jun 2025', term: 'Oxygen saturation', value: '98', unit: '%'           },
+  },
+  investigations: [
+    { test: 'HbA1c',             result: '74 mmol/mol', flag: 'Abnormal',        date: '08 Nov 2025', category: 'Blood',   requestGroup: '08 Nov 2025', requestContext: 'Diabetes Annual Review', source: 'GPConnect'                      },
+    { test: 'FBC',               result: 'Normal',      flag: 'Normal',          date: '08 Nov 2025', category: 'Blood',   requestGroup: '08 Nov 2025', requestContext: 'Diabetes Annual Review', source: 'GPConnect'                      },
+    { test: 'U&Es',              result: 'Na 139, K 4.1, Cr 88 µmol/L', flag: 'Normal', date: '08 Nov 2025', category: 'Blood', requestGroup: '08 Nov 2025', requestContext: 'Diabetes Annual Review', source: 'GPConnect'               },
+    { test: 'LFTs',              result: 'Normal',      flag: 'Normal',          date: '08 Nov 2025', category: 'Blood',   requestGroup: '08 Nov 2025', requestContext: 'Diabetes Annual Review', source: 'GPConnect'                      },
+    { test: 'Total cholesterol', result: '5.8 mmol/L',  flag: 'Borderline high', date: '08 Nov 2025', category: 'Blood',   requestGroup: '08 Nov 2025', requestContext: 'Diabetes Annual Review', source: 'GPConnect'                      },
+    { test: 'eGFR',              result: '82 mL/min/1.73m²', flag: 'Normal',     date: '08 Nov 2025', category: 'Blood',   requestGroup: '08 Nov 2025', requestContext: 'Diabetes Annual Review', source: 'GPConnect'                      },
+    { test: 'Urine ACR',         result: '4.1 mg/mmol', flag: 'Borderline high', date: '08 Nov 2025', category: 'Urine',   requestGroup: '08 Nov 2025', requestContext: 'Diabetes Annual Review', source: 'GPConnect'                      },
+    { test: 'CT Head',           result: 'No acute intracranial pathology', flag: 'Normal', date: '03 Jun 2025', category: 'Imaging', requestGroup: '03 Jun 2025', requestContext: 'A&E Attendance — Hypertensive urgency', source: 'Secondary care' },
+    { test: 'ECG',               result: 'Sinus tachycardia — no ischaemic changes', flag: 'Normal', date: '03 Jun 2025', category: 'Imaging', requestGroup: '03 Jun 2025', requestContext: 'A&E Attendance — Hypertensive urgency', source: 'Secondary care' },
+    { test: 'Troponin',          result: '<14 ng/L — negative', flag: 'Normal',   date: '03 Jun 2025', category: 'Blood',   requestGroup: '03 Jun 2025', requestContext: 'A&E Attendance — Hypertensive urgency', source: 'Secondary care' },
+    { test: 'Retinal screening', result: 'No diabetic retinopathy',    flag: 'Normal', date: '15 Sep 2025', category: 'Imaging', requestGroup: '15 Sep 2025', requestContext: 'Diabetic Eye Screening', source: 'Diabetic Eye Screening Programme' },
+  ],
+  specialNotes: [
+    {
+      id: 'sn-01',
+      category: 'Communication',
+      note: 'Patient requires a Yoruba interpreter for clinical consultations. Patient understands written English but prefers spoken clinical discussions in Yoruba to ensure informed consent.',
+      recordedDate: '08 Nov 2025',
+      recordedBy: 'Dr James Adeyemi',
+      source: 'GPConnect',
+    },
+  ],
+  immunisations: [
+    { vaccine: 'COVID-19 (Moderna)',         date: '14 Oct 2023', dose: 'Booster',    administeredBy: 'Pharmacy — Lloyds Pharmacy Birmingham', source: 'NHAIS' },
+    { vaccine: 'Influenza (Quadrivalent)',    date: '02 Oct 2024', dose: 'Annual',     administeredBy: 'Dr James Adeyemi', source: 'GPConnect'                    },
+    { vaccine: 'Pneumococcal (PPV23)',        date: '08 Mar 2022', dose: 'Single',     administeredBy: 'Dr James Adeyemi', source: 'GPConnect'                    },
+    { vaccine: 'Hepatitis B (Engerix-B)',     date: '11 Jan 2023', dose: 'Course — 3 doses completed', batchNumber: 'EB-2301-047', administeredBy: 'Occupational health — employer referral', source: 'Occupational Health Records' },
+    { vaccine: 'Tetanus/Diphtheria/Polio',   date: '22 Sep 2019', dose: 'Booster',    administeredBy: 'Dr James Adeyemi', source: 'GPConnect'                    },
+  ],
+  problems: [
+    {
+      groupTitle: 'Cardiovascular',
+      source: 'GPConnect',
+      items: [
+        { condition: 'Hypertension',              status: 'Active',   onset: '2021', notes: 'Poorly controlled. Currently on amlodipine 10mg. ACE inhibitor being added.' },
+        { condition: 'Hypertensive urgency',       status: 'Resolved', onset: 'Jun 2025', notes: 'A&E attendance. Managed with oral labetalol. No end-organ damage.' },
+        { condition: 'Elevated cardiovascular risk', status: 'Active', onset: '2026', notes: '10-year QRISK3 score 14.2%.' },
+      ],
+    },
+    {
+      groupTitle: 'Metabolic',
+      source: 'GPConnect',
+      items: [
+        { condition: 'Type 2 Diabetes',  status: 'Active', onset: '2022', notes: 'HbA1c 74 mmol/mol — suboptimal. On metformin 1g BD.' },
+        { condition: 'Obesity',          status: 'Active', onset: '2022', notes: 'BMI 29.7. Dietary review arranged.' },
+        { condition: 'Hypercholesterolaemia', status: 'Active', onset: '2025', notes: 'Total cholesterol 5.8 mmol/mol. Statin initiation under consideration.' },
+      ],
+    },
+    {
+      groupTitle: 'Mental health',
+      source: 'GPConnect',
+      items: [
+        { condition: 'Anxiety disorder', status: 'Active', onset: '2020', notes: 'On sertraline 50mg. Occasional panic attacks. No secondary care input.' },
+      ],
+    },
+  ],
+  outboundReferrals: [
+    {
+      id: 'ref-01',
+      referralDate: '12 Jan 2026',
+      referredTo: 'Stop Smoking Service — West Midlands',
+      specialty: 'Smoking cessation',
+      reason: 'Current smoker with elevated cardiovascular risk. 15 pack-year history.',
+      status: 'Pending',
+      urgency: 'Routine',
+      referredBy: 'Dr James Adeyemi',
+      source: 'GPConnect',
+    },
+    {
+      id: 'ref-02',
+      referralDate: '08 Nov 2025',
+      referredTo: 'Dietetics — Sandwell and West Birmingham NHS Trust',
+      specialty: 'Dietetics',
+      reason: 'Suboptimal glycaemic control. Irregular mealtimes secondary to shift work. Dietary review requested.',
+      status: 'Active',
+      urgency: 'Routine',
+      referredBy: 'Dr James Adeyemi',
+      source: 'GPConnect',
+    },
+    {
+      id: 'ref-03',
+      referralDate: '03 Jun 2025',
+      referredTo: 'Cardiology — City Hospital Birmingham',
+      specialty: 'Cardiology',
+      reason: 'Hypertensive urgency with poorly controlled BP on current therapy. Specialist review requested for optimisation of antihypertensive regimen.',
+      status: 'Completed',
+      urgency: 'Urgent',
+      referredBy: 'Dr Sarah Obi',
+      source: 'Secondary care discharge summary',
+    },
+  ],
+  carePlans: [
+    { area: 'Cardiovascular', plan: 'Add ramipril; repeat BP in 4 weeks; smoking cessation referral active' },
+    { area: 'Diabetes',       plan: 'Repeat HbA1c in 3 months; dietetics referral active; reinforce foot care' },
+    { area: 'Lifestyle',      plan: 'Smoking cessation support; alcohol reduction advice; weight management' },
+  ],
+  recentActivityFeed: [
+    { id: 'o1', type: 'viewed',      actor: { initials: 'JA', color: '#2B6CB0' }, datetime: '12 Jan 2026, 09:45' },
+    { id: 'o2', type: 'work-item',   actor: { initials: 'JA', color: '#2B6CB0' }, datetime: '12 Jan 2026, 09:52', meta: { label: 'Work item', value: 'Smoking Cessation Referral' } },
+    { id: 'o3', type: 'filed',       actor: { initials: 'JA', color: '#2B6CB0' }, datetime: '08 Nov 2025, 14:25', meta: { label: 'Filed to', value: 'Diabetes Annual Review' } },
+    { id: 'o4', type: 'appointment', actor: { initials: 'SO', color: '#B24E45' }, datetime: '03 Jun 2025, 22:40', meta: { label: 'Appointment', value: 'A&E — Hypertensive Urgency' } },
+    { id: 'o5', type: 'filed',       actor: { initials: 'SO', color: '#B24E45' }, datetime: '03 Jun 2025, 23:10', meta: { label: 'Filed to', value: 'Hypertensive Urgency — Discharge' } },
+  ],
+  aiSummary: {
+    keyThemes: [
+      'Poorly controlled hypertension with hypertensive urgency A&E attendance',
+      'Type 2 diabetes — suboptimal glycaemic control',
+      'Elevated cardiovascular risk (QRISK3 14.2%)',
+      'Interpreter required — Yoruba',
+      'Medication adherence concerns secondary to shift work',
+    ],
+    recentActivity:
+      'The patient has had three significant clinical contacts in the past year relating to cardiovascular and metabolic risk management. In June 2025 he attended the emergency department with hypertensive urgency, requiring managed BP reduction. Subsequent GP reviews in November 2025 and January 2026 have focused on antihypertensive optimisation, glycaemic control, and smoking cessation. ACE inhibitor addition is planned and smoking cessation referral is active.',
+    longitudinalSummary:
+      'The clinical record reflects a 41-year-old male with a high-burden cardiovascular and metabolic risk profile including poorly controlled hypertension, type 2 diabetes, and active smoking. Medication adherence is intermittent, partly attributed to rotating shift work. A hypertensive urgency episode in mid-2025 highlighted the urgency of risk factor optimisation. The clinical trajectory requires close monitoring and proactive multidisciplinary input.',
+  },
+  patientTracker: {
+    outstandingTasks: 2,
+    openReferrals: 2,
+    medicationReviewsDue: 1,
+    nextAppointment: '10 Feb 2026',
+    lastAppointment: '12 Jan 2026',
   },
 };
 

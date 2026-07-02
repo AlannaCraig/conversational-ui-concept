@@ -31,7 +31,7 @@
 
   /* Text */
   --text-primary: #484135;
-  --text-secondary: #8B826F;
+  --text-secondary: #746B5B;
   --text-tertiary: #C7C0AD;
 
   /* States */
@@ -77,10 +77,10 @@
   --success-contrast: #FAFCF8;
 
   /* Error */
-  --error-main: #B24E45;
-  --error-dark: #7A342E;
-  --error-light: #F3E5E1;
-  --error-contrast: #FFF8F6;
+  --error-main: #8A3A3A;
+  --error-dark: #562424;
+  --error-light: #E7C5D5;
+  --error-contrast: #F9F1F1;
 
   /* Typography */
   --font-sans: var(--font-geist-sans);

@@ -44,8 +44,13 @@ function TruncatedLabel({ label }: { label: string }) {
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => {
     const el = ref.current;
-    if (el) setTruncated(el.scrollWidth > el.clientWidth);
-  });
+    if (!el) return;
+    const check = () => setTruncated(el.scrollWidth > el.clientWidth);
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const handleMouseEnter = () => {
     if (!truncated || !ref.current) return;
@@ -206,7 +211,7 @@ function SparkChart({ label, unit, history }: SparkChartProps) {
   );
 }
 
-interface SparkDialogProps {
+export interface SparkDialogProps {
   label: string;
   unit: string;
   history: MetricHistoryPoint[] | null;
@@ -214,7 +219,7 @@ interface SparkDialogProps {
   onClose: () => void;
 }
 
-function SparkDialog({ label, unit, history, anchorRect, onClose }: SparkDialogProps) {
+export function SparkDialog({ label, unit, history, anchorRect, onClose }: SparkDialogProps) {
   const [mounted, setMounted] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState<{ top: number; left: number; openUpward: boolean } | null>(null);
