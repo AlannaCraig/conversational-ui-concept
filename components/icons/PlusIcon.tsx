@@ -1,34 +1,6 @@
-/**
- * PlusIcon Component
- * Plus/add icon
- */
+import { Add } from 'iqons-react';
 
-import { IconProps } from '@/lib/svg-icon-loader';
-
-export function PlusIcon({ className = '', size = 24, color = 'currentColor' }: IconProps) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M12.001 5V19.002"
-        stroke={color}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M19.002 12.002H4.99998"
-        stroke={color}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
+interface Props { size?: number; className?: string; }
+export function PlusIcon({ size = 24, className = '' }: Props) {
+  return <Add variant="duotone" size={size} className={className} />;
 }

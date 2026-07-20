@@ -2,7 +2,8 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useMemo } from 'react';
-import { BellOff, MoreVertical } from 'lucide-react';
+import { NotificationIcon } from '@/components/icons/NotificationIcon';
+import { MoreVerticalIcon } from '@/components/icons/MoreVerticalIcon';
 import {
   getMockNotifications,
   groupNotificationsByTime,
@@ -99,7 +100,7 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
       <div className="w-12 h-12 rounded-full bg-background-soft flex items-center justify-center mb-4">
-        <BellOff size={20} className="text-text-tertiary" />
+        <NotificationIcon size={20} className="text-text-tertiary" />
       </div>
       <p className="text-sm font-medium text-text-primary mb-1">You're all caught up</p>
       <p className="text-xs text-text-secondary">No unread notifications</p>
@@ -204,7 +205,7 @@ export function NotificationsPopover({
                   Unread only
                 </button>
                 <button className="text-text-secondary hover:text-text-primary transition-colors">
-                  <MoreVertical size={16} />
+                  <MoreVerticalIcon size={16} />
                 </button>
               </div>
             </div>

@@ -1,22 +1,6 @@
-interface CloseXIconProps {
-  size?: number;
-  className?: string;
-}
+import { Close } from 'iqons-react';
 
-export function CloseXIcon({ size = 24, className = '' }: CloseXIconProps) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-    >
-      <path
-        d="M17.4696 5.46967C17.7625 5.17678 18.2373 5.17678 18.5302 5.46967C18.8231 5.76256 18.8231 6.23732 18.5302 6.53022L13.0595 11.9999L18.5292 17.4697C18.8221 17.7626 18.8221 18.2373 18.5292 18.5302C18.2363 18.823 17.7615 18.8231 17.4687 18.5302L11.9989 13.0605L6.53116 18.5292C6.23827 18.8221 5.76351 18.8221 5.47062 18.5292C5.17773 18.2363 5.17772 17.7616 5.47062 17.4687L10.9384 11.9999L5.46964 6.53119C5.17677 6.23832 5.17681 5.76355 5.46964 5.47065C5.76253 5.17775 6.23729 5.17775 6.53019 5.47065L11.9989 10.9394L17.4696 5.46967Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
+interface Props { size?: number; className?: string; }
+export function CloseXIcon({ size = 24, className = '' }: Props) {
+  return <Close variant="duotone" size={size} className={className} />;
 }

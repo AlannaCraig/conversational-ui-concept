@@ -1,27 +1,6 @@
-/**
- * TickIcon Component
- * Checkmark/tick icon for selected states
- */
+import { Approve } from 'iqons-react';
 
-import { IconProps } from '@/lib/svg-icon-loader';
-
-export function TickIcon({ className = '', size = 24, color = 'currentColor' }: IconProps) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      className={className}
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M5 14L8.5 17.5L19 6.5"
-        stroke={color}
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
+interface Props { size?: number; className?: string; }
+export function TickIcon({ size = 24, className = '' }: Props) {
+  return <Approve variant="duotone" size={size} className={className} />;
 }
