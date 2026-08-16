@@ -26,6 +26,7 @@ import {
 import { ActionTiles, ThemeToast, Breadcrumb } from '@/components/ui';
 import { CloseXIcon, SwapHorizontalIcon, NewChatIcon } from '@/components/icons';
 import { PopOutForm, TextInput, TextArea, Select } from '@/components/forms';
+import { AppointmentsDayView } from '@/components/appointments/AppointmentsDayView';
 import { Message } from '@/types/conversation';
 import { getMockResponse } from '@/lib/mockResponses';
 import { getGameNode } from '@/lib/gameData';
@@ -59,7 +60,7 @@ const DEFAULT_SUGGESTIONS = [
   }
 ];
 
-type UIState = 'landing' | 'conversation';
+type UIState = 'landing' | 'conversation' | 'appointments';
 
 export default function Home() {
   const [uiState, setUiState] = useState<UIState>('landing');
@@ -479,6 +480,11 @@ export default function Home() {
     }
   };
 
+  const handleCalendarClick = () => {
+    setUiState('appointments');
+    setActivePopover(null);
+  };
+
   const handleHomeClick = () => {
     // Save current chat if there are messages
     if (messages.length > 0) {
@@ -556,6 +562,8 @@ export default function Home() {
                 onSearchClick={() => setIsFocusMode(true)}
                 chatHistoryButtonRef={chatHistoryButtonRef}
                 notificationsButtonRef={notificationsButtonRef}
+                onCalendarClick={handleCalendarClick}
+                isOnCalendar={uiState === 'appointments'}
                 isOnHome={uiState === 'landing'}
                 unreadNotificationCount={unreadNotificationCount}
                 activePopover={activePopover}
@@ -584,8 +592,11 @@ export default function Home() {
         {/* New Chat Button is now inside dialog container for both views */}
 
         {/* Main Content Area */}
-        <section className={`flex-1 transition-[margin] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${isFocusMode ? 'ml-0' : 'ml-16'}`}>
-          <div className="h-full p-6">
+        <section className={`flex-1 transition-[margin] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${isFocusMode ? 'ml-0' : 'ml-16'} h-full overflow-hidden`}>
+          {uiState === 'appointments' && (
+            <AppointmentsDayView onClose={() => setUiState('landing')} />
+          )}
+          {uiState !== 'appointments' && <div className="h-full p-6">
             <div className="h-full flex gap-6" style={{ flexDirection: isLayoutSwapped ? 'row-reverse' : 'row' }}>
               <AnimatePresence>
                 {/* Large Data Panel - Appears on left (or right if swapped) when active */}
@@ -847,7 +858,7 @@ export default function Home() {
               )}
               </AnimatePresence>
             </div>
-          </div>
+          </div>}
         </section>
       </div>
 

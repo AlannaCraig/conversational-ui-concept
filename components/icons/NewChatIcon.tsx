@@ -2,5 +2,5 @@ import { ChatNew } from 'iqons-react';
 
 interface Props { size?: number; className?: string; }
 export function NewChatIcon({ size = 24, className = '' }: Props) {
-  return <ChatNew variant="duotone" size={size} className={className} />;
+  return <ChatNew variant="outline" size={size} className={className} />;
 }
