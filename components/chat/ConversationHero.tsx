@@ -38,7 +38,7 @@ interface ConversationHeroProps {
 }
 
 export function ConversationHero({
-  userName = 'Liam',
+  userName = 'Alanna',
   greeting = `Hey ${userName || 'there'}!`,
   subtext,
   skipAnimation = false

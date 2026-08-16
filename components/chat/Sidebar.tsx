@@ -12,6 +12,7 @@ import {
   IQIcon,
   HomeIcon,
   ChatHistoryIcon,
+  CalendarIcon,
   SearchIcon,
   NotificationIcon,
   HelpIcon,
@@ -26,15 +27,17 @@ interface SidebarProps {
   onChatHistoryClick?: () => void;
   onNotificationsClick?: () => void;
   onSearchClick?: () => void;
+  onCalendarClick?: () => void;
   chatHistoryButtonRef?: React.RefObject<HTMLButtonElement>;
   notificationsButtonRef?: React.RefObject<HTMLButtonElement>;
   isOnHome?: boolean;
+  isOnCalendar?: boolean;
   unreadNotificationCount?: number;
   activePopover?: 'chatHistory' | 'notifications' | null;
   isFocusMode?: boolean;
 }
 
-export function Sidebar({ onHomeClick, onHelpClick, onChatHistoryClick, onNotificationsClick, onSearchClick, chatHistoryButtonRef, notificationsButtonRef, isOnHome = true, unreadNotificationCount = 0, activePopover, isFocusMode = false }: SidebarProps) {
+export function Sidebar({ onHomeClick, onHelpClick, onChatHistoryClick, onNotificationsClick, onSearchClick, onCalendarClick, chatHistoryButtonRef, notificationsButtonRef, isOnHome = true, isOnCalendar = false, unreadNotificationCount = 0, activePopover, isFocusMode = false }: SidebarProps) {
   return (
     <aside className="fixed left-0 top-0 h-screen w-16 bg-background border-r border-border flex flex-col items-center py-6 z-50">
       {/* Logo */}
@@ -52,6 +55,7 @@ export function Sidebar({ onHomeClick, onHelpClick, onChatHistoryClick, onNotifi
           onClick={onChatHistoryClick}
           disableTooltip={activePopover === 'chatHistory'}
         />
+        <SidebarItem icon={CalendarIcon} label="Calendar" active={isOnCalendar} onClick={onCalendarClick} />
       </nav>
 
       {/* Bottom Utility Icons */}
@@ -71,7 +75,7 @@ export function Sidebar({ onHomeClick, onHelpClick, onChatHistoryClick, onNotifi
 
       {/* User Avatar */}
       <div className="mt-4">
-        <Avatar initials="LH" variant="accent1" size={36} />
+        <Avatar initials="AC" variant="accent1" size={36} />
       </div>
     </aside>
   );
