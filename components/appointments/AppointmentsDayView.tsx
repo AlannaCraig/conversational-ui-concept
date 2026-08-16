@@ -6,6 +6,8 @@ import {
   URGENT_CARE_SLOTS, URGENT_CARE_PATIENT, URGENT_CARE_LOCATION_META, URGENT_CARE_CLINICIAN_TYPES,
   type UrgentCareSlot, type UrgentCareLocationMeta,
 } from '@/lib/appointmentsScheduleData';
+import { PatientHeader } from '@/components/ui/LargeAdaptiveCards';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 // ─── Layout constants ─────────────────────────────────────────────────────────
 
@@ -126,13 +128,13 @@ function AppointmentCard({ slot }: { slot: ScheduleSlot }) {
       <div className="flex flex-col h-full px-2.5 py-2 gap-0.5">
         {/* Time + menu row */}
         <div className="flex items-center justify-between flex-shrink-0">
-          <span className="text-[11px] font-medium" style={{ color: 'var(--text-tertiary)' }}>
+          <span className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>
             {slot.startTime}
           </span>
           {!veryCompact && (
             <button
               className="w-4 h-4 flex items-center justify-center rounded opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity"
-              style={{ color: 'var(--text-tertiary)' }}
+              style={{ color: 'var(--text-secondary)' }}
               aria-label="More options"
               tabIndex={-1}
             >
@@ -160,7 +162,7 @@ function AppointmentCard({ slot }: { slot: ScheduleSlot }) {
             style={{ color: 'var(--text-secondary)' }}
           >
             {slot.appointmentType}
-            <span style={{ color: 'var(--text-tertiary)' }}> · {slot.durationMins} mins</span>
+            <span style={{ color: 'var(--text-secondary)' }}> · {slot.durationMins} mins</span>
           </p>
         )}
 
@@ -194,7 +196,7 @@ function AvailableCard({ slot }: { slot: ScheduleSlot }) {
         background: 'transparent',
       }}
     >
-      <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+      <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
         <span className="font-medium">{slot.startTime}</span>
         <span className="ml-1.5">Available</span>
       </span>
@@ -216,7 +218,7 @@ function BlockedCard({ slot }: { slot: ScheduleSlot }) {
       }}
     >
       {!compact && (
-        <span className="text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+        <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>
           {slot.startTime}
         </span>
       )}
@@ -258,7 +260,7 @@ function TimeGutter() {
             className="absolute right-3 flex items-start"
             style={{ top: y }}
           >
-            <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+            <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
               {time}
             </span>
           </div>
@@ -608,53 +610,6 @@ function HintIcon({ variant }: { variant: 'green' | 'blue' | 'pink' }) {
   );
 }
 
-// ─── Urgent care: patient banner ─────────────────────────────────────────────
-
-function UrgentCarePatientBanner() {
-  return (
-    <div
-      className="flex-shrink-0 flex items-center gap-4 px-6 py-3"
-      style={{ borderBottom: '1px solid var(--border)', background: 'var(--background)' }}
-    >
-      <div
-        className="w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center"
-        style={{ background: 'var(--primary-light)' }}
-      >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary-main)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-        </svg>
-      </div>
-      <div className="min-w-0">
-        <div className="flex items-center gap-3 flex-wrap">
-          <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
-            {URGENT_CARE_PATIENT.name}
-          </span>
-          <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            NHS: {URGENT_CARE_PATIENT.nhsNumber}
-          </span>
-          <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            DOB: {URGENT_CARE_PATIENT.dob} ({URGENT_CARE_PATIENT.age}y)
-          </span>
-        </div>
-        <div className="flex items-center gap-3 mt-0.5">
-          <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-            </svg>
-            {URGENT_CARE_PATIENT.postcode}
-          </span>
-          <span className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13 19.79 19.79 0 0 1 1.61 4.35 2 2 0 0 1 3.59 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l.83-.82a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-            </svg>
-            {URGENT_CARE_PATIENT.phone}
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Urgent care: recommended slot card ──────────────────────────────────────
 
 function UrgentCareRecommendedCard({ slot, rank }: { slot: UrgentCareSlot; rank: number }) {
@@ -676,24 +631,24 @@ function UrgentCareRecommendedCard({ slot, rank }: { slot: UrgentCareSlot; rank:
         {/* Info columns */}
         <div className="flex-1 min-w-0 flex items-start gap-5 flex-wrap">
           <div className="min-w-[80px]">
-            <p className="text-[10px] mb-0.5" style={{ color: 'var(--text-tertiary)' }}>Time</p>
-            <div className="flex items-center gap-1" style={{ color: 'var(--text-tertiary)' }}>
+            <p className="text-xs mb-0.5" style={{ color: 'var(--text-secondary)' }}>Time</p>
+            <div className="flex items-center gap-1" style={{ color: 'var(--text-secondary)' }}>
               <UCClockIcon />
               <span className="text-lg font-bold leading-none" style={{ color: 'var(--text-primary)' }}>{slot.time}</span>
             </div>
           </div>
           <div className="min-w-[140px]">
-            <p className="text-[10px] mb-0.5" style={{ color: 'var(--text-tertiary)' }}>Location</p>
+            <p className="text-xs mb-0.5" style={{ color: 'var(--text-secondary)' }}>Location</p>
             <p className="text-sm font-medium leading-snug" style={{ color: 'var(--text-primary)' }}>{slot.location}</p>
             <p className="text-xs" style={{ color: 'var(--accent1-main)' }}>{slot.distanceMiles} mi away</p>
           </div>
           <div className="min-w-[120px]">
-            <p className="text-[10px] mb-0.5" style={{ color: 'var(--text-tertiary)' }}>Clinician</p>
+            <p className="text-xs mb-0.5" style={{ color: 'var(--text-secondary)' }}>Clinician</p>
             <p className="text-sm font-medium leading-snug" style={{ color: 'var(--text-primary)' }}>{slot.clinician}</p>
             <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{slot.clinicianRole}</p>
           </div>
           <div>
-            <p className="text-[10px] mb-0.5" style={{ color: 'var(--text-tertiary)' }}>Duration</p>
+            <p className="text-xs mb-0.5" style={{ color: 'var(--text-secondary)' }}>Duration</p>
             <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{slot.durationMins} mins</p>
           </div>
         </div>
@@ -736,28 +691,28 @@ function UrgentCareAllSlotRow({ slot }: { slot: UrgentCareSlot }) {
       style={{ background: 'var(--background)', borderColor: 'var(--border)' }}
     >
       <div className="min-w-[64px] flex-shrink-0">
-        <div className="flex items-center gap-1 mb-0.5" style={{ color: 'var(--text-tertiary)' }}>
-          <UCClockIcon /><span className="text-[10px]">Time</span>
+        <div className="flex items-center gap-1 mb-0.5" style={{ color: 'var(--text-secondary)' }}>
+          <UCClockIcon /><span className="text-xs">Time</span>
         </div>
         <span className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>{slot.time}</span>
       </div>
       <div className="flex-1 min-w-[120px]">
-        <div className="flex items-center gap-1 mb-0.5" style={{ color: 'var(--text-tertiary)' }}>
-          <UCPinIcon /><span className="text-[10px]">Location</span>
+        <div className="flex items-center gap-1 mb-0.5" style={{ color: 'var(--text-secondary)' }}>
+          <UCPinIcon /><span className="text-xs">Location</span>
         </div>
         <p className="text-sm font-medium leading-snug" style={{ color: 'var(--text-primary)' }}>{slot.location}</p>
         <p className="text-xs" style={{ color: 'var(--accent1-main)' }}>{slot.distanceMiles} mi away</p>
       </div>
       <div className="flex-1 min-w-[120px]">
-        <div className="flex items-center gap-1 mb-0.5" style={{ color: 'var(--text-tertiary)' }}>
-          <UCPersonIcon /><span className="text-[10px]">Clinician</span>
+        <div className="flex items-center gap-1 mb-0.5" style={{ color: 'var(--text-secondary)' }}>
+          <UCPersonIcon /><span className="text-xs">Clinician</span>
         </div>
         <p className="text-sm font-medium leading-snug" style={{ color: 'var(--text-primary)' }}>{slot.clinician}</p>
         <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{slot.clinicianRole}</p>
       </div>
       <div className="min-w-[64px] flex-shrink-0">
-        <div className="flex items-center gap-1 mb-0.5" style={{ color: 'var(--text-tertiary)' }}>
-          <UCClockIcon /><span className="text-[10px]">Duration</span>
+        <div className="flex items-center gap-1 mb-0.5" style={{ color: 'var(--text-secondary)' }}>
+          <UCClockIcon /><span className="text-xs">Duration</span>
         </div>
         <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{slot.durationMins} mins</span>
       </div>
@@ -818,7 +773,7 @@ function UrgentCareView() {
 
       {/* ── Main slots column ── */}
       <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
-        <UrgentCarePatientBanner />
+        <PatientHeader className="mx-6 mb-4" />
 
         <div className="flex-1 overflow-auto conversation-scroll px-6 py-5">
 
@@ -922,7 +877,7 @@ function UrgentCareView() {
                       >
                         {group.time}
                       </span>
-                      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                      <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                         {group.slots.length} {group.slots.length === 1 ? 'slot' : 'slots'}
                       </span>
                     </div>
@@ -955,12 +910,12 @@ function UrgentCareView() {
 
           {/* Search by location */}
           <div>
-            <p className="text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Search by Location</p>
+            <p className="text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Search by Location</p>
             <div
               className="flex items-center gap-2 px-3 h-9 rounded-lg border"
               style={{ background: 'var(--background)', borderColor: 'var(--border)' }}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
               </svg>
               <input
@@ -971,15 +926,15 @@ function UrgentCareView() {
                 style={{ color: 'var(--text-primary)' }}
               />
             </div>
-            <p className="text-[10px] mt-1" style={{ color: 'var(--text-tertiary)' }}>Select from suggestions or press Enter</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>Select from suggestions or press Enter</p>
           </div>
 
           {/* Date */}
           <div>
-            <p className="text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Date</p>
+            <p className="text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Date</p>
             <div
               className="flex items-center gap-2 px-3 h-9 rounded-lg border"
-              style={{ background: 'var(--background)', borderColor: 'var(--border)', color: 'var(--text-tertiary)' }}
+              style={{ background: 'var(--background)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
@@ -989,10 +944,10 @@ function UrgentCareView() {
 
           {/* Time window */}
           <div>
-            <p className="text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Time Window</p>
+            <p className="text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>Time Window</p>
             <div
               className="flex items-center gap-2 px-3 h-9 rounded-lg border"
-              style={{ background: 'var(--background)', borderColor: 'var(--border)', color: 'var(--text-tertiary)' }}
+              style={{ background: 'var(--background)', borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
@@ -1008,19 +963,19 @@ function UrgentCareView() {
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
               </svg>
-              <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Locations</p>
-              <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>(within 5mi)</span>
+              <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Locations</p>
+              <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>(within 5mi)</span>
             </div>
             <div
               className="flex items-center gap-2 px-3 h-8 rounded-lg border mb-2.5"
               style={{ background: 'var(--background)', borderColor: 'var(--border)' }}
             >
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
               </svg>
               <input
                 type="text"
-                className="flex-1 bg-transparent text-[11px] outline-none"
+                className="flex-1 bg-transparent text-xs outline-none"
                 style={{ color: 'var(--text-secondary)' }}
                 placeholder="Search locations..."
               />
@@ -1039,7 +994,7 @@ function UrgentCareView() {
                   >
                     <div className="min-w-0 flex-1 mr-2">
                       <p className="text-xs font-medium truncate" style={{ color: 'var(--text-primary)' }}>{loc.name}</p>
-                      <p className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{loc.distanceMiles} mi away</p>
+                      <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{loc.distanceMiles} mi away</p>
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{loc.slotCount}</span>
@@ -1052,7 +1007,7 @@ function UrgentCareView() {
                 );
               })}
             </div>
-            <p className="text-[10px] mt-2 text-center" style={{ color: 'var(--text-tertiary)' }}>
+            <p className="text-xs mt-2 text-center" style={{ color: 'var(--text-secondary)' }}>
               Showing {URGENT_CARE_LOCATION_META.length} of {URGENT_CARE_LOCATION_META.length} locations
             </p>
           </div>
@@ -1065,7 +1020,7 @@ function UrgentCareView() {
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
               </svg>
-              <p className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>Clinician Type</p>
+              <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Clinician Type</p>
             </div>
             <div className="space-y-0.5">
               {URGENT_CARE_CLINICIAN_TYPES.map(type => {
@@ -1080,7 +1035,7 @@ function UrgentCareView() {
                     onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                   >
                     <span className="text-xs" style={{ color: 'var(--text-primary)' }}>{type.label}</span>
-                    <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{type.count} available</span>
+                    <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{type.count} available</span>
                   </button>
                 );
               })}
@@ -1158,12 +1113,10 @@ export function AppointmentsDayView({ onClose }: AppointmentsDayViewProps) {
       style={{ background: 'var(--background-soft)' }}
     >
       {/* ── View header ── */}
-      <div
-        className="flex-shrink-0 flex items-center justify-between px-6 pt-5 pb-0"
-        style={{ background: 'var(--background-soft)' }}
-      >
-        <ViewSwitcherDropdown value={viewMode} onChange={setViewMode} />
-      </div>
+      <PageHeader
+        title={<ViewSwitcherDropdown value={viewMode} onChange={setViewMode} />}
+        className="px-6 pt-5 pb-4"
+      />
 
       {/* ── Week picker + filter button — Day View only ── */}
       {viewMode === 'day' && (

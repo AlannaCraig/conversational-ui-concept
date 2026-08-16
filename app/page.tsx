@@ -24,6 +24,7 @@ import {
   PatientHeader
 } from '@/components/ui/LargeAdaptiveCards';
 import { ActionTiles, ThemeToast, Breadcrumb } from '@/components/ui';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { CloseXIcon, SwapHorizontalIcon, NewChatIcon } from '@/components/icons';
 import { PopOutForm, TextInput, TextArea, Select } from '@/components/forms';
 import { AppointmentsDayView } from '@/components/appointments/AppointmentsDayView';
@@ -613,57 +614,43 @@ export default function Home() {
                     {/* Adaptive Card Container - Full height with flex layout */}
                     <div ref={largeDataContainerRef} className="h-full bg-background border border-border rounded-[12px] overflow-hidden flex flex-col">
                       {/* Sticky Header */}
-                      <div className="flex-shrink-0 px-6 pt-6 pb-6 bg-background">
-                        <div className="flex items-center justify-between mb-3">
-                          {/* Conditional Header: Breadcrumb for patient summary, "Large data" for others */}
-                          {showPatientHeader ? (
-                            <Breadcrumb
-                              items={breadcrumbs}
-                              onNavigate={handleBreadcrumbNavigate}
-                            />
-                          ) : (
-                            <h2 className="text-xl font-semibold text-text-primary">Large data</h2>
+                      <PageHeader
+                        className="px-6 pt-6 pb-6 bg-background"
+                        title={showPatientHeader ? (
+                          <Breadcrumb items={breadcrumbs} onNavigate={handleBreadcrumbNavigate} />
+                        ) : 'Large data'}
+                        actions={<>
+                          <button
+                            onClick={() => {
+                              const next = careMode === 'primary' ? 'urgent' : 'primary';
+                              setCareMode(next);
+                              if (next === 'urgent') setActivePatientId('PT-10003');
+                              else setActivePatientId('PT-10002');
+                            }}
+                            className={`w-10 h-10 border rounded-lg flex items-center justify-center transition-colors shadow-sm cursor-pointer text-xs font-semibold ${careMode === 'urgent' ? 'bg-primary-main text-primary-contrast border-primary-main' : 'bg-background border-border text-text-secondary hover:bg-hover'}`}
+                            aria-label="Toggle care mode"
+                            title={careMode === 'primary' ? 'Switch to urgent care view' : 'Switch to primary care view'}
+                          >
+                            {careMode === 'urgent' ? 'UC' : 'PC'}
+                          </button>
+                          {showPatientHeader && (
+                            <button
+                              onClick={() => setActivePatientId(id => id === 'PT-10002' ? 'PT-10001' : 'PT-10002')}
+                              className="w-10 h-10 bg-background border border-border rounded-lg flex items-center justify-center hover:bg-hover transition-colors shadow-sm cursor-pointer"
+                              aria-label="Switch patient"
+                            >
+                              <div className="w-4 h-4 border border-border rounded" />
+                            </button>
                           )}
-
-                          {/* Action buttons */}
-                          <div className="flex items-center gap-2">
-                            {/* Care mode toggle */}
-                            <button
-                              onClick={() => {
-                                const next = careMode === 'primary' ? 'urgent' : 'primary';
-                                setCareMode(next);
-                                if (next === 'urgent') setActivePatientId('PT-10003');
-                                else setActivePatientId('PT-10002');
-                              }}
-                              className={`w-10 h-10 border rounded-lg flex items-center justify-center transition-colors shadow-sm cursor-pointer text-xs font-semibold ${careMode === 'urgent' ? 'bg-primary-main text-primary-contrast border-primary-main' : 'bg-background border-border text-text-secondary hover:bg-hover'}`}
-                              aria-label="Toggle care mode"
-                              title={careMode === 'primary' ? 'Switch to urgent care view' : 'Switch to primary care view'}
-                            >
-                              {careMode === 'urgent' ? 'UC' : 'PC'}
-                            </button>
-                            {showPatientHeader && (
-                              <button
-                                onClick={() => setActivePatientId(id => id === 'PT-10002' ? 'PT-10001' : 'PT-10002')}
-                                className="w-10 h-10 bg-background border border-border rounded-lg flex items-center justify-center hover:bg-hover transition-colors shadow-sm cursor-pointer"
-                                aria-label="Switch patient"
-                              >
-                                <div className="w-4 h-4 border border-border rounded" />
-                              </button>
-                            )}
-
-                            {/* Close button */}
-                            <button
-                              onClick={handleCloseLargeData}
-                              className="w-10 h-10 bg-background border border-border rounded-lg flex items-center justify-center hover:bg-hover transition-colors shadow-sm text-text-secondary hover:text-text-primary cursor-pointer"
-                              aria-label="Close large data view"
-                            >
-                              <CloseXIcon size={20} />
-                            </button>
-                          </div>
-                        </div>
-                        {/* Breaker line */}
-                        <div className="border-t border-border"></div>
-                      </div>
+                          <button
+                            onClick={handleCloseLargeData}
+                            className="w-10 h-10 bg-background border border-border rounded-lg flex items-center justify-center hover:bg-hover transition-colors shadow-sm text-text-secondary hover:text-text-primary cursor-pointer"
+                            aria-label="Close large data view"
+                          >
+                            <CloseXIcon size={20} />
+                          </button>
+                        </>}
+                      />
 
                       {/* Scrollable Content */}
                       <div className={`flex-1 overflow-y-auto conversation-scroll${largeCardLayout.type === 'patient-summary' ? ' flex flex-col' : ''}`} style={{ scrollbarGutter: 'stable' }}>
