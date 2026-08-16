@@ -198,3 +198,72 @@ export const SCHEDULE_SLOTS: ScheduleSlot[] = [
   { id: 'dc-14', columnId: 'diabetes', type: 'appointment', startTime: '16:00', durationMins: 30, patientName: 'KEATS, Winifred (Mrs)',    appointmentType: 'Diabetes education', status: 'Booked'       },
   { id: 'dc-15', columnId: 'diabetes', type: 'blocked',     startTime: '16:30', durationMins: 30, blockedLabel: 'Clinical admin'          },
 ];
+
+// ─── Urgent Care ─────────────────────────────────────────────────────────────
+
+export interface UrgentCareSlot {
+  id: string;
+  time: string;
+  durationMins: number;
+  location: string;
+  clinician: string;
+  clinicianRole: string;
+  clinicianType: string;
+  distanceMiles: number;
+  isRecommended?: boolean;
+  contextHint?: { text: string; variant: 'green' | 'blue' | 'pink' };
+}
+
+export interface UrgentCareLocationMeta {
+  name: string;
+  slotCount: number;
+  availability: 'good' | 'limited' | 'scarce';
+  distanceMiles: number;
+}
+
+export const URGENT_CARE_PATIENT = {
+  name: 'Sarah Mitchell',
+  nhsNumber: '485 777 3456',
+  dob: '15/03/1978',
+  age: 46,
+  postcode: 'M1 4BT',
+  phone: '07700 900123',
+};
+
+export const URGENT_CARE_LOCATION_META: UrgentCareLocationMeta[] = [
+  { name: 'Central Medical Clinic',  slotCount: 17, availability: 'good',   distanceMiles: 0.8 },
+  { name: 'Riverside Health Centre', slotCount: 11, availability: 'good',   distanceMiles: 1.2 },
+  { name: 'Oakwood Surgery',         slotCount: 5,  availability: 'scarce', distanceMiles: 1.9 },
+  { name: 'Park View Medical',       slotCount: 3,  availability: 'scarce', distanceMiles: 2.3 },
+];
+
+export const URGENT_CARE_CLINICIAN_TYPES = [
+  { id: 'gp',     label: 'General Practitioner', count: 28 },
+  { id: 'nurse',  label: 'Practice Nurse',        count: 6  },
+  { id: 'physio', label: 'Physiotherapist',       count: 1  },
+  { id: 'mh',     label: 'Mental Health',         count: 1  },
+];
+
+export const URGENT_CARE_SLOTS: UrgentCareSlot[] = [
+  // ─── Recommended ─────────────────────────────────────────────────────────
+  { id: 'uc-r1', time: '09:00', durationMins: 15, location: 'Central Medical Clinic',  clinician: 'Dr. Sarah Chen',    clinicianRole: 'GP',    clinicianType: 'General Practitioner', distanceMiles: 0.8, isRecommended: true, contextHint: { text: 'Earliest available at nearest location', variant: 'green' } },
+  { id: 'uc-r2', time: '09:00', durationMins: 20, location: 'Riverside Health Centre', clinician: 'Nurse Maria Garcia', clinicianRole: 'Nurse', clinicianType: 'Practice Nurse',        distanceMiles: 1.2, isRecommended: true, contextHint: { text: 'Same time, alternative location',       variant: 'blue'  } },
+  { id: 'uc-r3', time: '09:15', durationMins: 15, location: 'Central Medical Clinic',  clinician: 'Dr. Sarah Chen',    clinicianRole: 'GP',    clinicianType: 'General Practitioner', distanceMiles: 0.8, isRecommended: true, contextHint: { text: 'Next available at nearest location',    variant: 'pink'  } },
+  // ─── All slots ────────────────────────────────────────────────────────────
+  { id: 'uc-a1',  time: '09:00', durationMins: 15, location: 'Central Medical Clinic',  clinician: 'Dr. Sarah Chen',    clinicianRole: 'GP',    clinicianType: 'General Practitioner', distanceMiles: 0.8 },
+  { id: 'uc-a2',  time: '09:00', durationMins: 20, location: 'Riverside Health Centre', clinician: 'Nurse Maria Garcia', clinicianRole: 'Nurse', clinicianType: 'Practice Nurse',        distanceMiles: 1.2 },
+  { id: 'uc-a3',  time: '09:15', durationMins: 15, location: 'Central Medical Clinic',  clinician: 'Dr. Sarah Chen',    clinicianRole: 'GP',    clinicianType: 'General Practitioner', distanceMiles: 0.8 },
+  { id: 'uc-a4',  time: '09:30', durationMins: 15, location: 'Central Medical Clinic',  clinician: 'Dr. James Wilson',  clinicianRole: 'GP',    clinicianType: 'General Practitioner', distanceMiles: 0.8 },
+  { id: 'uc-a5',  time: '09:45', durationMins: 20, location: 'Riverside Health Centre', clinician: 'Nurse Maria Garcia', clinicianRole: 'Nurse', clinicianType: 'Practice Nurse',        distanceMiles: 1.2 },
+  { id: 'uc-a6',  time: '10:00', durationMins: 15, location: 'Central Medical Clinic',  clinician: 'Dr. Sarah Chen',    clinicianRole: 'GP',    clinicianType: 'General Practitioner', distanceMiles: 0.8 },
+  { id: 'uc-a7',  time: '10:00', durationMins: 20, location: 'Oakwood Surgery',         clinician: 'Dr. Priya Sharma',  clinicianRole: 'GP',    clinicianType: 'General Practitioner', distanceMiles: 1.9 },
+  { id: 'uc-a8',  time: '10:15', durationMins: 20, location: 'Central Medical Clinic',  clinician: 'Dr. James Wilson',  clinicianRole: 'GP',    clinicianType: 'General Practitioner', distanceMiles: 0.8 },
+  { id: 'uc-a9',  time: '10:30', durationMins: 15, location: 'Riverside Health Centre', clinician: 'Nurse Maria Garcia', clinicianRole: 'Nurse', clinicianType: 'Practice Nurse',        distanceMiles: 1.2 },
+  { id: 'uc-a10', time: '10:45', durationMins: 15, location: 'Central Medical Clinic',  clinician: 'Dr. Sarah Chen',    clinicianRole: 'GP',    clinicianType: 'General Practitioner', distanceMiles: 0.8 },
+  { id: 'uc-a11', time: '11:00', durationMins: 15, location: 'Oakwood Surgery',         clinician: 'Dr. Priya Sharma',  clinicianRole: 'GP',    clinicianType: 'General Practitioner', distanceMiles: 1.9 },
+  { id: 'uc-a12', time: '11:30', durationMins: 20, location: 'Central Medical Clinic',  clinician: 'Dr. James Wilson',  clinicianRole: 'GP',    clinicianType: 'General Practitioner', distanceMiles: 0.8 },
+  { id: 'uc-a13', time: '14:00', durationMins: 15, location: 'Central Medical Clinic',  clinician: 'Dr. Sarah Chen',    clinicianRole: 'GP',    clinicianType: 'General Practitioner', distanceMiles: 0.8 },
+  { id: 'uc-a14', time: '14:30', durationMins: 10, location: 'Park View Medical',       clinician: 'Dr. Thomas Burke',  clinicianRole: 'GP',    clinicianType: 'General Practitioner', distanceMiles: 2.3 },
+  { id: 'uc-a15', time: '15:00', durationMins: 15, location: 'Riverside Health Centre', clinician: 'Nurse Maria Garcia', clinicianRole: 'Nurse', clinicianType: 'Practice Nurse',        distanceMiles: 1.2 },
+  { id: 'uc-a16', time: '15:30', durationMins: 20, location: 'Central Medical Clinic',  clinician: 'Dr. Sarah Chen',    clinicianRole: 'GP',    clinicianType: 'General Practitioner', distanceMiles: 0.8 },
+];
