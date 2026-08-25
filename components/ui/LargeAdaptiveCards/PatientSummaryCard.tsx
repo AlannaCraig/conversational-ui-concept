@@ -38,7 +38,7 @@ const PATIENT_REGISTRY: Record<string, Patient> = {
 interface PatientSummaryCardProps {
   patientName?: string;
   dateOfBirth?: string;
-  patientId?: string;
+  chiNumber?: string;
   sex?: string;
   allergyStatus?: string;
   onWidgetClick?: (widgetTitle: string) => void;
@@ -46,6 +46,9 @@ interface PatientSummaryCardProps {
   className?: string;
   activePatientId?: string;
   careMode?: 'primary' | 'urgent';
+  showStartConsultation?: boolean;
+  onStartConsultation?: () => void;
+  nextAppointmentDisplay?: string;
 }
 
 const SUMMARY_WIDGET = { id: 'summary', title: 'Summary' };
@@ -61,62 +64,68 @@ const STACK_WIDGETS_URGENT = [
   { id: 'referrals', title: 'Primary care outbound referrals' },
 ];
 
-// Separate Patient Header component for reuse
-export function PatientHeader({
+// Single shared PatientBanner — used on every screen that shows a patient header.
+export function PatientBanner({
   patientName = ACTIVE_PATIENT.demographics.displayName,
   dateOfBirth = ACTIVE_PATIENT.demographics.dateOfBirth,
-  patientId = ACTIVE_PATIENT.demographics.patientId,
+  chiNumber = ACTIVE_PATIENT.demographics.chiNumber,
   sex = ACTIVE_PATIENT.demographics.sex,
   allergyStatus = ACTIVE_PATIENT.demographics.allergies,
+  showMenu = true,
   className = '',
   activePatientId,
-}: Omit<PatientSummaryCardProps, 'onWidgetClick' | 'showWidgets'>) {
+}: {
+  patientName?: string;
+  dateOfBirth?: string;
+  chiNumber?: string;
+  sex?: string;
+  allergyStatus?: string;
+  showMenu?: boolean;
+  className?: string;
+  activePatientId?: string;
+}) {
   const resolved = activePatientId ? PATIENT_REGISTRY[activePatientId] : null;
-  let patientIdType: 'CHI' | 'NHS' | undefined;
   if (resolved) {
     patientName = resolved.demographics.displayName;
     dateOfBirth = resolved.demographics.dateOfBirth;
-    patientId = resolved.demographics.patientId;
-    patientIdType = resolved.demographics.patientIdType;
+    chiNumber = resolved.demographics.chiNumber;
     sex = resolved.demographics.sex;
     allergyStatus = resolved.demographics.allergies;
-  } else {
-    patientIdType = ACTIVE_PATIENT.demographics.patientIdType;
   }
-  const idLabel = patientIdType === 'NHS' ? 'NHS number' : patientIdType === 'CHI' ? 'CHI number' : 'Patient identifier';
 
   return (
     <div className={`border border-border bg-background-soft rounded-lg p-4 flex items-center gap-4 ${className}`}>
-      {/* Patient Information */}
       <div className="flex-1 min-w-0">
-        {/* Patient Name */}
-        <div className="text-base font-semibold text-text-primary mb-1">
+        <div className="text-base font-semibold text-text-primary mb-1 truncate">
           {patientName}
         </div>
-
-        {/* Demographics - Single line with separators */}
         <div className="text-sm text-text-secondary flex items-center gap-2 flex-wrap">
           <span>Born: {dateOfBirth}</span>
-          <span className="opacity-50">•</span>
-          <span>{idLabel}: {patientId}</span>
-          <span className="opacity-50">•</span>
-          <span>Sex: {sex}</span>
+          <span className="opacity-50">·</span>
+          <span>CHI number: {chiNumber}</span>
+          {sex && (
+            <>
+              <span className="opacity-50">·</span>
+              <span>Sex: {sex}</span>
+            </>
+          )}
         </div>
       </div>
-
-      {/* Allergy Chip */}
       <AllergyChip status={getAllergyStatus(allergyStatus ?? '')} />
-
-      {/* More Actions Button */}
-      <button
-        className="w-10 h-10 flex items-center justify-center text-primary-main hover:text-text-primary transition-colors flex-shrink-0 cursor-pointer"
-        aria-label="More actions"
-      >
-        <MoreVerticalIcon size={20} />
-      </button>
+      {showMenu && (
+        <button
+          className="w-10 h-10 flex items-center justify-center text-primary-main hover:text-text-primary transition-colors flex-shrink-0 cursor-pointer"
+          aria-label="More actions"
+        >
+          <MoreVerticalIcon size={20} />
+        </button>
+      )}
     </div>
   );
 }
+
+// Alias for backward compatibility
+export const PatientHeader = PatientBanner;
 
 // Skeleton shimmer line — CSS animation only, no JS RAF loop
 function SkeletonLine({ width = 'full' }: { width?: string }) {
@@ -1266,7 +1275,13 @@ function TrackerIconButton({ icon: Icon, label, count }: { icon: React.FC<{ size
   );
 }
 
-function PatientTracker({ patientId, careMode }: { patientId: string; careMode?: 'primary' | 'urgent' }) {
+function PatientTracker({ patientId, careMode, showStartConsultation, onStartConsultation, nextAppointmentDisplay }: {
+  patientId: string;
+  careMode?: 'primary' | 'urgent';
+  showStartConsultation?: boolean;
+  onStartConsultation?: () => void;
+  nextAppointmentDisplay?: string;
+}) {
   const patient = PATIENT_REGISTRY[patientId] ?? ACTIVE_PATIENT;
   const tracker = patient.patientTracker;
   if (!tracker) return null;
@@ -1285,16 +1300,28 @@ function PatientTracker({ patientId, careMode }: { patientId: string; careMode?:
       {/* Divider — only needed when icon buttons are visible */}
       {careMode !== 'urgent' && <div className="w-px h-8 bg-border mx-1 flex-shrink-0" />}
 
-      {/* Appointment pills */}
-      {[
-        { label: 'Next appointment', value: tracker.nextAppointment },
-      ].map(({ label, value }) => (
-        <div key={label} className="h-10 flex items-center gap-2 border border-border rounded-full bg-primary-contrast px-3 flex-shrink-0">
-          <CalendarIcon size={18} className="text-text-secondary flex-shrink-0" />
-          <span className="text-sm text-text-secondary whitespace-nowrap">{label}:</span>
-          <span className="text-sm font-semibold text-text-primary whitespace-nowrap">{value ?? '—'}</span>
-        </div>
-      ))}
+      {/* Next appointment — always visible */}
+      <div className="h-10 flex items-center gap-2 border border-border rounded-full bg-primary-contrast px-3 flex-shrink-0">
+        <CalendarIcon size={18} className="text-text-secondary flex-shrink-0" />
+        <span className="text-sm text-text-secondary whitespace-nowrap">Next appointment:</span>
+        <span className="text-sm font-semibold text-text-primary whitespace-nowrap">
+          {nextAppointmentDisplay ?? tracker.nextAppointment ?? '—'}
+        </span>
+      </div>
+
+      {/* Start consultation — contextual, shown during ±30 min window */}
+      {showStartConsultation && (
+        <button
+          onClick={onStartConsultation}
+          className="h-10 inline-flex items-center gap-2 rounded-full px-4 text-sm font-semibold flex-shrink-0 cursor-pointer transition-opacity hover:opacity-85"
+          style={{ background: 'var(--primary-main)', color: 'var(--primary-contrast)', border: 'none' }}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}>
+            <polygon points="5,3 19,12 5,21" />
+          </svg>
+          Start consultation
+        </button>
+      )}
     </div>
   );
 }
@@ -1368,6 +1395,9 @@ export function PatientSummaryCard({
   className = '',
   activePatientId,
   careMode = 'primary',
+  showStartConsultation,
+  onStartConsultation,
+  nextAppointmentDisplay,
 }: PatientSummaryCardProps) {
   const resolvedPatientId = activePatientId ?? ACTIVE_PATIENT.id;
 
@@ -1380,7 +1410,13 @@ export function PatientSummaryCard({
       {/* Tracker row — aligned to left column only */}
       <div className="flex gap-6">
         <div className="flex-1 min-w-0">
-          <PatientTracker patientId={resolvedPatientId} careMode={careMode} />
+          <PatientTracker
+            patientId={resolvedPatientId}
+            careMode={careMode}
+            showStartConsultation={showStartConsultation}
+            onStartConsultation={onStartConsultation}
+            nextAppointmentDisplay={nextAppointmentDisplay}
+          />
         </div>
         <div className="flex-1 min-w-0" />
       </div>

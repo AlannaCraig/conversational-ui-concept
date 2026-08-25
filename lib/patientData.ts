@@ -31,8 +31,7 @@ export interface Patient {
     livingSituation?: string;
     mobility?: string;
     nhsRegion?: string;
-    patientId: string;
-    patientIdType?: 'CHI' | 'NHS';
+    chiNumber: string;
     allergies: string;
   };
   lifestyleAndRiskFactors: Record<string, string>;
@@ -158,8 +157,7 @@ export const PATIENT_HARPER: Patient = {
     alcohol: 'Social',
     exercise: 'Gym 2× weekly',
     nhsRegion: 'Greater London',
-    patientId: '140297 1423',
-    patientIdType: 'CHI',
+    chiNumber: '140297 1423',
     allergies: 'No known allergies',
   },
   lifestyleAndRiskFactors: {
@@ -324,8 +322,7 @@ export const PATIENT_ELLISON: Patient = {
     alcohol: 'Rare',
     livingSituation: 'Lives alone',
     mobility: 'Uses walking stick',
-    patientId: '030951 8762',
-    patientIdType: 'CHI',
+    chiNumber: '030951 8762',
     allergies: 'Penicillin — Rash',
   },
   lifestyleAndRiskFactors: {
@@ -604,8 +601,7 @@ export const PATIENT_OKAFOR: Patient = {
     alcohol: 'Regular',
     livingSituation: 'Lives with family',
     nhsRegion: 'West Midlands',
-    patientId: '485 312 6790',
-    patientIdType: 'NHS',
+    chiNumber: '485312 6790',
     allergies: 'Penicillin — Anaphylaxis',
   },
   lifestyleAndRiskFactors: {
