@@ -42,7 +42,7 @@ export function Avatar({ initials, variant = 'accent1', size = 36 }: AvatarProps
         backgroundColor: colors.bg,
         boxShadow: `inset 0 0 0 2px ${colors.stroke}`,
         color: colors.text,
-        fontSize: '16px',
+        fontSize: `${Math.max(8, Math.round(size * 0.38))}px`,
         lineHeight: '1',
       }}
       aria-label={`Avatar for ${initials}`}

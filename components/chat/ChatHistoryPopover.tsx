@@ -7,7 +7,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChatHistoryIcon, SearchIcon, ChatsIcon, ChevronDownIcon, MoreVerticalIcon } from '@/components/icons';
+import { ChatHistoryIcon, SearchIcon, ChatsIcon, ChevronDownIcon, MoreVerticalIcon, PlusIcon } from '@/components/icons';
 import { useState } from 'react';
 import { getMockChatHistory } from '@/lib/mockChatHistory';
 
@@ -30,9 +30,10 @@ interface ChatHistoryPopoverProps {
   onClose: () => void;
   buttonRef?: React.RefObject<HTMLButtonElement>;
   onSelectChat?: (chatId: string) => void;
+  onNewChat?: () => void;
 }
 
-export function ChatHistoryPopover({ isOpen, onClose, buttonRef, onSelectChat }: ChatHistoryPopoverProps) {
+export function ChatHistoryPopover({ isOpen, onClose, buttonRef, onSelectChat, onNewChat }: ChatHistoryPopoverProps) {
   const mockChats = getMockChatHistory();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
@@ -129,8 +130,17 @@ export function ChatHistoryPopover({ isOpen, onClose, buttonRef, onSelectChat }:
             }}
           >
             {/* Header */}
-            <div className="flex-shrink-0 px-5 pt-5 pb-4">
+            <div className="flex-shrink-0 flex items-center justify-between px-5 pt-5 pb-4">
               <h2 className="text-base font-semibold text-text-primary">Chat history</h2>
+              {onNewChat && (
+                <button
+                  onClick={onNewChat}
+                  className="h-8 px-3 flex items-center gap-1.5 bg-primary-main text-primary-contrast rounded-lg hover:opacity-90 transition-opacity cursor-pointer text-xs font-medium"
+                >
+                  <PlusIcon size={14} />
+                  New chat
+                </button>
+              )}
             </div>
 
             {/* Divider */}

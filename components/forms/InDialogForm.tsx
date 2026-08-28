@@ -17,6 +17,7 @@
 'use client';
 
 import { ReactNode } from 'react';
+import { Button } from '@/components/ui';
 
 interface InDialogFormProps {
   /** Form title */
@@ -89,12 +90,14 @@ export function InDialogForm({
 
         {/* Footer with Submit Button */}
         <div className="p-4 flex justify-end">
-          <button
+          <Button
             type="submit"
-            className="px-4 py-2 bg-accent1-main text-accent1-contrast text-sm font-medium rounded hover:bg-accent1-dark transition-colors"
+            variant="primary"
+            size="md"
+            style={{ background: 'var(--accent1-main)', borderColor: 'var(--accent1-main)', color: 'var(--accent1-contrast)' }}
           >
             {submitText}
-          </button>
+          </Button>
         </div>
       </form>
     </div>

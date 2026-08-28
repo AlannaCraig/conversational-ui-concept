@@ -20,6 +20,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { ReactNode, useState, useEffect } from 'react';
+import { Button } from '@/components/ui';
 import { ChevronDownIcon, ChevronUpIcon } from '@/components/icons';
 
 interface PopOutFormProps {
@@ -151,12 +152,14 @@ export function PopOutForm({
 
             {/* Footer with Actions */}
             <div className="p-4 flex justify-end">
-              <button
+              <Button
                 type="submit"
-                className="px-4 py-2 bg-accent1-main text-accent1-contrast text-sm font-medium rounded hover:bg-accent1-dark transition-colors cursor-pointer"
+                variant="primary"
+                size="md"
+                style={{ background: 'var(--accent1-main)', borderColor: 'var(--accent1-main)', color: 'var(--accent1-contrast)' }}
               >
                 {submitText}
-              </button>
+              </Button>
             </div>
           </form>
         </motion.div>

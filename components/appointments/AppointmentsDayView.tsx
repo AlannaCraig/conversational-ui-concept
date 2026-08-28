@@ -10,6 +10,8 @@ import {
 import { PatientBanner, PatientSummaryCard } from '@/components/ui/LargeAdaptiveCards/PatientSummaryCard';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { AppointmentHoverCard } from './AppointmentHoverCard';
+import { WeekPicker, Button } from '@/components/ui';
+import { getMonday, addDays, isSameDay, DAY_LABELS } from '@/lib/dateUtils';
 
 // ─── Layout constants ─────────────────────────────────────────────────────────
 
@@ -32,28 +34,6 @@ function minsToH(mins: number): number {
   return mins / 5 * SLOT_HEIGHT;
 }
 
-function getMonday(date: Date): Date {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  d.setDate(diff);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function addDays(date: Date, n: number): Date {
-  const d = new Date(date);
-  d.setDate(d.getDate() + n);
-  return d;
-}
-
-function isSameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() &&
-         a.getMonth() === b.getMonth() &&
-         a.getDate() === b.getDate();
-}
-
-const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 function formatDuration(mins: number): string {
   if (mins < 60) return `${mins} mins`;
@@ -641,12 +621,9 @@ function AppointmentDetailPanelContent({
             <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 500 }}>Appointment</p>
             <h3 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>{slot.patientName ?? 'Unknown patient'}</h3>
           </div>
-          <button
-            onClick={onClose}
-            style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, marginTop: 2 }}
-          >
+          <Button variant="icon" size="xs" aria-label="Close" style={{ marginTop: 2 }} onClick={onClose}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
+          </Button>
         </div>
 
         {/* Scrollable content */}
@@ -691,18 +668,12 @@ function AppointmentDetailPanelContent({
 
         {/* Footer */}
         <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', flexShrink: 0, display: 'flex', gap: 8 }}>
-          <button
-            onClick={onStartConsultation}
-            style={{ flex: 1, height: 40, borderRadius: 10, border: 'none', background: 'var(--primary-main)', color: 'var(--primary-contrast)', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
-          >
+          <Button variant="primary" size="lg" style={{ flex: 1 }} onClick={onStartConsultation}>
             Start consultation
-          </button>
-          <button
-            onClick={onViewPatient}
-            style={{ height: 40, paddingInline: 16, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--text-primary)', fontSize: 14, cursor: 'pointer', whiteSpace: 'nowrap' }}
-          >
+          </Button>
+          <Button variant="secondary" size="lg" onClick={onViewPatient}>
             View patient summary
-          </button>
+          </Button>
         </div>
       </div>
     </>,
@@ -739,13 +710,9 @@ function ConsultationViewContent({ slot, onClose }: { slot: ScheduleSlot; onClos
     <div style={{ position: 'fixed', inset: 0, zIndex: 9995, background: 'var(--background-soft)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       {/* Top bar */}
       <div style={{ flexShrink: 0, padding: '0 24px', height: 52, borderBottom: '1px solid var(--border)', background: 'var(--background)', display: 'flex', alignItems: 'center', gap: 16 }}>
-        <button
-          onClick={onClose}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13 }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        <Button variant="ghost" size="sm" leadingIcon={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>} onClick={onClose}>
           Back to schedule
-        </button>
+        </Button>
         <div style={{ width: 1, height: 20, background: 'var(--border)', flexShrink: 0 }} />
         <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{slot.patientName}</span>
         <div style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-secondary)', flexShrink: 0 }}>
@@ -780,18 +747,12 @@ function ConsultationViewContent({ slot, onClose }: { slot: ScheduleSlot; onClos
 
       {/* Bottom bar */}
       <div style={{ flexShrink: 0, padding: '12px 24px', borderTop: '1px solid var(--border)', background: 'var(--background)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-        <button
-          onClick={onClose}
-          style={{ height: 36, paddingInline: 16, borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-primary)', fontSize: 13, cursor: 'pointer' }}
-        >
+        <Button variant="secondary" size="md" onClick={onClose}>
           End consultation
-        </button>
-        <button
-          onClick={onClose}
-          style={{ height: 36, paddingInline: 20, borderRadius: 8, border: 'none', background: 'var(--primary-main)', color: 'var(--primary-contrast)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-        >
+        </Button>
+        <Button variant="primary" size="md" onClick={onClose}>
           Save &amp; close
-        </button>
+        </Button>
       </div>
     </div>,
     document.body,
@@ -871,12 +832,9 @@ function BookingFlowPanelContent({
             <h3 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)' }}>{slot.startTime} · {formatDuration(slot.durationMins)}</h3>
             <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>{dateStr}</p>
           </div>
-          <button
-            onClick={onClose}
-            style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0, marginTop: 2 }}
-          >
+          <Button variant="icon" size="xs" onClick={onClose}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
+          </Button>
         </div>
 
         {/* Pre-populated slot info */}
@@ -937,12 +895,9 @@ function BookingFlowPanelContent({
                   showMenu={false}
                   className="mb-2"
                 />
-                <button
-                  onClick={() => setSelectedPatient(null)}
-                  style={{ fontSize: 12, color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: '2px 0' }}
-                >
+                <Button variant="ghost" size="xs" style={{ textDecoration: 'underline', height: 'auto', padding: '2px 0' }} onClick={() => setSelectedPatient(null)}>
                   Change patient
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -986,19 +941,9 @@ function BookingFlowPanelContent({
 
         {/* Footer */}
         <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', flexShrink: 0, display: 'flex', gap: 8 }}>
-          <button
-            onClick={handleBook}
-            disabled={!selectedPatient}
-            style={{
-              flex: 1, height: 40, borderRadius: 10, border: 'none',
-              background: selectedPatient ? 'var(--primary-main)' : 'var(--primary-light)',
-              color: selectedPatient ? 'var(--primary-contrast)' : 'var(--text-secondary)',
-              fontSize: 14, fontWeight: 600, cursor: selectedPatient ? 'pointer' : 'default',
-              transition: 'background 0.15s',
-            }}
-          >
+          <Button variant="primary" size="lg" style={{ flex: 1 }} disabled={!selectedPatient} onClick={handleBook}>
             Book appointment
-          </button>
+          </Button>
         </div>
       </div>
     </>,
@@ -1082,13 +1027,9 @@ function PatientSummaryViewContent({ slot, selectedDate, onBack, onStartConsulta
 
       {/* Top bar */}
       <div style={{ flexShrink: 0, height: 52, padding: '0 20px', borderBottom: '1px solid var(--border)', background: 'var(--background)', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button
-          onClick={onBack}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, flexShrink: 0 }}
-        >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        <Button variant="ghost" size="sm" leadingIcon={<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>} onClick={onBack}>
           Back to appointment
-        </button>
+        </Button>
         <div style={{ width: 1, height: 18, background: 'var(--border)', flexShrink: 0 }} />
         <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>Patient summary</span>
       </div>
@@ -1192,19 +1133,19 @@ function findSuggestedAppts(
       return 0;
     });
 
-  const results: SuggestedAppt[] = [];
-  const seenCols = new Set<string>();
+  // Collect up to 3 earliest available slots per column over 42 days
+  type Candidate = SuggestedAppt & { score: number; daysDiff: number };
+  const candidates: Candidate[] = [];
 
-  for (let off = 1; off <= 28 && results.length < 5; off++) {
-    const date = new Date(today);
-    date.setDate(today.getDate() + off);
-    if (date.getDay() === 0) continue;
+  for (const col of targetCols) {
+    let colHits = 0;
+    for (let off = 1; off <= 42 && colHits < 3; off++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + off);
+      if (date.getDay() === 0) continue;
 
-    const factor = availabilityFactor(off);
-    const dk = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-
-    for (const col of targetCols) {
-      if (results.length < 3 && seenCols.has(col.id)) continue;
+      const factor = availabilityFactor(off);
+      const dk = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 
       const avail = SCHEDULE_SLOTS
         .filter(s => s.columnId === col.id && s.type !== 'blocked')
@@ -1215,34 +1156,66 @@ function findSuggestedAppts(
         });
 
       if (avail) {
-        results.push({
-          slot: avail,
-          date: new Date(date),
-          column: col,
-          label: buildSlotLabel(col, reason, chiNumber, results.length === 0),
-          recommended: false,
-        });
-        seenCols.add(col.id);
-        break;
+        let score = 0;
+        if (reason.preferredColumnIds?.includes(col.id)) score += 100;
+        if (reason.categories.includes('doctor') && col.id === usualId) score += 60;
+        score -= off; // prefer sooner dates within same tier
+        candidates.push({ slot: avail, date: new Date(date), column: col, label: '', recommended: false, score, daysDiff: off });
+        colHits++;
       }
     }
   }
 
-  if (results.length > 0) {
-    let ri = 0;
-    if (reason.categories.includes('doctor')) {
-      const gi = results.findIndex(r => r.column.id === usualId);
-      if (gi >= 0) ri = gi;
-    } else {
-      const pi = results.findIndex(r => reason.preferredColumnIds?.includes(r.column.id));
-      if (pi >= 0) ri = pi;
-    }
-    results[ri] = { ...results[ri], recommended: true };
-    const [rec] = results.splice(ri, 1);
-    results.unshift(rec);
+  if (candidates.length === 0) return [];
+
+  // Rank: highest score first, ties broken by date
+  candidates.sort((a, b) => b.score - a.score || a.daysDiff - b.daysDiff);
+
+  // Select up to 6, capping at 3 per column for variety
+  const colCounts: Record<string, number> = {};
+  const selected: Candidate[] = [];
+  for (const c of candidates) {
+    if (selected.length >= 6) break;
+    const n = colCounts[c.column.id] ?? 0;
+    if (n >= 3) continue;
+    selected.push(c);
+    colCounts[c.column.id] = n + 1;
   }
 
-  return results.slice(0, 4);
+  if (selected.length === 0) return [];
+
+  // Build contextual labels
+  const overallEarliestDays = Math.min(...selected.map(c => c.daysDiff));
+  const colFirstSeen = new Set<string>();
+
+  const results: SuggestedAppt[] = selected.map(c => {
+    const isFirstForCol = !colFirstSeen.has(c.column.id);
+    colFirstSeen.add(c.column.id);
+    const isUsualGp = reason.categories.includes('doctor') && c.column.id === usualId;
+    const isEarliest = c.daysDiff === overallEarliestDays;
+
+    let label: string;
+    if (c.column.id === 'phlebotomy') label = 'Phlebotomy clinic';
+    else if (c.column.id === 'diabetes') label = 'Diabetes clinic';
+    else if (c.column.category === 'hca') label = 'Healthcare assistant';
+    else if (c.column.category === 'nurse') label = 'Practice nurse';
+    else if (isUsualGp && isEarliest && isFirstForCol) label = 'Usual GP · Earliest available';
+    else if (isUsualGp) label = 'Usual GP';
+    else if (isEarliest && isFirstForCol) label = 'Earliest available';
+    else if (c.column.category === 'doctor' && isFirstForCol) label = 'Suitable GP';
+    else label = 'Next available';
+
+    return { slot: c.slot, date: c.date, column: c.column, label, recommended: false };
+  });
+
+  // Highest-scored candidate is recommended; sort the rest chronologically
+  results[0] = { ...results[0], recommended: true };
+  const [rec, ...others] = results;
+  others.sort((a, b) =>
+    a.date.getTime() - b.date.getTime() ||
+    (a.slot.startTime ?? '').localeCompare(b.slot.startTime ?? '')
+  );
+  return [rec, ...others];
 }
 
 function nbFormatDate(d: Date): string {
@@ -1450,25 +1423,18 @@ function NewBookingFlowContent({ onClose, onBook, bookedSlots }: {
         <div style={{ flexShrink: 0, height: 52, padding: '0 16px 0 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
           {step !== 'patient' && step !== 'finding' && (
             <>
-              <button
-                onClick={stepBack}
-                style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--text-secondary)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, padding: '4px 6px', borderRadius: 6, flexShrink: 0 }}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+              <Button variant="ghost" size="sm" leadingIcon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>} onClick={stepBack}>
                 Back
-              </button>
+              </Button>
               <div style={{ width: 1, height: 16, background: 'var(--border)', flexShrink: 0 }} />
             </>
           )}
           <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', flex: 1 }}>
             {step === 'manual' ? 'Find another appointment' : 'Book appointment'}
           </span>
-          <button
-            onClick={onClose}
-            style={{ width: 28, height: 28, borderRadius: 6, border: 'none', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          >
+          <Button variant="icon" size="xs" style={{ border: 'none', background: 'transparent' }} onClick={onClose}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
+          </Button>
         </div>
 
         {/* Step content */}
@@ -1560,18 +1526,9 @@ function NewBookingFlowContent({ onClose, onBook, bookedSlots }: {
                     style={inputStyle}
                   />
                   <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
-                    <button
-                      onClick={() => launchFind(selectedReason)}
-                      disabled={!customReason.trim()}
-                      style={{
-                        height: 36, paddingInline: 16, borderRadius: 8, border: 'none', fontSize: 13, fontWeight: 600,
-                        background: customReason.trim() ? 'var(--primary-main)' : 'var(--primary-light)',
-                        color: customReason.trim() ? 'var(--primary-contrast)' : 'var(--text-secondary)',
-                        cursor: customReason.trim() ? 'pointer' : 'default',
-                      }}
-                    >
+                    <Button variant="primary" size="md" disabled={!customReason.trim()} onClick={() => launchFind(selectedReason)}>
                       Find appointments
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -1607,7 +1564,7 @@ function NewBookingFlowContent({ onClose, onBook, bookedSlots }: {
                   )}
                   {suggestions.filter(s => !s.recommended).length > 0 && (
                     <div>
-                      <p style={sectionLabel}>Other available appointments</p>
+                      <p style={sectionLabel}>Other suitable appointments</p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {suggestions.filter(s => !s.recommended).map((s, i) => (
                           <ApptOptionCard key={i} s={s} reason={selectedReason} onClick={() => handlePickSuggestion(s)} />
@@ -1618,22 +1575,15 @@ function NewBookingFlowContent({ onClose, onBook, bookedSlots }: {
                 </>
               )}
               <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
-                <button
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  style={{ width: '100%' }}
+                  leadingIcon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}
                   onClick={() => setStep('manual')}
-                  style={{
-                    width: '100%', height: 40, borderRadius: 8,
-                    border: '1px solid var(--border)', background: 'transparent',
-                    fontSize: 13, fontWeight: 500, color: 'var(--text-primary)',
-                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--hover)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-                  </svg>
                   Find another appointment
-                </button>
+                </Button>
               </div>
             </>
           )}
@@ -1665,20 +1615,20 @@ function NewBookingFlowContent({ onClose, onBook, bookedSlots }: {
                   { label: '+1 month',  days: 30 },
                   { label: '+3 months', days: 91 },
                 ] as { label: string; days: number }[]).map(({ label, days }) => (
-                  <button
+                  <Button
                     key={label}
+                    variant="secondary"
+                    size="xs"
+                    className="bg-background-soft"
                     onClick={() => {
                       const d = new Date();
                       d.setDate(d.getDate() + days);
                       d.setHours(0, 0, 0, 0);
                       setManualDate(d);
                     }}
-                    style={{ height: 28, paddingInline: 10, borderRadius: 6, border: '1px solid var(--border)', background: 'var(--background-soft)', fontSize: 12, color: 'var(--text-secondary)', cursor: 'pointer' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--hover)'; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'var(--background-soft)'; }}
                   >
                     {label}
-                  </button>
+                  </Button>
                 ))}
               </div>
 
@@ -1766,12 +1716,9 @@ function NewBookingFlowContent({ onClose, onBook, bookedSlots }: {
         {/* Footer — confirm step only */}
         {step === 'confirm' && (
           <div style={{ flexShrink: 0, padding: '14px 24px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }}>
-            <button
-              onClick={handleBook}
-              style={{ height: 38, paddingInline: 20, borderRadius: 8, border: 'none', background: 'var(--primary-main)', color: 'var(--primary-contrast)', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}
-            >
+            <Button variant="primary" size="md" onClick={handleBook}>
               Book appointment
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -1878,247 +1825,6 @@ function CurrentTimeLine({ y }: { y: number }) {
   );
 }
 
-const MONTH_NAMES = [
-  'January','February','March','April','May','June',
-  'July','August','September','October','November','December',
-];
-
-function CalendarDropdown({
-  selectedDate,
-  onSelect,
-}: {
-  selectedDate: Date;
-  onSelect: (d: Date) => void;
-}) {
-  const [viewYear, setViewYear] = useState(selectedDate.getFullYear());
-  const [viewMonth, setViewMonth] = useState(selectedDate.getMonth());
-  const today = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; }, []);
-
-  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-  const firstDayOfWeek = (new Date(viewYear, viewMonth, 1).getDay() + 6) % 7;
-
-  const cells: (Date | null)[] = [];
-  for (let i = 0; i < firstDayOfWeek; i++) cells.push(null);
-  for (let day = 1; day <= daysInMonth; day++) cells.push(new Date(viewYear, viewMonth, day));
-  while (cells.length % 7 !== 0) cells.push(null);
-
-  function prevMonth() {
-    if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
-    else setViewMonth(m => m - 1);
-  }
-  function nextMonth() {
-    if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
-    else setViewMonth(m => m + 1);
-  }
-
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        top: 'calc(100% + 6px)',
-        right: 0,
-        width: 256,
-        background: 'var(--background)',
-        border: '1px solid var(--border)',
-        borderRadius: 12,
-        boxShadow: '0 8px 24px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06)',
-        zIndex: 100,
-        padding: '12px 12px 10px',
-      }}
-    >
-      <div className="flex items-center justify-between mb-2">
-        <button
-          onClick={prevMonth}
-          className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors"
-          style={{ color: 'var(--text-secondary)' }}
-          aria-label="Previous month"
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </button>
-        <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-          {MONTH_NAMES[viewMonth]} {viewYear}
-        </span>
-        <button
-          onClick={nextMonth}
-          className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors"
-          style={{ color: 'var(--text-secondary)' }}
-          aria-label="Next month"
-        >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="9 18 15 12 9 6" />
-          </svg>
-        </button>
-      </div>
-
-      <div className="grid grid-cols-7 mb-1">
-        {['M','T','W','T','F','S','S'].map((d, i) => (
-          <div key={i} className="h-7 flex items-center justify-center text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>
-            {d}
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-7">
-        {cells.map((date, i) => {
-          if (!date) return <div key={i} className="h-8" />;
-          const isSelected = isSameDay(date, selectedDate);
-          const isToday = isSameDay(date, today);
-          return (
-            <button
-              key={i}
-              onClick={() => onSelect(date)}
-              className="h-8 flex items-center justify-center rounded-full text-[12px] transition-colors"
-              style={{
-                background: isSelected ? 'var(--primary-main)' : isToday ? 'var(--accent1-light)' : 'transparent',
-                color: isSelected ? 'var(--primary-contrast)' : isToday ? 'var(--accent1-dark)' : 'var(--text-primary)',
-                fontWeight: isSelected || isToday ? 600 : 400,
-              }}
-            >
-              {date.getDate()}
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="mt-2 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
-        <button
-          onClick={() => onSelect(today)}
-          className="w-full py-1.5 text-[12px] font-medium rounded-lg text-center transition-colors"
-          style={{ color: 'var(--accent1-main)' }}
-        >
-          Today
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function WeekPicker({
-  selectedDate,
-  onSelect,
-}: {
-  selectedDate: Date;
-  onSelect: (d: Date) => void;
-}) {
-  const [weekStart, setWeekStart] = useState(() => getMonday(selectedDate));
-  const [calOpen, setCalOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const today = useMemo(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }, []);
-
-  // Sync weekStart when selectedDate jumps to a different week (e.g. from calendar picker)
-  useEffect(() => {
-    const monday = getMonday(selectedDate);
-    if (monday.getTime() !== weekStart.getTime()) setWeekStart(monday);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate]);
-
-  // Close calendar on outside click
-  useEffect(() => {
-    if (!calOpen) return;
-    function handle(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setCalOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handle);
-    return () => document.removeEventListener('mousedown', handle);
-  }, [calOpen]);
-
-  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-
-  return (
-    <div ref={containerRef} className="relative flex items-center gap-2">
-      {/* Prev week */}
-      <button
-        onClick={() => setWeekStart(d => addDays(d, -7))}
-        className="w-8 h-8 flex items-center justify-center rounded-full transition-colors"
-        style={{ border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--text-secondary)' }}
-        aria-label="Previous week"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="15 18 9 12 15 6" />
-        </svg>
-      </button>
-
-      {/* Day buttons */}
-      <div className="flex items-center gap-1">
-        {days.map((day, i) => {
-          const isSelected = isSameDay(day, selectedDate);
-          const isDayToday = isSameDay(day, today);
-          return (
-            <button
-              key={i}
-              onClick={() => onSelect(day)}
-              className="flex flex-col items-center gap-0.5 w-12 py-1.5 rounded-xl transition-colors"
-              style={{
-                background: isSelected ? 'var(--primary-main)' : 'transparent',
-                color: isSelected ? 'var(--primary-contrast)' : isDayToday ? 'var(--accent1-main)' : 'var(--text-secondary)',
-              }}
-            >
-              <span className="text-[11px] font-medium uppercase tracking-wide">
-                {DAY_LABELS[i]}
-              </span>
-              <span
-                className="text-sm font-semibold w-7 h-7 flex items-center justify-center rounded-full"
-                style={{
-                  background: isDayToday && !isSelected ? 'var(--accent1-light)' : 'transparent',
-                  color: isDayToday && !isSelected ? 'var(--accent1-dark)' : 'inherit',
-                }}
-              >
-                {day.getDate()}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Next week */}
-      <button
-        onClick={() => setWeekStart(d => addDays(d, 7))}
-        className="w-8 h-8 flex items-center justify-center rounded-full transition-colors"
-        style={{ border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--text-secondary)' }}
-        aria-label="Next week"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
-      </button>
-
-      {/* Calendar date picker toggle */}
-      <button
-        onClick={() => setCalOpen(o => !o)}
-        className="w-8 h-8 flex items-center justify-center rounded-full transition-colors"
-        style={{
-          border: '1px solid var(--border)',
-          background: calOpen ? 'var(--hover)' : 'var(--background)',
-          color: calOpen ? 'var(--text-primary)' : 'var(--text-secondary)',
-        }}
-        aria-label="Open date picker"
-        aria-expanded={calOpen}
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-          <line x1="16" y1="2" x2="16" y2="6" />
-          <line x1="8" y1="2" x2="8" y2="6" />
-          <line x1="3" y1="10" x2="21" y2="10" />
-        </svg>
-      </button>
-
-      {calOpen && (
-        <CalendarDropdown
-          selectedDate={selectedDate}
-          onSelect={d => { onSelect(d); setCalOpen(false); }}
-        />
-      )}
-    </div>
-  );
-}
 
 function FilterButton({
   active,
@@ -2144,20 +1850,14 @@ function FilterButton({
 
   return (
     <div ref={ref} className="relative">
-      <button
+      <Button
+        variant={isFiltered ? 'primary' : 'secondary'}
+        size="md"
+        leadingIcon={<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M4.25 5.61C6.27 8.2 10 13 10 13v6c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-6s3.72-4.8 5.74-7.39C20.25 4.95 19.78 4 18.95 4H5.04c-.83 0-1.3.95-.79 1.61z" /></svg>}
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs font-medium transition-colors border"
-        style={{
-          background: isFiltered ? 'var(--primary-main)' : 'var(--background)',
-          color: isFiltered ? 'var(--primary-contrast)' : 'var(--text-secondary)',
-          borderColor: isFiltered ? 'var(--primary-main)' : 'var(--border)',
-        }}
       >
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-          <path d="M4.25 5.61C6.27 8.2 10 13 10 13v6c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-6s3.72-4.8 5.74-7.39C20.25 4.95 19.78 4 18.95 4H5.04c-.83 0-1.3.95-.79 1.61z" />
-        </svg>
         {isFiltered ? activeLabel : 'Filter'}
-      </button>
+      </Button>
 
       {open && (
         <div
@@ -2376,16 +2076,9 @@ function UrgentCareRecommendedCard({ slot, rank }: { slot: UrgentCareSlot; rank:
         </div>
 
         {/* Book button */}
-        <button
-          className="flex-shrink-0 h-10 px-5 rounded-lg text-sm font-semibold"
-          style={{
-            background: isTop ? 'var(--primary-main)' : 'var(--background)',
-            color: isTop ? 'var(--primary-contrast)' : 'var(--text-primary)',
-            border: isTop ? 'none' : '1px solid var(--border)',
-          }}
-        >
+        <Button variant={isTop ? 'primary' : 'secondary'} size="lg">
           {isTop ? 'Book Top Pick' : 'Book Slot'}
-        </button>
+        </Button>
       </div>
 
       {/* Context hint */}
@@ -2439,12 +2132,9 @@ function UrgentCareAllSlotRow({ slot }: { slot: UrgentCareSlot }) {
         <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{slot.durationMins} mins</span>
       </div>
       <div className="flex-shrink-0 flex items-center self-center">
-        <button
-          className="h-9 px-4 rounded-lg text-sm font-semibold"
-          style={{ background: 'var(--primary-main)', color: 'var(--primary-contrast)' }}
-        >
+        <Button variant="primary" size="md">
           Book Slot
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -2773,9 +2463,13 @@ function UrgentCareView() {
 
 interface AppointmentsDayViewProps {
   onClose?: () => void;
+  triggerConsultationSlotId?: string | null;
+  onConsultationTriggered?: () => void;
+  autoOpenNewBooking?: boolean;
+  onNewBookingAutoOpened?: () => void;
 }
 
-export function AppointmentsDayView({ onClose }: AppointmentsDayViewProps) {
+export function AppointmentsDayView({ onClose, triggerConsultationSlotId, onConsultationTriggered, autoOpenNewBooking, onNewBookingAutoOpened }: AppointmentsDayViewProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('day');
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     const d = new Date();
@@ -2791,6 +2485,25 @@ export function AppointmentsDayView({ onClose }: AppointmentsDayViewProps) {
   const [bookingFlow, setBookingFlow] = useState<ScheduleSlot | null>(null);
   const [patientSummarySlot, setPatientSummarySlot] = useState<ScheduleSlot | null>(null);
   const [newBookingOpen, setNewBookingOpen] = useState(false);
+
+  // Auto-open consultation when triggered from outside (e.g. Home Hub)
+  useEffect(() => {
+    if (triggerConsultationSlotId) {
+      const slot = SCHEDULE_SLOTS.find(s => s.id === triggerConsultationSlotId);
+      if (slot) {
+        setConsultationSlot(slot);
+        onConsultationTriggered?.();
+      }
+    }
+  }, [triggerConsultationSlotId]);
+
+  // Auto-open new booking flow when triggered from outside (e.g. Home Hub)
+  useEffect(() => {
+    if (autoOpenNewBooking) {
+      setNewBookingOpen(true);
+      onNewBookingAutoOpened?.();
+    }
+  }, [autoOpenNewBooking]);
   const [currentTimeY, setCurrentTimeY] = useState<number | null>(() => {
     const now = new Date();
     const h = now.getHours(), m = now.getMinutes();
@@ -2902,34 +2615,22 @@ export function AppointmentsDayView({ onClose }: AppointmentsDayViewProps) {
         className="px-6 pt-5 pb-4"
         actions={
           <>
-            <button
-              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[13px] font-medium transition-colors"
-              style={{
-                background: 'var(--primary-main)',
-                border: '1px solid var(--primary-main)',
-                color: 'var(--primary-contrast)',
-              }}
+            <Button
+              variant="primary"
+              size="sm"
+              leadingIcon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>}
               onClick={() => setNewBookingOpen(true)}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
               Book appointment
-            </button>
-            <button
-              className="flex items-center gap-1.5 h-8 px-3 rounded-lg text-[13px] font-medium transition-colors"
-              style={{
-                background: 'var(--background)',
-                border: '1px solid var(--border)',
-                color: 'var(--text-primary)',
-              }}
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              leadingIcon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>}
               onClick={() => {}}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-              </svg>
               Patient lookup
-            </button>
+            </Button>
           </>
         }
       />
@@ -2956,22 +2657,21 @@ export function AppointmentsDayView({ onClose }: AppointmentsDayViewProps) {
             </div>
             <FilterButton active={activeFilter} onChange={setActiveFilter} />
           </div>
-          <button
+          <Button
+              variant="secondary"
+              size="sm"
+              className="flex-shrink-0 mr-2"
               onClick={() => {
                 const t = new Date(); t.setHours(0, 0, 0, 0);
                 setSelectedDate(t);
               }}
-              className="flex-shrink-0 h-8 px-3 rounded-lg text-[13px] font-medium transition-colors mr-2"
               style={{
-                background: 'var(--background)',
-                border: '1px solid var(--border)',
-                color: 'var(--text-primary)',
                 visibility: isSelectedDateToday ? 'hidden' : 'visible',
                 pointerEvents: isSelectedDateToday ? 'none' : 'auto',
               }}
             >
               Today
-            </button>
+            </Button>
           <WeekPicker selectedDate={selectedDate} onSelect={setSelectedDate} />
           <div className="flex-1" />
         </div>

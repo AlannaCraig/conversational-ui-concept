@@ -23,11 +23,12 @@ import {
   PatientSummaryCard,
   PatientHeader
 } from '@/components/ui/LargeAdaptiveCards';
-import { ActionTiles, ThemeToast, Breadcrumb } from '@/components/ui';
+import { ActionTiles, ThemeToast, Breadcrumb, Button } from '@/components/ui';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { CloseXIcon, SwapHorizontalIcon, NewChatIcon } from '@/components/icons';
 import { PopOutForm, TextInput, TextArea, Select } from '@/components/forms';
 import { AppointmentsDayView } from '@/components/appointments/AppointmentsDayView';
+import { HomeHub } from '@/components/home/HomeHub';
 import { Message } from '@/types/conversation';
 import { getMockResponse } from '@/lib/mockResponses';
 import { getGameNode } from '@/lib/gameData';
@@ -61,10 +62,10 @@ const DEFAULT_SUGGESTIONS = [
   }
 ];
 
-type UIState = 'landing' | 'conversation' | 'appointments';
+type UIState = 'home' | 'landing' | 'conversation' | 'appointments';
 
 export default function Home() {
-  const [uiState, setUiState] = useState<UIState>('landing');
+  const [uiState, setUiState] = useState<UIState>('home');
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentGameNodeId, setCurrentGameNodeId] = useState<string | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -81,6 +82,8 @@ export default function Home() {
   const [activePatientId, setActivePatientId] = useState<string>('PT-10002');
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [careMode, setCareMode] = useState<'primary' | 'urgent'>('primary');
+  const [triggerConsultationSlotId, setTriggerConsultationSlotId] = useState<string | null>(null);
+  const [triggerNewBooking, setTriggerNewBooking] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -486,20 +489,30 @@ export default function Home() {
     setActivePopover(null);
   };
 
+  const handleStartConsultationFromHome = (slotId: string) => {
+    setTriggerConsultationSlotId(slotId);
+    setUiState('appointments');
+    setActivePopover(null);
+  };
+
+  const handleBookAppointmentFromHome = () => {
+    setTriggerNewBooking(true);
+    setUiState('appointments');
+    setActivePopover(null);
+  };
+
   const handleHomeClick = () => {
-    // Save current chat if there are messages
     if (messages.length > 0) {
       saveCurrentChat(messages, currentGameNodeId);
     }
-
-    // Reset to landing state
-    setUiState('landing');
+    setUiState('home');
     setMessages([]);
     setCurrentGameNodeId(null);
     setShowLargeData(false);
     setLargeCardLayout(null);
     setClosedLargeDataContext(null);
     setShowPatientHeader(false);
+    setActivePopover(null);
   };
 
   const handleNewChat = () => {
@@ -565,7 +578,7 @@ export default function Home() {
                 notificationsButtonRef={notificationsButtonRef}
                 onCalendarClick={handleCalendarClick}
                 isOnCalendar={uiState === 'appointments'}
-                isOnHome={uiState === 'landing'}
+                isOnHome={uiState === 'home'}
                 unreadNotificationCount={unreadNotificationCount}
                 activePopover={activePopover}
                 isFocusMode={isFocusMode}
@@ -580,6 +593,7 @@ export default function Home() {
           onClose={() => setActivePopover(null)}
           buttonRef={chatHistoryButtonRef}
           onSelectChat={handleSelectChat}
+          onNewChat={() => { setActivePopover(null); handleNewChat(); }}
         />
 
         {/* Notifications Popover */}
@@ -595,7 +609,13 @@ export default function Home() {
         {/* Main Content Area */}
         <section className={`flex-1 transition-[margin] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] ${isFocusMode ? 'ml-0' : 'ml-16'} h-full overflow-hidden`}>
           {uiState === 'appointments' && (
-            <AppointmentsDayView onClose={() => setUiState('landing')} />
+            <AppointmentsDayView
+              onClose={() => setUiState('home')}
+              triggerConsultationSlotId={triggerConsultationSlotId}
+              onConsultationTriggered={() => setTriggerConsultationSlotId(null)}
+              autoOpenNewBooking={triggerNewBooking}
+              onNewBookingAutoOpened={() => setTriggerNewBooking(false)}
+            />
           )}
           {uiState !== 'appointments' && <div className="h-full p-6">
             <div className="h-full flex gap-6" style={{ flexDirection: isLayoutSwapped ? 'row-reverse' : 'row' }}>
@@ -620,35 +640,42 @@ export default function Home() {
                           <Breadcrumb items={breadcrumbs} onNavigate={handleBreadcrumbNavigate} />
                         ) : 'Large data'}
                         actions={<>
-                          <button
+                          <Button
+                            variant={careMode === 'urgent' ? 'primary' : 'secondary'}
+                            size="lg"
                             onClick={() => {
                               const next = careMode === 'primary' ? 'urgent' : 'primary';
                               setCareMode(next);
                               if (next === 'urgent') setActivePatientId('PT-10003');
                               else setActivePatientId('PT-10002');
                             }}
-                            className={`w-10 h-10 border rounded-lg flex items-center justify-center transition-colors shadow-sm cursor-pointer text-xs font-semibold ${careMode === 'urgent' ? 'bg-primary-main text-primary-contrast border-primary-main' : 'bg-background border-border text-text-secondary hover:bg-hover'}`}
                             aria-label="Toggle care mode"
                             title={careMode === 'primary' ? 'Switch to urgent care view' : 'Switch to primary care view'}
+                            className="shadow-sm"
+                            style={{ fontSize: 12, fontWeight: 600 }}
                           >
                             {careMode === 'urgent' ? 'UC' : 'PC'}
-                          </button>
+                          </Button>
                           {showPatientHeader && (
-                            <button
+                            <Button
+                              variant="icon"
+                              size="lg"
                               onClick={() => setActivePatientId(id => id === 'PT-10002' ? 'PT-10001' : 'PT-10002')}
-                              className="w-10 h-10 bg-background border border-border rounded-lg flex items-center justify-center hover:bg-hover transition-colors shadow-sm cursor-pointer"
                               aria-label="Switch patient"
+                              className="shadow-sm"
                             >
                               <div className="w-4 h-4 border border-border rounded" />
-                            </button>
+                            </Button>
                           )}
-                          <button
+                          <Button
+                            variant="icon"
+                            size="lg"
                             onClick={handleCloseLargeData}
-                            className="w-10 h-10 bg-background border border-border rounded-lg flex items-center justify-center hover:bg-hover transition-colors shadow-sm text-text-secondary hover:text-text-primary cursor-pointer"
                             aria-label="Close large data view"
+                            className="shadow-sm hover:text-text-primary"
                           >
                             <CloseXIcon size={20} />
-                          </button>
+                          </Button>
                         </>}
                       />
 
@@ -695,6 +722,16 @@ export default function Home() {
                 className="h-full bg-background border border-border rounded-[12px] overflow-hidden"
                 style={{ minWidth: 0 }}
               >
+            {/* STATE: HOME HUB */}
+            {uiState === 'home' && (
+              <HomeHub
+                onViewAppointments={handleCalendarClick}
+                onBookAppointment={handleBookAppointmentFromHome}
+                onStartConsultation={handleStartConsultationFromHome}
+                onViewNotifications={handleNotificationsClick}
+              />
+            )}
+
             {/* STATE 1: LANDING STATE */}
             {uiState === 'landing' && (
               <div className="h-full flex flex-col items-center justify-center p-6 relative">
@@ -792,21 +829,25 @@ export default function Home() {
                 {/* Header with New Chat button (and Swap button in large data view) */}
                 <div className="flex-shrink-0 px-6 pt-6 pb-4 flex items-center justify-end gap-2">
                   {showLargeData && (
-                    <button
+                    <Button
+                      variant="icon"
+                      size="lg"
                       onClick={handleSwapLayout}
-                      className="w-10 h-10 flex items-center justify-center bg-background border border-border rounded-lg hover:bg-hover transition-colors shadow-sm cursor-pointer"
                       aria-label="Swap layout"
+                      className="shadow-sm"
                     >
                       <SwapHorizontalIcon size={20} className="text-text-secondary" />
-                    </button>
+                    </Button>
                   )}
-                  <button
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    leadingIcon={<NewChatIcon size={20} className="text-text-secondary" />}
                     onClick={handleNewChat}
-                    className="h-10 px-4 flex items-center gap-2 bg-background border border-border rounded-lg hover:bg-hover transition-colors shadow-sm cursor-pointer"
+                    className="shadow-sm"
                   >
-                    <NewChatIcon size={20} className="text-text-secondary" />
-                    <span className="text-sm font-medium text-text-primary">New chat</span>
-                  </button>
+                    New chat
+                  </Button>
                 </div>
 
                 {/* Scrollable Conversation Thread */}
