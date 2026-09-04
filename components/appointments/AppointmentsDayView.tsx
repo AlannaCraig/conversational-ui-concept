@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  SCHEDULE_COLUMNS, SCHEDULE_SLOTS, type ScheduleSlot, type ScheduleColumn, type AppointmentStatus, type RoleCategory,
+  SCHEDULE_COLUMNS, SCHEDULE_SLOTS, type ScheduleSlot, type ScheduleColumn, type AppointmentStatus, type InteractionStatus, type RoleCategory,
   URGENT_CARE_SLOTS, URGENT_CARE_PATIENT, URGENT_CARE_LOCATION_META, URGENT_CARE_CLINICIAN_TYPES,
   type UrgentCareSlot, type UrgentCareLocationMeta,
 } from '@/lib/appointmentsScheduleData';
@@ -12,6 +12,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { AppointmentHoverCard } from './AppointmentHoverCard';
 import { WeekPicker, Button } from '@/components/ui';
 import { getMonday, addDays, isSameDay, DAY_LABELS } from '@/lib/dateUtils';
+import { ScheduleInteractionModal } from '@/components/interactions/ScheduleInteractionModal';
 
 // ─── Layout constants ─────────────────────────────────────────────────────────
 
@@ -435,6 +436,96 @@ function BlockedCard({ slot }: { slot: ScheduleSlot }) {
   );
 }
 
+// ─── Interaction card (task / contact / review / follow-up) ──────────────────
+
+const INTERACTION_TYPE_ICON: Record<string, React.ReactNode> = {
+  task:       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><polyline points="9 11 12 14 22 4"/></svg>,
+  contact:    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  review:     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,
+  'follow-up': <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>,
+};
+
+const INTERACTION_STATUS_CFG: Record<string, { bg: string; text: string; border: string }> = {
+  'To do':      { bg: 'var(--background-soft)',       text: 'var(--text-secondary)', border: 'var(--border)'                  },
+  'In progress':{ bg: 'rgba(245,158,11,0.1)',         text: '#b45309',               border: 'rgba(245,158,11,0.35)'          },
+  'Completed':  { bg: 'var(--background-inactive)',   text: 'var(--text-secondary)', border: 'var(--border)'                  },
+};
+
+function InteractionStatusChip({ status }: { status: InteractionStatus }) {
+  const cfg = INTERACTION_STATUS_CFG[status] ?? INTERACTION_STATUS_CFG['To do'];
+  return (
+    <span
+      className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border"
+      style={{ background: cfg.bg, color: cfg.text, borderColor: cfg.border }}
+    >
+      {status}
+    </span>
+  );
+}
+
+function InteractionCard({
+  slot,
+  onSlotClick,
+}: {
+  slot: ScheduleSlot;
+  onSlotClick: () => void;
+}) {
+  const h = minsToH(slot.durationMins);
+  const compact = h < 80;
+  const veryCompact = h < 56;
+  const icon = INTERACTION_TYPE_ICON[slot.type] ?? INTERACTION_TYPE_ICON.task;
+
+  return (
+    <div
+      className="absolute left-1 right-1 group hover:z-50 cursor-pointer"
+      style={{ top: timeToY(slot.startTime) + 2, height: h - 4 }}
+      onClick={onSlotClick}
+    >
+      <div
+        className="w-full h-full rounded-lg border overflow-hidden"
+        style={{
+          background: 'var(--background-soft)',
+          borderColor: 'var(--border)',
+          borderLeft: '2px solid var(--border)',
+        }}
+      >
+        <div className="flex flex-col h-full px-2.5 py-2 gap-0.5">
+          {/* Time + icon row */}
+          <div className="flex items-center justify-between flex-shrink-0">
+            <span className="text-[11px] font-medium" style={{ color: 'var(--text-secondary)' }}>
+              {slot.startTime}
+            </span>
+            <span style={{ color: 'var(--text-secondary)', opacity: 0.6, display: 'flex' }}>
+              {icon}
+            </span>
+          </div>
+
+          {/* Title */}
+          {!veryCompact && slot.title && (
+            <p className="text-[12px] font-semibold leading-tight truncate flex-shrink-0" style={{ color: 'var(--text-primary)' }}>
+              {slot.title}
+            </p>
+          )}
+
+          {/* Patient name */}
+          {!compact && slot.patientName && (
+            <p className="text-[11px] leading-tight truncate flex-shrink-0" style={{ color: 'var(--text-secondary)' }}>
+              {slot.patientName}
+            </p>
+          )}
+
+          {/* Status chip — pushed to bottom */}
+          {slot.interactionStatus && !veryCompact && (
+            <div className="mt-auto flex-shrink-0">
+              <InteractionStatusChip status={slot.interactionStatus} />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Mock patient data ────────────────────────────────────────────────────────
 
 interface MockPatient {
@@ -686,6 +777,138 @@ function AppointmentDetailPanel(props: { slot: ScheduleSlot; selectedDate: Date;
   useEffect(() => { setMounted(true); }, []);
   if (!mounted) return null;
   return <AppointmentDetailPanelContent {...props} />;
+}
+
+// ─── Interaction detail panel ─────────────────────────────────────────────────
+
+const INTERACTION_TYPE_LABEL: Record<string, string> = {
+  task:       'Task',
+  contact:    'Patient contact',
+  review:     'Review',
+  'follow-up': 'Follow-up',
+};
+
+function InteractionDetailPanelContent({
+  slot,
+  onClose,
+}: {
+  slot: ScheduleSlot;
+  onClose: () => void;
+}) {
+  const [status, setStatus] = useState<InteractionStatus>(slot.interactionStatus ?? 'To do');
+  const [notes, setNotes] = useState(slot.notes ?? '');
+  const typeLabel = INTERACTION_TYPE_LABEL[slot.type] ?? slot.type;
+
+  return createPortal(
+    <>
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.25)', zIndex: 9990 }} onClick={onClose} />
+      <div
+        style={{
+          position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+          width: 460, maxHeight: '85vh',
+          zIndex: 9991,
+          background: 'var(--background)',
+          border: '1px solid var(--border)',
+          borderRadius: 14,
+          boxShadow: '0 20px 60px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.08)',
+          display: 'flex', flexDirection: 'column',
+        }}
+      >
+        {/* Header */}
+        <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div>
+            <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 500 }}>{typeLabel}</p>
+            <h3 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>{slot.title ?? slot.appointmentType ?? 'Interaction'}</h3>
+          </div>
+          <Button variant="icon" size="xs" aria-label="Close" style={{ marginTop: 2 }} onClick={onClose}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </Button>
+        </div>
+
+        {/* Content */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }} className="conversation-scroll">
+          {/* Status */}
+          <section style={{ marginBottom: 20 }}>
+            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Status</p>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {(['To do', 'In progress', 'Completed'] as InteractionStatus[]).map(s => {
+                const cfg = INTERACTION_STATUS_CFG[s];
+                const isActive = status === s;
+                return (
+                  <button
+                    key={s}
+                    onClick={() => setStatus(s)}
+                    style={{
+                      height: 28, paddingInline: 12, borderRadius: 20, cursor: 'pointer', fontSize: 12, fontWeight: isActive ? 600 : 400,
+                      border: '1px solid ' + (isActive ? cfg.border : 'var(--border)'),
+                      background: isActive ? cfg.bg : 'var(--background)',
+                      color: isActive ? cfg.text : 'var(--text-secondary)',
+                    }}
+                  >
+                    {s}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* Patient */}
+          {slot.patientName && (
+            <section style={{ marginBottom: 20 }}>
+              <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Patient</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px' }}>
+                <DetailRow label="Name" value={slot.patientName} span />
+                {slot.chiNumber && <DetailRow label="CHI number" value={slot.chiNumber} />}
+                {slot.phone && <DetailRow label="Phone" value={slot.phone} />}
+              </div>
+            </section>
+          )}
+
+          {/* Assigned to / scheduled */}
+          <section style={{ marginBottom: 20 }}>
+            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>Details</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px' }}>
+              <DetailRow label="Scheduled" value={slot.startTime} />
+              {slot.durationMins > 0 && <DetailRow label="Duration" value={formatDuration(slot.durationMins)} />}
+              {slot.assignedTo && <DetailRow label="Assigned to" value={slot.assignedTo} span />}
+            </div>
+          </section>
+
+          {/* Notes */}
+          <section>
+            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Notes</p>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="Add notes…"
+              rows={4}
+              style={{
+                width: '100%', padding: '8px 12px', borderRadius: 8,
+                border: '1px solid var(--border)', background: 'var(--background)',
+                fontSize: 13, color: 'var(--text-primary)', outline: 'none',
+                resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit', lineHeight: 1.5,
+              }}
+            />
+          </section>
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', flexShrink: 0, display: 'flex', gap: 8 }}>
+          <Button variant="primary" size="lg" style={{ flex: 1 }} onClick={onClose}>
+            {status === 'Completed' ? 'Mark as completed' : 'Save changes'}
+          </Button>
+        </div>
+      </div>
+    </>,
+    document.body,
+  );
+}
+
+function InteractionDetailPanel(props: { slot: ScheduleSlot; onClose: () => void }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  if (!mounted) return null;
+  return <InteractionDetailPanelContent {...props} />;
 }
 
 // ─── Consultation view ────────────────────────────────────────────────────────
@@ -2485,6 +2708,7 @@ export function AppointmentsDayView({ onClose, triggerConsultationSlotId, onCons
   const [bookingFlow, setBookingFlow] = useState<ScheduleSlot | null>(null);
   const [patientSummarySlot, setPatientSummarySlot] = useState<ScheduleSlot | null>(null);
   const [newBookingOpen, setNewBookingOpen] = useState(false);
+  const [scheduleInteractionOpen, setScheduleInteractionOpen] = useState(false);
 
   // Auto-open consultation when triggered from outside (e.g. Home Hub)
   useEffect(() => {
@@ -2619,9 +2843,9 @@ export function AppointmentsDayView({ onClose, triggerConsultationSlotId, onCons
               variant="primary"
               size="sm"
               leadingIcon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>}
-              onClick={() => setNewBookingOpen(true)}
+              onClick={() => setScheduleInteractionOpen(true)}
             >
-              Book appointment
+              Schedule an interaction
             </Button>
             <Button
               variant="secondary"
@@ -2786,6 +3010,13 @@ export function AppointmentsDayView({ onClose, triggerConsultationSlotId, onCons
                         />
                       );
                       if (slot.type === 'blocked')   return <BlockedCard   key={slot.id} slot={slot} />;
+                      if (slot.type === 'task' || slot.type === 'contact' || slot.type === 'review' || slot.type === 'follow-up') return (
+                        <InteractionCard
+                          key={slot.id}
+                          slot={slot}
+                          onSlotClick={() => setDetailPanel(slot)}
+                        />
+                      );
                       return null;
                     })}
                   </div>
@@ -2805,13 +3036,20 @@ export function AppointmentsDayView({ onClose, triggerConsultationSlotId, onCons
         />
       )}
       {detailPanel && !consultationSlot && !patientSummarySlot && (
-        <AppointmentDetailPanel
-          slot={detailPanel}
-          selectedDate={selectedDate}
-          onClose={() => setDetailPanel(null)}
-          onStartConsultation={() => { setConsultationSlot(detailPanel); setDetailPanel(null); }}
-          onViewPatient={() => { setPatientSummarySlot(detailPanel); setDetailPanel(null); }}
-        />
+        detailPanel.type === 'appointment' ? (
+          <AppointmentDetailPanel
+            slot={detailPanel}
+            selectedDate={selectedDate}
+            onClose={() => setDetailPanel(null)}
+            onStartConsultation={() => { setConsultationSlot(detailPanel); setDetailPanel(null); }}
+            onViewPatient={() => { setPatientSummarySlot(detailPanel); setDetailPanel(null); }}
+          />
+        ) : (
+          <InteractionDetailPanel
+            slot={detailPanel}
+            onClose={() => setDetailPanel(null)}
+          />
+        )
       )}
       {patientSummarySlot && (
         <PatientSummaryView
@@ -2850,6 +3088,11 @@ export function AppointmentsDayView({ onClose, triggerConsultationSlotId, onCons
           bookedSlots={bookedSlots}
         />
       )}
+      <ScheduleInteractionModal
+        isOpen={scheduleInteractionOpen}
+        onClose={() => setScheduleInteractionOpen(false)}
+        onBookAppointment={() => { setScheduleInteractionOpen(false); setNewBookingOpen(true); }}
+      />
     </div>
   );
 }

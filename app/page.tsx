@@ -726,7 +726,7 @@ export default function Home() {
             {uiState === 'home' && (
               <HomeHub
                 onViewAppointments={handleCalendarClick}
-                onBookAppointment={handleBookAppointmentFromHome}
+                onScheduleInteraction={handleBookAppointmentFromHome}
                 onStartConsultation={handleStartConsultationFromHome}
                 onViewNotifications={handleNotificationsClick}
               />

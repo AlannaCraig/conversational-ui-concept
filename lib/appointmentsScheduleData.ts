@@ -2,6 +2,8 @@ export type AppointmentStatus =
   | 'Available' | 'Booked' | 'Arrived' | 'In Progress'
   | 'Completed' | 'DNA' | 'Cancelled' | 'Blocked' | 'Reserved' | 'Running Late';
 
+export type InteractionStatus = 'To do' | 'In progress' | 'Completed';
+
 export type RoleCategory = 'doctor' | 'nurse' | 'hca' | 'clinic' | 'service';
 
 export interface ScheduleColumn {
@@ -16,7 +18,7 @@ export interface ScheduleColumn {
 export interface ScheduleSlot {
   id: string;
   columnId: string;
-  type: 'appointment' | 'blocked' | 'available';
+  type: 'appointment' | 'blocked' | 'available' | 'task' | 'contact' | 'review' | 'follow-up';
   startTime: string;
   durationMins: number;
   patientName?: string;
@@ -26,6 +28,9 @@ export interface ScheduleSlot {
   chiNumber?: string;
   phone?: string;
   notes?: string;
+  title?: string;             // what needs to happen (for interaction types)
+  interactionStatus?: InteractionStatus;
+  assignedTo?: string;        // staff member name
 }
 
 export const SCHEDULE_COLUMNS: ScheduleColumn[] = [
@@ -43,24 +48,24 @@ export const SCHEDULE_SLOTS: ScheduleSlot[] = [
   { id: 'sm-02', columnId: 'malik', type: 'appointment', startTime: '09:10', durationMins: 10, patientName: 'DOBSON, Irene (Mrs)',      appointmentType: 'Admin',              status: 'Completed',    chiNumber: '450619 2837', phone: '07723 456 781', notes: 'Fit note extension requested. Off work with lower back pain following a fall at home. Physiotherapy ongoing. Two-week extension agreed.' },
   { id: 'sm-03', columnId: 'malik', type: 'appointment', startTime: '09:20', durationMins: 10, patientName: 'HARTLEY, Charles (Mr)',    appointmentType: 'Face-to-face',       status: 'Completed',    chiNumber: '871304 6152', phone: '07654 321 098', notes: 'Presenting with recurring frontal headaches for two weeks. No visual symptoms or nausea. Blood pressure normal. Likely tension headache — advised to monitor and return if worsening.' },
   { id: 'sm-04', columnId: 'malik', type: 'appointment', startTime: '09:30', durationMins: 20, patientName: 'PATEL, Susan (Mrs)',       appointmentType: 'Medication review',  status: 'Completed',    chiNumber: '629015 3874', phone: '07512 876 543', notes: 'Routine medication review. On metformin 500mg twice daily and lisinopril 5mg. Both tolerated well. Repeat bloods requested including HbA1c and renal function.' },
-  { id: 'sm-05', columnId: 'malik', type: 'available',   startTime: '09:50', durationMins: 10 },
+  { id: 'sm-05', columnId: 'malik', type: 'contact', startTime: '09:50', durationMins: 10, patientName: 'CRAWFORD, Thomas (Mr)', title: 'Follow-up call — discuss blood results', chiNumber: '261083 7492', phone: '07910 244 033', interactionStatus: 'To do', assignedTo: 'Dr Sarah Malik' },
   { id: 'sm-06', columnId: 'malik', type: 'blocked',     startTime: '10:00', durationMins: 30, blockedLabel: 'Admin / correspondence'  },
   { id: 'sm-07', columnId: 'malik', type: 'appointment', startTime: '10:30', durationMins: 10, patientName: 'HOLMES, Margaret (Mrs)',   appointmentType: 'Medication review',  status: 'In Progress',  chiNumber: '483920 1754', phone: '07832 156 490', notes: 'Due for annual medication review. Currently taking ramipril and atorvastatin. Reports occasional muscle aches since starting statin — patient wishes to discuss whether an alternative can be considered.' },
   { id: 'sm-08', columnId: 'malik', type: 'appointment', startTime: '10:40', durationMins: 10, patientName: 'CRAWFORD, Thomas (Mr)',    appointmentType: 'Follow-up',          status: 'Arrived',      chiNumber: '261083 7492', phone: '07910 244 033', notes: 'Follow-up following last month\'s chest infection. Completed course of amoxicillin. Symptoms resolved. Check recent bloods.' },
   { id: 'sm-09', columnId: 'malik', type: 'appointment', startTime: '10:50', durationMins: 10, patientName: 'FARROW, Nina (Ms)',        appointmentType: 'Asthma review',      status: 'Booked',       chiNumber: '739452 8163', phone: '07741 882 317', notes: 'Routine asthma review. PEFR diary requested at last visit. Patient reports using reliever inhaler more frequently in recent weeks, particularly in cold weather.' },
   { id: 'sm-10', columnId: 'malik', type: 'appointment', startTime: '11:00', durationMins: 10, patientName: 'ASHWORTH, Linda (Mrs)',    appointmentType: 'Face-to-face',       status: 'DNA',          chiNumber: '193507 4826', phone: '07346 890 123', notes: 'Appointment for discussion of recent smear result correspondence. Patient did not attend. Telephone contact attempted — no answer. Recall letter to be sent.' },
   { id: 'sm-11', columnId: 'malik', type: 'appointment', startTime: '11:10', durationMins: 20, patientName: 'BAINES, Christopher (Mr)', appointmentType: 'Annual review',      status: 'Booked',       chiNumber: '748261 0935', phone: '07867 012 345', notes: 'Annual chronic disease review. Patient has type 2 diabetes, hypertension, and hypercholesterolaemia. Bloods due: HbA1c, lipids, renal function, LFTs.' },
-  { id: 'sm-12', columnId: 'malik', type: 'available',   startTime: '11:30', durationMins: 10 },
+  { id: 'sm-12', columnId: 'malik', type: 'review', startTime: '11:30', durationMins: 10, patientName: 'CRAWFORD, Thomas (Mr)', title: 'Review FBC results', chiNumber: '261083 7492', interactionStatus: 'To do', assignedTo: 'Dr Sarah Malik' },
   { id: 'sm-13', columnId: 'malik', type: 'appointment', startTime: '11:40', durationMins: 20, patientName: 'NEVILLE, Patricia (Mrs)',  appointmentType: 'Mental health',      status: 'Booked',       chiNumber: '384920 6751', phone: '07478 234 567', notes: 'Ongoing mental health review. Managing moderate depression with sertraline 100mg. Discuss current effectiveness, side effects, and whether dose adjustment is appropriate.' },
   { id: 'sm-14', columnId: 'malik', type: 'blocked',     startTime: '12:00', durationMins: 60, blockedLabel: 'Lunch'                   },
   { id: 'sm-15', columnId: 'malik', type: 'appointment', startTime: '13:00', durationMins: 10, patientName: 'HARDY, Michael (Mr)',      appointmentType: 'Urgent',             status: 'Arrived',      chiNumber: '592317 8046', phone: '07523 669 410', notes: 'Walk-in urgent appointment. Patient reporting acute chest pain and shortness of breath for the past two hours. Referred in by 111. ECG required.' },
   { id: 'sm-16', columnId: 'malik', type: 'appointment', startTime: '13:10', durationMins: 20, patientName: 'SIMMONS, Carol (Mrs)',     appointmentType: "Women's health",     status: 'Booked',       chiNumber: '561803 2947', phone: '07589 456 789', notes: 'Consultation regarding irregular menstrual cycles over the past three months. Patient is 47. Discussing possible perimenopause and whether further investigation or referral is needed.' },
   { id: 'sm-17', columnId: 'malik', type: 'appointment', startTime: '13:30', durationMins: 20, patientName: 'MURRAY, David (Mr)',       appointmentType: 'Respiratory',        status: 'Running Late', chiNumber: '927146 3580', phone: '07712 678 901', notes: 'COPD review following recent exacerbation managed at home. Rescue antibiotics and steroids completed two weeks ago. Assess current lung function and review inhaler regime.' },
-  { id: 'sm-18', columnId: 'malik', type: 'available',   startTime: '13:50', durationMins: 10 },
+  { id: 'sm-18', columnId: 'malik', type: 'follow-up', startTime: '13:50', durationMins: 10, patientName: 'MORRISON, Steven (Mr)', title: 'Review medication changes', chiNumber: '673041 8295', interactionStatus: 'To do', assignedTo: 'Dr Sarah Malik' },
   { id: 'sm-19', columnId: 'malik', type: 'appointment', startTime: '14:00', durationMins: 10, patientName: 'CLARKSON, Brian (Mr)',     appointmentType: 'Face-to-face',       status: 'Booked',       chiNumber: '236874 1059', phone: '07634 890 123', notes: 'New rash on lower left leg, present for approximately one week. No known allergies. Area is red and slightly warm — concerned about possible cellulitis or dermatitis.' },
   { id: 'sm-20', columnId: 'malik', type: 'appointment', startTime: '14:10', durationMins: 20, patientName: 'WEBB, Karen (Mrs)',        appointmentType: 'Annual review',      status: 'Booked',       chiNumber: '815390 2764', phone: '07456 012 345', notes: 'Annual hypertension review. Patient on amlodipine 10mg. Bloods due. Recent home BP readings have been variable — patient to bring home monitoring diary.' },
   { id: 'sm-21', columnId: 'malik', type: 'appointment', startTime: '14:30', durationMins: 20, patientName: 'MORRISON, Steven (Mr)',    appointmentType: 'Diabetes review',    status: 'Booked',       chiNumber: '673041 8295', phone: '07378 234 567', notes: 'Diabetes review. Last HbA1c was 68 mmol/mol six months ago. Patient reports improved diet and increased physical activity. Repeat HbA1c and review current medication.' },
-  { id: 'sm-22', columnId: 'malik', type: 'available',   startTime: '14:50', durationMins: 10 },
+  { id: 'sm-22', columnId: 'malik', type: 'task', startTime: '14:50', durationMins: 10, patientName: 'FARROW, Nina (Ms)', title: 'Complete referral letter', chiNumber: '739452 8163', interactionStatus: 'To do', assignedTo: 'Dr Sarah Malik' },
   { id: 'sm-23', columnId: 'malik', type: 'blocked',     startTime: '15:00', durationMins: 30, blockedLabel: 'Clinical meeting'        },
   { id: 'sm-24', columnId: 'malik', type: 'appointment', startTime: '15:30', durationMins: 10, patientName: 'RICHARDS, Anne (Mrs)',     appointmentType: 'Admin',              status: 'Booked',       chiNumber: '294517 8630', phone: '07890 456 789', notes: 'Requesting completion of insurance medical report form. Patient to bring form. Also enquiring about travel vaccination requirements for a planned trip to Southeast Asia.' },
   { id: 'sm-25', columnId: 'malik', type: 'appointment', startTime: '15:40', durationMins: 10, patientName: 'HOLLOWAY, Frank (Mr)',     appointmentType: 'Follow-up',          status: 'Booked',       chiNumber: '758423 0196', phone: '07612 678 901', notes: 'Four-week follow-up after starting ramipril 5mg for hypertension. Check for side effects including cough. Repeat BP and renal function check as per protocol.' },

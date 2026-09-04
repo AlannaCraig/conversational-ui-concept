@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { SCHEDULE_SLOTS } from '@/lib/appointmentsScheduleData';
-import type { AppointmentStatus } from '@/lib/appointmentsScheduleData';
+import type { AppointmentStatus, InteractionStatus } from '@/lib/appointmentsScheduleData';
 import { getMockNotifications, formatNotificationTime } from '@/lib/mockNotifications';
 import { CURRENT_USER } from '@/lib/currentUser';
 import { Avatar, WeekPicker, Button } from '@/components/ui';
@@ -22,6 +22,7 @@ import {
 import { ActivityPanel } from '@/components/ui';
 import type { ActivityItem } from '@/components/ui';
 import { WorkItemsContent } from '@/components/workitems/WorkItemsView';
+import { ScheduleInteractionModal } from '@/components/interactions/ScheduleInteractionModal';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -86,26 +87,56 @@ function StatusChip({ status }: { status: AppointmentStatus }) {
   );
 }
 
+function InteractionChip({ status }: { status: InteractionStatus }) {
+  const cfg: Record<InteractionStatus, { bg: string; text: string }> = {
+    'To do':       { bg: 'var(--background-soft)',     text: 'var(--text-secondary)' },
+    'In progress': { bg: 'rgba(245,158,11,0.1)',       text: '#b45309'               },
+    'Completed':   { bg: 'var(--background-inactive)', text: 'var(--text-secondary)' },
+  };
+  const s = cfg[status] ?? cfg['To do'];
+  return (
+    <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: s.bg, color: s.text, whiteSpace: 'nowrap', flexShrink: 0 }}>
+      {status}
+    </span>
+  );
+}
+
+const INTERACTION_TYPE_LABEL: Record<string, string> = {
+  contact:     'Patient contact',
+  review:      'Review',
+  'follow-up': 'Follow-up',
+  task:        'Task',
+};
+
 // ── component ─────────────────────────────────────────────────────────────────
 
 interface HomeHubProps {
   onViewAppointments: () => void;
-  onBookAppointment: () => void;
+  onScheduleInteraction: () => void;
   onStartConsultation: (slotId: string) => void;
   onViewNotifications: () => void;
 }
 
-export function HomeHub({ onViewAppointments, onBookAppointment, onStartConsultation, onViewNotifications }: HomeHubProps) {
+export function HomeHub({ onViewAppointments, onScheduleInteraction, onStartConsultation, onViewNotifications }: HomeHubProps) {
   const [activeTab, setActiveTab] = useState<HomeTab>('day');
   const [notifFilter, setNotifFilter] = useState<NotifFilter>('all');
   const [notifSearch, setNotifSearch] = useState('');
+  const [scheduleOpen, setScheduleOpen] = useState(false);
 
   const today = useMemo(() => { const d = new Date(); d.setHours(0,0,0,0); return d; }, []);
 
-  // All of Dr Malik's patient appointments
+  // All of Dr Malik's patient appointments (for the "Upcoming" card)
   const allAppts = useMemo(() =>
     SCHEDULE_SLOTS
       .filter(s => s.columnId === CURRENT_USER.columnId && s.type === 'appointment' && s.patientName)
+      .sort((a, b) => a.startTime.localeCompare(b.startTime)),
+    []
+  );
+
+  // All schedule items — appointments + interactions (for the mini-calendar)
+  const allScheduleItems = useMemo(() =>
+    SCHEDULE_SLOTS
+      .filter(s => s.columnId === CURRENT_USER.columnId && s.type !== 'blocked' && s.type !== 'available')
       .sort((a, b) => a.startTime.localeCompare(b.startTime)),
     []
   );
@@ -310,12 +341,12 @@ export function HomeHub({ onViewAppointments, onBookAppointment, onStartConsulta
         {/* Header actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 2 }}>
           <Button
-            variant="secondary"
+            variant="primary"
             size="sm"
-            leadingIcon={<CalendarIcon size={14} className="text-text-secondary" />}
-            onClick={onBookAppointment}
+            leadingIcon={<CalendarIcon size={14} className="text-primary-contrast" />}
+            onClick={() => setScheduleOpen(true)}
           >
-            Book appointment
+            Schedule an interaction
           </Button>
           <Button
             variant="secondary"
@@ -540,55 +571,70 @@ export function HomeHub({ onViewAppointments, onBookAppointment, onStartConsulta
             <WeekPicker selectedDate={today} onSelect={() => {}} />
           </div>
 
-          {/* Appointment timeline */}
+          {/* Schedule timeline — appointments + interactions */}
           <div style={{ overflowY: 'auto' }} className="hub-appt-scroll conversation-scroll">
-            {allAppts.map((slot, i) => (
-              <div
-                key={slot.id}
-                onClick={onViewAppointments}
-                className="hover:bg-hover transition-colors cursor-pointer"
-                style={{
-                  display: 'flex', alignItems: 'stretch',
-                  borderBottom: i < allAppts.length - 1 ? '1px solid var(--border-light)' : 'none',
-                  opacity: DONE_STATUSES.includes(slot.status ?? 'Booked') && slot.status !== 'DNA' ? 0.55 : 1,
-                }}
-              >
-                {/* Time column */}
-                <div style={{
-                  flexShrink: 0, width: 52, padding: '11px 8px 11px 18px',
-                  display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end',
-                }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
-                    {slot.startTime}
-                  </span>
-                </div>
-                {/* Accent bar */}
-                <div style={{ width: 3, flexShrink: 0, background: statusAccent(slot.status), borderRadius: 2, margin: '8px 0' }} />
-                {/* Content */}
-                <div style={{ flex: 1, padding: '10px 14px 10px 12px', minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 2 }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {slot.patientName}
-                    </p>
-                    {slot.status && <StatusChip status={slot.status} />}
+            {allScheduleItems.map((slot, i) => {
+              const isInteraction = slot.type !== 'appointment';
+              const isApptDone = !isInteraction && DONE_STATUSES.includes(slot.status ?? 'Booked') && slot.status !== 'DNA';
+              return (
+                <div
+                  key={slot.id}
+                  onClick={onViewAppointments}
+                  className="hover:bg-hover transition-colors cursor-pointer"
+                  style={{
+                    display: 'flex', alignItems: 'stretch',
+                    borderBottom: i < allScheduleItems.length - 1 ? '1px solid var(--border-light)' : 'none',
+                    opacity: isApptDone ? 0.55 : 1,
+                  }}
+                >
+                  {/* Time column */}
+                  <div style={{ flexShrink: 0, width: 52, padding: '11px 8px 11px 18px', display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end' }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', fontVariantNumeric: 'tabular-nums' }}>
+                      {slot.startTime}
+                    </span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {slot.chiNumber && (
-                      <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>CHI: {slot.chiNumber}</span>
-                    )}
-                    {slot.phone && (
+                  {/* Accent bar */}
+                  <div style={{ width: 3, flexShrink: 0, background: isInteraction ? 'var(--border)' : statusAccent(slot.status), borderRadius: 2, margin: '8px 0' }} />
+                  {/* Content */}
+                  <div style={{ flex: 1, padding: '10px 14px 10px 12px', minWidth: 0 }}>
+                    {isInteraction ? (
                       <>
-                        <span style={{ fontSize: 10, color: 'var(--text-secondary)' }}>·</span>
-                        <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{slot.phone}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 2 }}>
+                          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {slot.title ?? slot.appointmentType}
+                          </p>
+                          {slot.interactionStatus && <InteractionChip status={slot.interactionStatus} />}
+                        </div>
+                        {slot.patientName && (
+                          <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 1 }}>
+                            {slot.patientName} · {INTERACTION_TYPE_LABEL[slot.type] ?? slot.type}
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 2 }}>
+                          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {slot.patientName}
+                          </p>
+                          {slot.status && <StatusChip status={slot.status} />}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {slot.chiNumber && <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>CHI: {slot.chiNumber}</span>}
+                          {slot.phone && <>
+                            <span style={{ fontSize: 10, color: 'var(--text-secondary)' }}>·</span>
+                            <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{slot.phone}</span>
+                          </>}
+                        </div>
+                        {slot.appointmentType && (
+                          <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 1 }}>{slot.appointmentType} · {slot.durationMins} min</p>
+                        )}
                       </>
                     )}
                   </div>
-                  {slot.appointmentType && (
-                    <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 1 }}>{slot.appointmentType} · {slot.durationMins} min</p>
-                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -750,6 +796,11 @@ export function HomeHub({ onViewAppointments, onBookAppointment, onStartConsulta
 
       </div>
       )}
+      <ScheduleInteractionModal
+        isOpen={scheduleOpen}
+        onClose={() => setScheduleOpen(false)}
+        onBookAppointment={() => { setScheduleOpen(false); onScheduleInteraction(); }}
+      />
     </div>
   );
 }
