@@ -11,8 +11,10 @@ import { PatientBanner, PatientSummaryCard } from '@/components/ui/LargeAdaptive
 import { PageHeader } from '@/components/ui/PageHeader';
 import { AppointmentHoverCard } from './AppointmentHoverCard';
 import { WeekPicker, Button } from '@/components/ui';
+import { AppointmentStatusChip, APPOINTMENT_STATUS_CFG } from '@/components/ui/AppointmentStatusChip';
+import { InteractionStatusChip, INTERACTION_STATUS_CFG } from '@/components/ui/InteractionStatusChip';
 import { getMonday, addDays, isSameDay, DAY_LABELS } from '@/lib/dateUtils';
-import { ScheduleInteractionModal } from '@/components/interactions/ScheduleInteractionModal';
+import { ScheduleInteractionModal, type ScheduledInteraction } from '@/components/interactions/ScheduleInteractionModal';
 
 // ─── Layout constants ─────────────────────────────────────────────────────────
 
@@ -65,23 +67,6 @@ function availabilityFactor(daysDiff: number): number {
   return 0.87;
 }
 
-// ─── Status chip config ───────────────────────────────────────────────────────
-
-type StatusCfg = { bg: string; text: string; border: string };
-
-const STATUS_CFG: Record<AppointmentStatus, StatusCfg> = {
-  Available:      { bg: 'var(--success-light)',       text: 'var(--success-dark)',      border: 'var(--success-main)'  },
-  Booked:         { bg: 'rgba(59,130,246,0.08)',      text: '#2563eb',                  border: 'rgba(59,130,246,0.3)' },
-  Arrived:        { bg: 'var(--accent3-light)',       text: 'var(--accent3-dark)',      border: 'var(--accent3-main)'  },
-  'In Progress':  { bg: 'rgba(245,158,11,0.1)',       text: '#b45309',                  border: 'rgba(245,158,11,0.35)'},
-  Completed:      { bg: 'var(--background-inactive)', text: 'var(--text-secondary)',    border: 'var(--border)'        },
-  DNA:            { bg: 'rgba(239,68,68,0.08)',       text: '#b91c1c',                  border: 'rgba(239,68,68,0.3)'  },
-  Cancelled:      { bg: 'rgba(239,68,68,0.08)',       text: '#b91c1c',                  border: 'rgba(239,68,68,0.3)'  },
-  Blocked:        { bg: 'var(--background-inactive)', text: 'var(--text-secondary)',    border: 'var(--border)'        },
-  Reserved:       { bg: 'var(--primary-light)',       text: 'var(--text-secondary)',    border: 'var(--border)'        },
-  'Running Late': { bg: 'rgba(245,158,11,0.1)',       text: '#b45309',                  border: 'rgba(245,158,11,0.35)'},
-};
-
 // ─── Filter categories ────────────────────────────────────────────────────────
 
 const FILTER_CATS: { id: RoleCategory | 'all'; label: string }[] = [
@@ -107,20 +92,6 @@ const AVAILABILITY_COLOR: Record<UrgentCareLocationMeta['availability'], string>
   limited: 'rgba(245,158,11,1)',
   scarce:  'rgba(239,68,68,1)',
 };
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function StatusChip({ status }: { status: AppointmentStatus }) {
-  const cfg = STATUS_CFG[status];
-  return (
-    <span
-      className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border"
-      style={{ background: cfg.bg, color: cfg.text, borderColor: cfg.border }}
-    >
-      {status}
-    </span>
-  );
-}
 
 // ─── Status logic ─────────────────────────────────────────────────────────────
 
@@ -178,7 +149,7 @@ function StatusDropdownContent({
         onMouseDown={e => e.stopPropagation()}
       >
         {validStatuses.map(status => {
-          const cfg = STATUS_CFG[status];
+          const cfg = APPOINTMENT_STATUS_CFG[status];
           const isActive = status === current;
           return (
             <button
@@ -230,12 +201,14 @@ function AppointmentCard({
   onStatusChange,
   onSlotClick,
   onActionClick,
+  dimmed,
 }: {
   slot: ScheduleSlot;
   selectedDate: Date;
   onStatusChange: (s: AppointmentStatus) => void;
   onSlotClick: () => void;
   onActionClick: (rect: DOMRect) => void;
+  dimmed?: boolean;
 }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [hovered, setHovered] = useState(false);
@@ -285,6 +258,9 @@ function AppointmentCard({
         top: timeToY(slot.startTime) + 2,
         height: h - 4,
         cursor: 'pointer',
+        opacity: dimmed ? 0.2 : 1,
+        pointerEvents: dimmed ? 'none' : undefined,
+        transition: 'opacity 0.15s',
       }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -340,7 +316,7 @@ function AppointmentCard({
                 className="inline-flex rounded-full cursor-pointer transition-opacity hover:opacity-70"
                 title="Change status"
               >
-                <StatusChip status={slot.status as AppointmentStatus} />
+                <AppointmentStatusChip status={slot.status as AppointmentStatus} />
               </div>
             </div>
           )}
@@ -355,7 +331,7 @@ function AppointmentCard({
                 className="inline-flex rounded-full cursor-pointer transition-opacity hover:opacity-70"
                 title="Change status"
               >
-                <StatusChip status={slot.status as AppointmentStatus} />
+                <AppointmentStatusChip status={slot.status as AppointmentStatus} />
               </div>
             </div>
           )}
@@ -445,30 +421,14 @@ const INTERACTION_TYPE_ICON: Record<string, React.ReactNode> = {
   'follow-up': <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>,
 };
 
-const INTERACTION_STATUS_CFG: Record<string, { bg: string; text: string; border: string }> = {
-  'To do':      { bg: 'var(--background-soft)',       text: 'var(--text-secondary)', border: 'var(--border)'                  },
-  'In progress':{ bg: 'rgba(245,158,11,0.1)',         text: '#b45309',               border: 'rgba(245,158,11,0.35)'          },
-  'Completed':  { bg: 'var(--background-inactive)',   text: 'var(--text-secondary)', border: 'var(--border)'                  },
-};
-
-function InteractionStatusChip({ status }: { status: InteractionStatus }) {
-  const cfg = INTERACTION_STATUS_CFG[status] ?? INTERACTION_STATUS_CFG['To do'];
-  return (
-    <span
-      className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium border"
-      style={{ background: cfg.bg, color: cfg.text, borderColor: cfg.border }}
-    >
-      {status}
-    </span>
-  );
-}
-
 function InteractionCard({
   slot,
   onSlotClick,
+  dimmed,
 }: {
   slot: ScheduleSlot;
   onSlotClick: () => void;
+  dimmed?: boolean;
 }) {
   const h = minsToH(slot.durationMins);
   const compact = h < 80;
@@ -478,7 +438,7 @@ function InteractionCard({
   return (
     <div
       className="absolute left-1 right-1 group hover:z-50 cursor-pointer"
-      style={{ top: timeToY(slot.startTime) + 2, height: h - 4 }}
+      style={{ top: timeToY(slot.startTime) + 2, height: h - 4, opacity: dimmed ? 0.2 : 1, pointerEvents: dimmed ? 'none' : undefined, transition: 'opacity 0.15s' }}
       onClick={onSlotClick}
     >
       <div
@@ -528,7 +488,7 @@ function InteractionCard({
 
 // ─── Mock patient data ────────────────────────────────────────────────────────
 
-interface MockPatient {
+export interface MockPatient {
   id: string;
   name: string;
   dob: string;
@@ -538,7 +498,7 @@ interface MockPatient {
   address: string;
 }
 
-const MOCK_PATIENTS: MockPatient[] = [
+export const MOCK_PATIENTS: MockPatient[] = [
   { id: 'p-001', name: 'WALSH, Peter (Mr)',        dob: '14/03/1958', chiNumber: '312748 5091', sex: 'Male',   phone: '07891 234 560', address: '42 Ashdown Road, Birmingham B15 2TN'   },
   { id: 'p-002', name: 'DOBSON, Irene (Mrs)',       dob: '22/07/1941', chiNumber: '450619 2837', sex: 'Female', phone: '07723 456 781', address: '8 Clover Lane, Manchester M14 6PQ'      },
   { id: 'p-003', name: 'HARTLEY, Charles (Mr)',     dob: '05/11/1965', chiNumber: '871304 6152', sex: 'Male',   phone: '07654 321 098', address: '19 Mill Street, Leeds LS6 3AB'          },
@@ -603,15 +563,87 @@ const APPT_TYPES = [
   "Women's health", 'Respiratory', 'Admin',
 ];
 
+// ─── Cancel confirmation dialog ──────────────────────────────────────────────
+
+function CancelConfirmDialog({ slot, onConfirm, onCancel }: { slot: ScheduleSlot; onConfirm: () => void; onCancel: () => void }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  if (!mounted) return null;
+  return createPortal(
+    <>
+      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 10000 }} onClick={onCancel} />
+      <div style={{
+        position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+        zIndex: 10001, width: 400, background: 'var(--background)',
+        border: '1px solid var(--border)', borderRadius: 14,
+        boxShadow: '0 20px 60px rgba(0,0,0,0.18)', padding: 24,
+      }}>
+        <h3 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8 }}>Cancel appointment</h3>
+        <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 24, lineHeight: 1.5 }}>
+          Are you sure you want to cancel the appointment for <strong style={{ color: 'var(--text-primary)' }}>{slot.patientName}</strong>? This cannot be undone.
+        </p>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <Button variant="ghost" size="md" onClick={onCancel}>Keep appointment</Button>
+          <Button variant="primary" size="md" onClick={onConfirm} style={{ background: 'var(--error, #dc2626)', borderColor: 'var(--error, #dc2626)' }}>Cancel appointment</Button>
+        </div>
+      </div>
+    </>,
+    document.body
+  );
+}
+
+// ─── Booking toast ────────────────────────────────────────────────────────────
+
+function BookingToast({ patientName, date, time, onDismiss, onViewInSchedule }: {
+  patientName: string; date: Date; time: string; onDismiss: () => void; onViewInSchedule: () => void;
+}) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+  if (!mounted) return null;
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dateStr = `${DAYS[date.getDay()]} ${date.getDate()} ${MONTHS[date.getMonth()]}`;
+  return createPortal(
+    <div style={{
+      position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
+      background: 'var(--background)', border: '1px solid var(--border)',
+      borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+      padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 8,
+      minWidth: 280, maxWidth: 360,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{
+          width: 26, height: 26, borderRadius: '50%',
+          background: 'var(--success-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--success-dark, #166534)' }}>
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        </div>
+        <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', flex: 1 }}>Appointment booked</p>
+        <button onClick={onDismiss} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text-secondary)', lineHeight: 1, padding: 0 }}>×</button>
+      </div>
+      <p style={{ fontSize: 12, color: 'var(--text-secondary)', paddingLeft: 36 }}>{patientName} · {dateStr} at {time}</p>
+      <button
+        onClick={onViewInSchedule}
+        style={{ fontSize: 12, color: 'var(--primary-main)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0, paddingLeft: 36, textDecoration: 'underline' }}
+      >
+        View in schedule →
+      </button>
+    </div>,
+    document.body
+  );
+}
+
 // ─── Slot context menu ────────────────────────────────────────────────────────
 
-function SlotContextMenuContent({ anchorRect, onClose }: { anchorRect: DOMRect; onClose: () => void }) {
+function SlotContextMenuContent({ anchorRect, onClose, onViewPatient, onCancelRequest, onRescheduleRequest, onAddNote }: { anchorRect: DOMRect; onClose: () => void; onViewPatient?: () => void; onCancelRequest?: () => void; onRescheduleRequest?: () => void; onAddNote?: () => void }) {
   const MENU_W = 204;
-  const items = [
-    { label: 'View patient', icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg> },
-    { label: 'Reschedule appointment', icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
-    { label: 'Add note', icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg> },
-    { label: 'Cancel appointment', icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>, danger: true },
+  const items: { label: string; icon: React.ReactNode; danger?: boolean; onAction?: () => void }[] = [
+    { label: 'View patient', icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>, onAction: onViewPatient },
+    { label: 'Reschedule appointment', icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>, onAction: onRescheduleRequest },
+    { label: 'Add note', icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><path d="M18.375 2.625a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>, onAction: onAddNote },
+    { label: 'Cancel appointment', icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>, danger: true, onAction: onCancelRequest },
   ];
 
   const menuH = items.length * 36 + 12;
@@ -639,7 +671,7 @@ function SlotContextMenuContent({ anchorRect, onClose }: { anchorRect: DOMRect; 
         {items.map(item => (
           <button
             key={item.label}
-            onClick={onClose}
+            onClick={() => { item.onAction?.(); onClose(); }}
             className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-left transition-colors"
             style={{ color: item.danger ? 'var(--error, #dc2626)' : 'var(--text-primary)', background: 'transparent', border: 'none', cursor: 'pointer' }}
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--hover)'; }}
@@ -655,7 +687,7 @@ function SlotContextMenuContent({ anchorRect, onClose }: { anchorRect: DOMRect; 
   );
 }
 
-function SlotContextMenu(props: { anchorRect: DOMRect; onClose: () => void }) {
+function SlotContextMenu(props: { anchorRect: DOMRect; onClose: () => void; onViewPatient?: () => void; onCancelRequest?: () => void; onRescheduleRequest?: () => void; onAddNote?: () => void }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
   if (!mounted) return null;
@@ -679,17 +711,32 @@ function AppointmentDetailPanelContent({
   onClose,
   onStartConsultation,
   onViewPatient,
+  onViewInSchedule,
+  openToNotes,
 }: {
   slot: ScheduleSlot;
   selectedDate: Date;
   onClose: () => void;
-  onStartConsultation: () => void;
-  onViewPatient: () => void;
+  onStartConsultation?: () => void;
+  onViewPatient?: () => void;
+  onViewInSchedule?: () => void;
+  openToNotes?: boolean;
 }) {
   const column = SCHEDULE_COLUMNS.find(c => c.id === slot.columnId);
   const dob = getDob(slot.chiNumber);
   const dateStr = selectedDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const statusCfg = slot.status ? STATUS_CFG[slot.status as AppointmentStatus] : null;
+  const statusCfg = slot.status ? APPOINTMENT_STATUS_CFG[slot.status as AppointmentStatus] : null;
+  const [localNotes, setLocalNotes] = useState(slot.notes ?? '');
+  const notesRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (openToNotes && notesRef.current) {
+      setTimeout(() => {
+        notesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        notesRef.current?.focus();
+      }, 100);
+    }
+  }, [openToNotes]);
 
   return createPortal(
     <>
@@ -749,22 +796,51 @@ function AppointmentDetailPanelContent({
             </div>
           </section>
 
-          {slot.notes && (
-            <section>
-              <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Reason / notes</p>
-              <p style={{ fontSize: 13, color: 'var(--text-primary)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{slot.notes}</p>
-            </section>
-          )}
+          <section>
+            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Notes</p>
+            <textarea
+              ref={notesRef}
+              value={localNotes}
+              onChange={e => setLocalNotes(e.target.value)}
+              placeholder="Add notes…"
+              rows={4}
+              style={{
+                width: '100%', padding: '8px 12px', borderRadius: 8,
+                border: '1px solid var(--border)', background: 'var(--background)',
+                fontSize: 13, color: 'var(--text-primary)', outline: 'none',
+                resize: 'vertical', boxSizing: 'border-box', fontFamily: 'inherit', lineHeight: 1.5,
+              }}
+            />
+          </section>
         </div>
 
         {/* Footer */}
         <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border)', flexShrink: 0, display: 'flex', gap: 8 }}>
-          <Button variant="primary" size="lg" style={{ flex: 1 }} onClick={onStartConsultation}>
-            Start consultation
-          </Button>
-          <Button variant="secondary" size="lg" onClick={onViewPatient}>
-            View patient summary
-          </Button>
+          {onStartConsultation && (
+            <Button variant="primary" size="lg" style={{ flex: 1 }} onClick={onStartConsultation}>
+              Start consultation
+            </Button>
+          )}
+          {onViewPatient && (
+            <Button variant="secondary" size="lg" onClick={onViewPatient}>
+              View patient summary
+            </Button>
+          )}
+          {onViewInSchedule && (
+            <>
+              <Button variant="secondary" size="lg" style={{ flex: 1 }} onClick={onViewInSchedule}>
+                View in day schedule →
+              </Button>
+              <Button variant="ghost" size="lg" onClick={onClose}>
+                Close
+              </Button>
+            </>
+          )}
+          {!onStartConsultation && !onViewPatient && !onViewInSchedule && (
+            <Button variant="secondary" size="lg" style={{ flex: 1 }} onClick={onClose}>
+              Close
+            </Button>
+          )}
         </div>
       </div>
     </>,
@@ -772,7 +848,7 @@ function AppointmentDetailPanelContent({
   );
 }
 
-function AppointmentDetailPanel(props: { slot: ScheduleSlot; selectedDate: Date; onClose: () => void; onStartConsultation: () => void; onViewPatient: () => void }) {
+export function AppointmentDetailPanel(props: { slot: ScheduleSlot; selectedDate: Date; onClose: () => void; onStartConsultation?: () => void; onViewPatient?: () => void; onViewInSchedule?: () => void; openToNotes?: boolean }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
   if (!mounted) return null;
@@ -970,7 +1046,7 @@ function ConsultationViewContent({ slot, onClose }: { slot: ScheduleSlot; onClos
 
       {/* Bottom bar */}
       <div style={{ flexShrink: 0, padding: '12px 24px', borderTop: '1px solid var(--border)', background: 'var(--background)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-        <Button variant="secondary" size="md" onClick={onClose}>
+        <Button variant="ghost" size="md" onClick={onClose}>
           End consultation
         </Button>
         <Button variant="primary" size="md" onClick={onClose}>
@@ -1216,14 +1292,17 @@ function computeNextApptDisplay(slot: ScheduleSlot, selectedDate: Date, now: Dat
   return `${DAYS[selectedDate.getDay()]} ${selectedDate.getDate()} ${MONTHS[selectedDate.getMonth()]}`;
 }
 
-function PatientSummaryViewContent({ slot, selectedDate, onBack, onStartConsultation }: {
+function PatientSummaryViewContent({ slot, selectedDate, onBack, onStartConsultation, onSchedule, onBookAppointmentForPatient }: {
   slot: ScheduleSlot;
   selectedDate: Date;
   onBack: () => void;
   onStartConsultation: () => void;
+  onSchedule?: (i: ScheduledInteraction) => void;
+  onBookAppointmentForPatient?: (patient: MockPatient | null) => void;
 }) {
   const dob = getDob(slot.chiNumber);
   const patientId = slot.chiNumber ? chiToPatientId(slot.chiNumber) : 'PT-10002';
+  const [interactionOpen, setInteractionOpen] = useState(false);
 
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -1266,6 +1345,7 @@ function PatientSummaryViewContent({ slot, selectedDate, onBack, onStartConsulta
           chiNumber={slot.chiNumber ?? '—'}
           sex={sexFromName(slot.patientName ?? '')}
           className="mb-4"
+          onAddInteraction={() => setInteractionOpen(true)}
         />
 
         {/* Clinical widgets — uses mapped patient dataset */}
@@ -1277,14 +1357,37 @@ function PatientSummaryViewContent({ slot, selectedDate, onBack, onStartConsulta
         />
 
       </div>
+
+      {interactionOpen && (
+        <ScheduleInteractionModal
+          isOpen={true}
+          onClose={() => setInteractionOpen(false)}
+          onBookAppointment={() => {
+            setInteractionOpen(false);
+            const found = MOCK_PATIENTS.find(p =>
+              p.chiNumber.replace(/\s/g, '') === (slot.chiNumber ?? '').replace(/\s/g, '')
+            );
+            const patient = found ?? (slot.patientName ? {
+              id: `slot-${slot.id}`,
+              name: slot.patientName,
+              dob: getDob(slot.chiNumber),
+              chiNumber: slot.chiNumber ?? '',
+              sex: '',
+              phone: slot.phone ?? '',
+              address: '',
+            } : null);
+            onBookAppointmentForPatient?.(patient);
+          }}
+          onSchedule={onSchedule}
+          contextPatient={slot.patientName ? { name: slot.patientName, chiNumber: slot.chiNumber ?? '', phone: slot.phone } : null}
+        />
+      )}
     </div>
   );
 }
 
 
-
-
-function PatientSummaryView(props: { slot: ScheduleSlot; selectedDate: Date; onBack: () => void; onStartConsultation: () => void }) {
+function PatientSummaryView(props: { slot: ScheduleSlot; selectedDate: Date; onBack: () => void; onStartConsultation: () => void; onSchedule?: (i: ScheduledInteraction) => void; onBookAppointmentForPatient?: (patient: MockPatient | null) => void }) {
   return <PatientSummaryViewContent {...props} />;
 }
 
@@ -1508,15 +1611,16 @@ function ManualSlotRow({ slot, col, reason, onClick }: {
   );
 }
 
-function NewBookingFlowContent({ onClose, onBook, bookedSlots }: {
+function NewBookingFlowContent({ onClose, onBook, bookedSlots, prefilledPatient }: {
   onClose: () => void;
   onBook: (slot: ScheduleSlot, date: Date) => void;
   bookedSlots: Record<string, ScheduleSlot>;
+  prefilledPatient?: MockPatient | null;
 }) {
   type NbStep = 'patient' | 'reason' | 'finding' | 'options' | 'manual' | 'confirm';
-  const [step, setStep] = useState<NbStep>('patient');
+  const [step, setStep] = useState<NbStep>(prefilledPatient ? 'reason' : 'patient');
   const [patientSearch, setPatientSearch] = useState('');
-  const [selectedPatient, setSelectedPatient] = useState<MockPatient | null>(null);
+  const [selectedPatient, setSelectedPatient] = useState<MockPatient | null>(prefilledPatient ?? null);
   const [selectedReason, setSelectedReason] = useState<BookingReasonDef | null>(null);
   const [customReason, setCustomReason] = useState('');
   const [suggestions, setSuggestions] = useState<SuggestedAppt[]>([]);
@@ -1655,7 +1759,7 @@ function NewBookingFlowContent({ onClose, onBook, bookedSlots }: {
           <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', flex: 1 }}>
             {step === 'manual' ? 'Find another appointment' : 'Book appointment'}
           </span>
-          <Button variant="icon" size="xs" style={{ border: 'none', background: 'transparent' }} onClick={onClose}>
+          <Button variant="icon" size="xs" aria-label="Close" style={{ border: 'none', background: 'transparent' }} onClick={onClose}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </Button>
         </div>
@@ -1950,7 +2054,7 @@ function NewBookingFlowContent({ onClose, onBook, bookedSlots }: {
   );
 }
 
-function NewBookingFlow(props: { onClose: () => void; onBook: (slot: ScheduleSlot, date: Date) => void; bookedSlots: Record<string, ScheduleSlot> }) {
+export function NewBookingFlow(props: { onClose: () => void; onBook: (slot: ScheduleSlot, date: Date) => void; bookedSlots: Record<string, ScheduleSlot>; prefilledPatient?: MockPatient | null }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
   if (!mounted) return null;
@@ -2690,9 +2794,15 @@ interface AppointmentsDayViewProps {
   onConsultationTriggered?: () => void;
   autoOpenNewBooking?: boolean;
   onNewBookingAutoOpened?: () => void;
+  bookedSlots: Record<string, ScheduleSlot>;
+  onSlotBooked: (key: string, slot: ScheduleSlot) => void;
+  statusOverrides: Record<string, AppointmentStatus>;
+  onStatusOverride: (key: string, status: AppointmentStatus) => void;
+  scheduledInteractions?: ScheduledInteraction[];
+  onInteractionScheduled?: (i: ScheduledInteraction) => void;
 }
 
-export function AppointmentsDayView({ onClose, triggerConsultationSlotId, onConsultationTriggered, autoOpenNewBooking, onNewBookingAutoOpened }: AppointmentsDayViewProps) {
+export function AppointmentsDayView({ onClose, triggerConsultationSlotId, onConsultationTriggered, autoOpenNewBooking, onNewBookingAutoOpened, bookedSlots, onSlotBooked, statusOverrides, onStatusOverride, scheduledInteractions: _scheduledInteractions, onInteractionScheduled }: AppointmentsDayViewProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('day');
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     const d = new Date();
@@ -2700,15 +2810,19 @@ export function AppointmentsDayView({ onClose, triggerConsultationSlotId, onCons
     return d;
   });
   const [activeFilter, setActiveFilter] = useState<RoleCategory | 'all'>('all');
-  const [statusOverrides, setStatusOverrides] = useState<Record<string, AppointmentStatus>>({});
-  const [bookedSlots, setBookedSlots] = useState<Record<string, ScheduleSlot>>({});
   const [contextMenu, setContextMenu] = useState<{ slot: ScheduleSlot; rect: DOMRect } | null>(null);
   const [detailPanel, setDetailPanel] = useState<ScheduleSlot | null>(null);
   const [consultationSlot, setConsultationSlot] = useState<ScheduleSlot | null>(null);
   const [bookingFlow, setBookingFlow] = useState<ScheduleSlot | null>(null);
   const [patientSummarySlot, setPatientSummarySlot] = useState<ScheduleSlot | null>(null);
   const [newBookingOpen, setNewBookingOpen] = useState(false);
+  const [newBookingPatient, setNewBookingPatient] = useState<MockPatient | null>(null);
   const [scheduleInteractionOpen, setScheduleInteractionOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [cancelConfirm, setCancelConfirm] = useState<ScheduleSlot | null>(null);
+  const [rescheduleSlot, setRescheduleSlot] = useState<ScheduleSlot | null>(null);
+  const [detailPanelOpenToNotes, setDetailPanelOpenToNotes] = useState(false);
+  const [bookingToast, setBookingToast] = useState<{ patientName: string; date: Date; time: string } | null>(null);
 
   // Auto-open consultation when triggered from outside (e.g. Home Hub)
   useEffect(() => {
@@ -2721,9 +2835,10 @@ export function AppointmentsDayView({ onClose, triggerConsultationSlotId, onCons
     }
   }, [triggerConsultationSlotId]);
 
-  // Auto-open new booking flow when triggered from outside (e.g. Home Hub)
+  // Auto-open new booking flow when triggered from outside
   useEffect(() => {
     if (autoOpenNewBooking) {
+      setNewBookingPatient(null);
       setNewBookingOpen(true);
       onNewBookingAutoOpened?.();
     }
@@ -2847,14 +2962,6 @@ export function AppointmentsDayView({ onClose, triggerConsultationSlotId, onCons
             >
               Schedule an interaction
             </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              leadingIcon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>}
-              onClick={() => {}}
-            >
-              Patient lookup
-            </Button>
           </>
         }
       />
@@ -2877,7 +2984,18 @@ export function AppointmentsDayView({ onClose, triggerConsultationSlotId, onCons
                 placeholder="Search appointments..."
                 className="flex-1 bg-transparent text-xs outline-none"
                 style={{ color: 'var(--text-primary)' }}
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
               />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'var(--text-secondary)', display: 'flex', lineHeight: 1, fontSize: 16 }}
+                  aria-label="Clear search"
+                >
+                  ×
+                </button>
+              )}
             </div>
             <FilterButton active={activeFilter} onChange={setActiveFilter} />
           </div>
@@ -2949,6 +3067,29 @@ export function AppointmentsDayView({ onClose, triggerConsultationSlotId, onCons
                       {col.sessionLabel}
                     </p>
                   )}
+                  {(() => {
+                    const STAFF_TO_COL: Record<string, string> = { me: 'malik', reid: 'reid', wilson: 'wilson', douglas: 'douglas' };
+                    const colItems = (_scheduledInteractions ?? []).filter(i => STAFF_TO_COL[i.assignedToId] === col.id);
+                    if (colItems.length === 0) return null;
+                    return (
+                      <div style={{ marginTop: 4, display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                        {colItems.map(item => (
+                          <span
+                            key={item.id}
+                            title={item.description}
+                            style={{
+                              fontSize: 10, fontWeight: 500, padding: '2px 6px', borderRadius: 10,
+                              background: 'var(--background-soft)', border: '1px solid var(--border)',
+                              color: 'var(--text-secondary)', whiteSpace: 'nowrap',
+                              overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 110, display: 'inline-block',
+                            }}
+                          >
+                            {item.description || item.type}
+                          </span>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
               ))}
             </div>
@@ -2996,10 +3137,11 @@ export function AppointmentsDayView({ onClose, triggerConsultationSlotId, onCons
                           selectedDate={selectedDate}
                           onStatusChange={newStatus => {
                             const dateKey = `${selectedDate.getFullYear()}-${selectedDate.getMonth()}-${selectedDate.getDate()}`;
-                            setStatusOverrides(prev => ({ ...prev, [`${slot.id}:${dateKey}`]: newStatus }));
+                            onStatusOverride(`${slot.id}:${dateKey}`, newStatus);
                           }}
                           onSlotClick={() => setDetailPanel(slot)}
                           onActionClick={rect => setContextMenu({ slot, rect })}
+                          dimmed={!!searchQuery && !slot.patientName?.toLowerCase().includes(searchQuery.toLowerCase())}
                         />
                       );
                       if (slot.type === 'available') return (
@@ -3015,6 +3157,7 @@ export function AppointmentsDayView({ onClose, triggerConsultationSlotId, onCons
                           key={slot.id}
                           slot={slot}
                           onSlotClick={() => setDetailPanel(slot)}
+                          dimmed={!!searchQuery && !((slot.title ?? '').toLowerCase().includes(searchQuery.toLowerCase()) || (slot.patientName ?? '').toLowerCase().includes(searchQuery.toLowerCase()))}
                         />
                       );
                       return null;
@@ -3033,6 +3176,10 @@ export function AppointmentsDayView({ onClose, triggerConsultationSlotId, onCons
         <SlotContextMenu
           anchorRect={contextMenu.rect}
           onClose={() => setContextMenu(null)}
+          onViewPatient={contextMenu.slot.patientName ? () => { setPatientSummarySlot(contextMenu!.slot); setContextMenu(null); } : undefined}
+          onCancelRequest={contextMenu.slot.patientName ? () => { setCancelConfirm(contextMenu!.slot); setContextMenu(null); } : undefined}
+          onRescheduleRequest={contextMenu.slot.patientName ? () => { setRescheduleSlot(contextMenu!.slot); setNewBookingOpen(true); setContextMenu(null); } : undefined}
+          onAddNote={contextMenu.slot.patientName ? () => { setDetailPanel(contextMenu!.slot); setDetailPanelOpenToNotes(true); setContextMenu(null); } : undefined}
         />
       )}
       {detailPanel && !consultationSlot && !patientSummarySlot && (
@@ -3040,9 +3187,10 @@ export function AppointmentsDayView({ onClose, triggerConsultationSlotId, onCons
           <AppointmentDetailPanel
             slot={detailPanel}
             selectedDate={selectedDate}
-            onClose={() => setDetailPanel(null)}
-            onStartConsultation={() => { setConsultationSlot(detailPanel); setDetailPanel(null); }}
-            onViewPatient={() => { setPatientSummarySlot(detailPanel); setDetailPanel(null); }}
+            onClose={() => { setDetailPanel(null); setDetailPanelOpenToNotes(false); }}
+            onStartConsultation={() => { setConsultationSlot(detailPanel); setDetailPanel(null); setDetailPanelOpenToNotes(false); }}
+            onViewPatient={() => { setPatientSummarySlot(detailPanel); setDetailPanel(null); setDetailPanelOpenToNotes(false); }}
+            openToNotes={detailPanelOpenToNotes}
           />
         ) : (
           <InteractionDetailPanel
@@ -3057,6 +3205,12 @@ export function AppointmentsDayView({ onClose, triggerConsultationSlotId, onCons
           selectedDate={selectedDate}
           onBack={() => { setDetailPanel(patientSummarySlot); setPatientSummarySlot(null); }}
           onStartConsultation={() => { setConsultationSlot(patientSummarySlot); setPatientSummarySlot(null); }}
+          onSchedule={onInteractionScheduled}
+          onBookAppointmentForPatient={(patient) => {
+            setNewBookingPatient(patient);
+            setNewBookingOpen(true);
+            setPatientSummarySlot(null);
+          }}
         />
       )}
       {consultationSlot && (
@@ -3072,26 +3226,60 @@ export function AppointmentsDayView({ onClose, triggerConsultationSlotId, onCons
           onClose={() => setBookingFlow(null)}
           onBook={newSlot => {
             const dateKey = `${selectedDate.getFullYear()}-${selectedDate.getMonth()}-${selectedDate.getDate()}`;
-            setBookedSlots(prev => ({ ...prev, [`${bookingFlow.id}:${dateKey}`]: newSlot }));
+            onSlotBooked(`${bookingFlow.id}:${dateKey}`, newSlot);
+            setBookingToast({ patientName: newSlot.patientName ?? 'Patient', date: selectedDate, time: newSlot.startTime ?? '' });
             setBookingFlow(null);
           }}
         />
       )}
       {newBookingOpen && (
         <NewBookingFlow
-          onClose={() => setNewBookingOpen(false)}
+          onClose={() => { setNewBookingOpen(false); setRescheduleSlot(null); setNewBookingPatient(null); }}
           onBook={(slot, date) => {
             const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-            setBookedSlots(prev => ({ ...prev, [`${slot.id}:${dateKey}`]: slot }));
+            onSlotBooked(`${slot.id}:${dateKey}`, slot);
+            if (rescheduleSlot) {
+              const origKey = `${rescheduleSlot.id}:${selectedDate.getFullYear()}-${selectedDate.getMonth()}-${selectedDate.getDate()}`;
+              onStatusOverride(origKey, 'Cancelled');
+            }
+            setBookingToast({ patientName: slot.patientName ?? 'Patient', date, time: slot.startTime ?? '' });
             setNewBookingOpen(false);
+            setRescheduleSlot(null);
+            setNewBookingPatient(null);
           }}
           bookedSlots={bookedSlots}
+          prefilledPatient={
+            rescheduleSlot
+              ? (MOCK_PATIENTS.find(p => p.chiNumber === rescheduleSlot.chiNumber) ?? null)
+              : newBookingPatient
+          }
+        />
+      )}
+      {cancelConfirm && (
+        <CancelConfirmDialog
+          slot={cancelConfirm}
+          onConfirm={() => {
+            const dateKey = `${selectedDate.getFullYear()}-${selectedDate.getMonth()}-${selectedDate.getDate()}`;
+            onStatusOverride(`${cancelConfirm.id}:${dateKey}`, 'Cancelled');
+            setCancelConfirm(null);
+          }}
+          onCancel={() => setCancelConfirm(null)}
+        />
+      )}
+      {bookingToast && (
+        <BookingToast
+          patientName={bookingToast.patientName}
+          date={bookingToast.date}
+          time={bookingToast.time}
+          onDismiss={() => setBookingToast(null)}
+          onViewInSchedule={() => { setSelectedDate(new Date(bookingToast!.date)); setBookingToast(null); }}
         />
       )}
       <ScheduleInteractionModal
         isOpen={scheduleInteractionOpen}
         onClose={() => setScheduleInteractionOpen(false)}
         onBookAppointment={() => { setScheduleInteractionOpen(false); setNewBookingOpen(true); }}
+        onSchedule={onInteractionScheduled}
       />
     </div>
   );

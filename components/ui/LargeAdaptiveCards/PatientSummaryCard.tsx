@@ -74,6 +74,7 @@ export function PatientBanner({
   showMenu = true,
   className = '',
   activePatientId,
+  onAddInteraction,
 }: {
   patientName?: string;
   dateOfBirth?: string;
@@ -83,6 +84,7 @@ export function PatientBanner({
   showMenu?: boolean;
   className?: string;
   activePatientId?: string;
+  onAddInteraction?: () => void;
 }) {
   const resolved = activePatientId ? PATIENT_REGISTRY[activePatientId] : null;
   if (resolved) {
@@ -92,6 +94,20 @@ export function PatientBanner({
     sex = resolved.demographics.sex;
     allergyStatus = resolved.demographics.allergies;
   }
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleDown(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleDown);
+    return () => document.removeEventListener('mousedown', handleDown);
+  }, [menuOpen]);
 
   return (
     <div className={`border border-border bg-background-soft rounded-lg p-4 flex items-center gap-4 ${className}`}>
@@ -113,12 +129,45 @@ export function PatientBanner({
       </div>
       <AllergyChip status={getAllergyStatus(allergyStatus ?? '')} />
       {showMenu && (
-        <button
-          className="w-10 h-10 flex items-center justify-center text-primary-main hover:text-text-primary transition-colors flex-shrink-0 cursor-pointer"
-          aria-label="More actions"
-        >
-          <MoreVerticalIcon size={20} />
-        </button>
+        <div ref={menuRef} style={{ position: 'relative', flexShrink: 0 }}>
+          <button
+            onClick={() => setMenuOpen(o => !o)}
+            className="w-10 h-10 flex items-center justify-center text-primary-main hover:text-text-primary transition-colors cursor-pointer"
+            aria-label="More actions"
+            style={{ background: 'none', border: 'none', borderRadius: 8 }}
+          >
+            <MoreVerticalIcon size={20} />
+          </button>
+          {menuOpen && (
+            <div style={{
+              position: 'absolute', top: 'calc(100% + 4px)', right: 0, zIndex: 60,
+              background: 'var(--background)', border: '1px solid var(--border)',
+              borderRadius: 10, boxShadow: '0 4px 16px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06)',
+              padding: 6, minWidth: 168,
+            }}>
+              {onAddInteraction ? (
+                <button
+                  onClick={() => { onAddInteraction(); setMenuOpen(false); }}
+                  style={{
+                    width: '100%', padding: '8px 12px', borderRadius: 6,
+                    background: 'transparent', border: 'none', cursor: 'pointer',
+                    fontSize: 13, color: 'var(--text-primary)', textAlign: 'left',
+                    display: 'flex', alignItems: 'center', gap: 8,
+                  }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'var(--hover)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, color: 'var(--text-secondary)' }}>
+                    <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/>
+                  </svg>
+                  Add interaction
+                </button>
+              ) : (
+                <p style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text-secondary)', fontStyle: 'italic' }}>No actions available</p>
+              )}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

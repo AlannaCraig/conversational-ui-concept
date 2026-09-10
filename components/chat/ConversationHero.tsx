@@ -11,6 +11,7 @@
 import { motion } from 'framer-motion';
 import { DialogueIcon } from '@/components/icons';
 import { useState, useEffect } from 'react';
+import { CURRENT_USER } from '@/lib/currentUser';
 
 const SUBTEXT_VARIATIONS = [
   'Welcome back! Want to try one of these prompts or go your own way?',
@@ -38,7 +39,7 @@ interface ConversationHeroProps {
 }
 
 export function ConversationHero({
-  userName = 'Alanna',
+  userName = CURRENT_USER.firstName,
   greeting = `Hey ${userName || 'there'}!`,
   subtext,
   skipAnimation = false

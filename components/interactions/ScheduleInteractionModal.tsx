@@ -9,10 +9,26 @@ import { TaskIcon, RepeatIcon, ReportIcon, PatientIcon, CalendarIcon, SearchIcon
 
 export type InteractionType = 'appointment' | 'task' | 'follow-up' | 'contact' | 'review';
 
+export interface ScheduledInteraction {
+  id: string;
+  type: 'task' | 'follow-up' | 'contact' | 'review';
+  description: string;
+  patientName?: string;
+  chiNumber?: string;
+  phone?: string;
+  assignedToId: string;
+  assignedToName: string;
+  dueDate: string;
+  notes?: string;
+  status: 'To do' | 'In progress' | 'Completed';
+  createdAt: number;
+}
+
 interface ScheduleInteractionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onBookAppointment: () => void;
+  onSchedule?: (interaction: ScheduledInteraction) => void;
   contextPatient?: { name: string; chiNumber: string; dob?: string; phone?: string } | null;
 }
 
@@ -127,10 +143,12 @@ function PatientPill({ name, onClear }: { name: string; onClear: () => void }) {
 function ScheduleInteractionModalContent({
   onClose,
   onBookAppointment,
+  onSchedule,
   contextPatient,
 }: {
   onClose: () => void;
   onBookAppointment: () => void;
+  onSchedule?: (interaction: ScheduledInteraction) => void;
   contextPatient?: { name: string; chiNumber: string; dob?: string; phone?: string } | null;
 }) {
   type Step = 'type' | 'patient' | 'details' | 'done';
@@ -181,6 +199,23 @@ function ScheduleInteractionModalContent({
   }
 
   function handleSubmit() {
+    if (onSchedule && selectedType && selectedType !== 'appointment') {
+      const staffMember = STAFF_MEMBERS.find(s => s.id === assignedTo);
+      onSchedule({
+        id: `si-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        type: selectedType as ScheduledInteraction['type'],
+        description: description.trim(),
+        patientName: selectedPatient?.name,
+        chiNumber: selectedPatient?.chiNumber,
+        phone: selectedPatient?.phone,
+        assignedToId: assignedTo,
+        assignedToName: staffMember?.name ?? assignedTo,
+        dueDate: dueDate || 'Today',
+        notes: notes.trim() || undefined,
+        status: 'To do',
+        createdAt: Date.now(),
+      });
+    }
     setStep('done');
   }
 
@@ -321,7 +356,7 @@ function ScheduleInteractionModalContent({
                   Continue
                 </Button>
               )}
-              {typeConfig?.requiresPatient === false || (
+              {typeConfig?.requiresPatient === false && (
                 <button
                   onClick={() => setStep('details')}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 8 }}
@@ -460,7 +495,7 @@ function ScheduleInteractionModalContent({
 
 // ─── Mount wrapper ────────────────────────────────────────────────────────────
 
-export function ScheduleInteractionModal({ isOpen, onClose, onBookAppointment, contextPatient }: ScheduleInteractionModalProps) {
+export function ScheduleInteractionModal({ isOpen, onClose, onBookAppointment, onSchedule, contextPatient }: ScheduleInteractionModalProps) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
   if (!mounted || !isOpen) return null;
@@ -468,6 +503,7 @@ export function ScheduleInteractionModal({ isOpen, onClose, onBookAppointment, c
     <ScheduleInteractionModalContent
       onClose={onClose}
       onBookAppointment={onBookAppointment}
+      onSchedule={onSchedule}
       contextPatient={contextPatient}
     />
   );

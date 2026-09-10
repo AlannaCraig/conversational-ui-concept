@@ -27,8 +27,10 @@ import { ActionTiles, ThemeToast, Breadcrumb, Button } from '@/components/ui';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { CloseXIcon, SwapHorizontalIcon, NewChatIcon } from '@/components/icons';
 import { PopOutForm, TextInput, TextArea, Select } from '@/components/forms';
-import { AppointmentsDayView } from '@/components/appointments/AppointmentsDayView';
+import { AppointmentsDayView, NewBookingFlow, MOCK_PATIENTS, type MockPatient } from '@/components/appointments/AppointmentsDayView';
 import { HomeHub } from '@/components/home/HomeHub';
+import type { ScheduleSlot, AppointmentStatus } from '@/lib/appointmentsScheduleData';
+import type { ScheduledInteraction } from '@/components/interactions/ScheduleInteractionModal';
 import { Message } from '@/types/conversation';
 import { getMockResponse } from '@/lib/mockResponses';
 import { getGameNode } from '@/lib/gameData';
@@ -84,6 +86,11 @@ export default function Home() {
   const [careMode, setCareMode] = useState<'primary' | 'urgent'>('primary');
   const [triggerConsultationSlotId, setTriggerConsultationSlotId] = useState<string | null>(null);
   const [triggerNewBooking, setTriggerNewBooking] = useState(false);
+  const [globalBookingOpen, setGlobalBookingOpen] = useState(false);
+  const [globalBookingPatient, setGlobalBookingPatient] = useState<MockPatient | null>(null);
+  const [bookedSlots, setBookedSlots] = useState<Record<string, ScheduleSlot>>({});
+  const [statusOverrides, setStatusOverrides] = useState<Record<string, AppointmentStatus>>({});
+  const [scheduledInteractions, setScheduledInteractions] = useState<ScheduledInteraction[]>([]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -495,9 +502,24 @@ export default function Home() {
     setActivePopover(null);
   };
 
-  const handleBookAppointmentFromHome = () => {
-    setTriggerNewBooking(true);
-    setUiState('appointments');
+  const handleBookAppointmentFromHome = (patient?: { name: string; chiNumber: string } | null) => {
+    if (patient) {
+      const found = MOCK_PATIENTS.find(p =>
+        p.chiNumber.replace(/\s/g, '') === patient.chiNumber.replace(/\s/g, '')
+      );
+      setGlobalBookingPatient(found ?? {
+        id: `ctx-${patient.chiNumber.replace(/\s/g, '')}`,
+        name: patient.name,
+        dob: '',
+        chiNumber: patient.chiNumber,
+        sex: '',
+        phone: '',
+        address: '',
+      });
+    } else {
+      setGlobalBookingPatient(null);
+    }
+    setGlobalBookingOpen(true);
     setActivePopover(null);
   };
 
@@ -615,6 +637,12 @@ export default function Home() {
               onConsultationTriggered={() => setTriggerConsultationSlotId(null)}
               autoOpenNewBooking={triggerNewBooking}
               onNewBookingAutoOpened={() => setTriggerNewBooking(false)}
+              bookedSlots={bookedSlots}
+              onSlotBooked={(key, slot) => setBookedSlots(prev => ({ ...prev, [key]: slot }))}
+              statusOverrides={statusOverrides}
+              onStatusOverride={(key, status) => setStatusOverrides(prev => ({ ...prev, [key]: status }))}
+              scheduledInteractions={scheduledInteractions}
+              onInteractionScheduled={(i: ScheduledInteraction) => setScheduledInteractions(prev => [...prev, i])}
             />
           )}
           {uiState !== 'appointments' && <div className="h-full p-6">
@@ -729,6 +757,12 @@ export default function Home() {
                 onScheduleInteraction={handleBookAppointmentFromHome}
                 onStartConsultation={handleStartConsultationFromHome}
                 onViewNotifications={handleNotificationsClick}
+                bookedSlots={bookedSlots}
+                statusOverrides={statusOverrides}
+                onStatusOverride={(key, status) => setStatusOverrides(prev => ({ ...prev, [key]: status }))}
+                scheduledInteractions={scheduledInteractions}
+                onInteractionScheduled={(i: ScheduledInteraction) => setScheduledInteractions(prev => [...prev, i])}
+                onInteractionStatusChange={(id, status) => setScheduledInteractions(prev => prev.map(i => i.id === id ? { ...i, status } : i))}
               />
             )}
 
@@ -938,6 +972,19 @@ export default function Home() {
           <TextArea label="Current Medications" name="medications" rows={3} />
           <TextArea label="Notes" name="notes" rows={3} />
         </PopOutForm>
+      )}
+      {globalBookingOpen && (
+        <NewBookingFlow
+          onClose={() => { setGlobalBookingOpen(false); setGlobalBookingPatient(null); }}
+          onBook={(slot, date) => {
+            const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+            setBookedSlots(prev => ({ ...prev, [`${slot.id}:${dateKey}`]: slot }));
+            setGlobalBookingOpen(false);
+            setGlobalBookingPatient(null);
+          }}
+          bookedSlots={bookedSlots}
+          prefilledPatient={globalBookingPatient}
+        />
       )}
     </main>
   );

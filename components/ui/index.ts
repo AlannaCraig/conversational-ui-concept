@@ -20,3 +20,6 @@ export { ActivityPanel } from './ActivityPanel';
 export type { ActivityItem, ActivityDetail, ActivityIconType, ActivityPanelProps } from './ActivityPanel';
 export { WeekPicker } from './WeekPicker';
 export type { WeekPickerProps } from './WeekPicker';
+export { AppointmentStatusChip, APPOINTMENT_STATUS_CFG, appointmentStatusAccent } from './AppointmentStatusChip';
+export type { StatusCfg } from './AppointmentStatusChip';
+export { InteractionStatusChip, INTERACTION_STATUS_CFG } from './InteractionStatusChip';

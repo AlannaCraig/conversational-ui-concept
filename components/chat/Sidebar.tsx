@@ -19,6 +19,7 @@ import {
 } from '@/components/icons';
 import { SidebarItem } from './SidebarItem';
 import { Avatar } from '@/components/ui';
+import { CURRENT_USER } from '@/lib/currentUser';
 
 interface SidebarProps {
   onHomeClick?: () => void;
@@ -92,7 +93,7 @@ export function Sidebar({ onHomeClick, onHelpClick, onChatHistoryClick, onNotifi
 
       {/* User Avatar */}
       <div className="mt-4">
-        <Avatar initials="AC" variant="accent1" size={36} />
+        <Avatar initials={CURRENT_USER.initials} variant="accent1" size={36} />
       </div>
     </aside>
   );
